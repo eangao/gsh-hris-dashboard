@@ -56,16 +56,20 @@ export const user_register = createAsyncThunk(
 
 export const logout = createAsyncThunk(
   "auth/logout",
-  async (_, { rejectWithValue, fulfillWithValue }) => {
+  async ({ navigate }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/logout", { withCredentials: true });
-      localStorage.removeItem("accessToken");
+      const { data } = await api.post("/user-logout", {
+        withCredentials: true,
+      });
 
-      return fulfillWithValue(true);
+      localStorage.removeItem("accessToken");
+      navigate("/login");
+
+      console.log(data);
+      return fulfillWithValue(data);
     } catch (error) {
-      // console.log(error.response.data)
-      // return rejectWithValue(error.response.data);
-      return rejectWithValue(false);
+      console.log(error.response.data);
+      return rejectWithValue(error.response.data);
     }
   }
 );
@@ -114,11 +118,6 @@ export const authReducer = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
-    clearAuth: (state) => {
-      state.userInfo = "";
-      state.role = "";
-      state.token = "";
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -162,6 +161,15 @@ export const authReducer = createSlice({
       .addCase(get_user_info.fulfilled, (state, { payload }) => {
         state.loader = false;
         state.userInfo = payload.userInfo;
+      })
+
+      .addCase(logout.rejected, (state, { payload }) => {
+        state.loader = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(logout.fulfilled, (state, { payload }) => {
+        state.loader = false;
+        state.successMessage = payload.message;
       });
   },
 });

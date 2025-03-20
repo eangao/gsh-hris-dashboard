@@ -3,8 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { getNav } from "../navigation/index";
 import { BiLogOutCircle } from "react-icons/bi";
 import { useDispatch, useSelector } from "react-redux";
-import { logout, clearAuth } from "../store/Reducers/authReducer";
-import toast from "react-hot-toast";
+import { logout } from "../store/Reducers/authReducer";
 
 const Sidebar = ({ showSidebar, setShowSidebar }) => {
   const dispatch = useDispatch();
@@ -19,20 +18,6 @@ const Sidebar = ({ showSidebar, setShowSidebar }) => {
     const navs = getNav(role);
     setAllNav(navs);
   }, [role]);
-
-  const handleLogout = async () => {
-    try {
-      const result = await dispatch(logout()).unwrap(); // extracts 'true'
-
-      if (result) {
-        dispatch(clearAuth());
-        navigate("/login");
-      }
-    } catch (error) {
-      // console.log("Logout failed", error);
-      toast.error("Logout failed");
-    }
-  };
 
   return (
     <div>
@@ -78,7 +63,7 @@ const Sidebar = ({ showSidebar, setShowSidebar }) => {
 
             <li>
               <button
-                onClick={handleLogout}
+                onClick={() => dispatch(logout({ navigate }))}
                 className="text-[#030811] font-bold duration-200
                    px-[12px] py-[9px] rounded-sm flex justify-start items-center gap-[12px] hover:pl-4 transition-all w-full mb-1"
               >
