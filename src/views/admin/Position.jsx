@@ -7,47 +7,64 @@ import {
   deletePosition,
   messageClear,
 } from "../../store/Reducers/positionReducer";
+import Pagination from "../components/Pagination";
+import toast from "react-hot-toast";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
+
+import { buttonOverrideStyle } from "../../utils/utils";
+import { PropagateLoader } from "react-spinners";
+import Search from "../components/Search";
 
 const Position = () => {
   const dispatch = useDispatch();
-  const {
-    positions = [],
-    loading,
-    error,
-    success,
-    message,
-  } = useSelector((state) => state.position);
+
+  const { positions, totalPosition, loading, successMessage, errorMessage } =
+    useSelector((state) => state.position);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchValue, setSearchValue] = useState("");
+  const [perPage, setPerpage] = useState(5);
+
+  useEffect(() => {
+    // Reset to page 1 if searchValue is not empty
+    if (searchValue && currentPage !== 1) {
+      setCurrentPage(1); // Reset page to 1 when a search is triggered
+    }
+
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchPositions(obj));
+  }, [searchValue, currentPage, perPage, dispatch]);
+
   const [formData, setFormData] = useState({
-    id: null,
-    title: "",
+    _id: null,
+    name: "",
     description: "",
-    department: "",
-    status: "active",
+    changeReason: "",
   });
-  const [departments] = useState([
-    "IT",
-    "HR",
-    "Finance",
-    "Marketing",
-    "Operations",
-  ]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [deleteName, setDeleteName] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchPositions());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (success) {
+    if (successMessage) {
+      toast.success(successMessage);
       setIsModalOpen(false);
       setDeleteId(null);
-      setTimeout(() => {
-        dispatch(messageClear());
-      }, 3000);
+
+      dispatch(messageClear());
     }
-  }, [success, dispatch]);
+
+    if (errorMessage) {
+      toast.error(errorMessage);
+      dispatch(messageClear());
+    }
+  }, [successMessage, errorMessage]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,8 +72,8 @@ const Position = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.id) {
-      dispatch(updatePosition({ id: formData.id, positionData: formData }));
+    if (formData._id) {
+      dispatch(updatePosition(formData));
     } else {
       dispatch(createPosition(formData));
     }
@@ -67,7 +84,10 @@ const Position = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteConfirm = (id) => setDeleteId(id);
+  const handleDeleteConfirm = (id, name) => {
+    setDeleteId(id);
+    setDeleteName(name);
+  };
 
   const handleDelete = () => {
     dispatch(deletePosition(deleteId));
@@ -75,56 +95,39 @@ const Position = () => {
 
   const resetForm = () => {
     setFormData({
-      id: null,
-      title: "",
+      _id: null,
+      name: "",
       description: "",
-      department: "",
-      status: "active",
+      changeReason: "",
     });
   };
 
-  const filteredPositions = positions.filter(
-    (position) =>
-      position?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      position?.department?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">
-        Position Management
-      </h1>
-
-      {/* Success Message */}
-      {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-          {message}
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>
-      )}
-
-      {/* Search and Add Position */}
+      {/*  Header and Add Position */}
       <div className="flex justify-between mb-4">
-        <input
-          type="text"
-          placeholder="Search positions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 border rounded w-64"
-        />
+        <h1 className="text-2xl font-bold  text-center">Position Management</h1>
         <button
           onClick={() => {
             resetForm();
             setIsModalOpen(true);
           }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          disabled={loading}
         >
           Add Position
         </button>
+      </div>
+
+      {/* Search and Add Position */}
+
+      <div className=" mb-4">
+        <Search
+          setPerpage={setPerpage}
+          setSearchValue={setSearchValue}
+          searchValue={searchValue}
+          inputPlaceholder={"Search Position..."}
+        />
       </div>
 
       {/* Positions Table */}
@@ -132,57 +135,47 @@ const Position = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Title</th>
+              <th className="p-3">Position Name</th>
               <th className="p-3">Description</th>
-              <th className="p-3">Department</th>
-              <th className="p-3">Status</th>
-              <th className="p-3 text-center">Actions</th>
+              <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="p-3 text-center">
-                  Loading...
+                <td colSpan="3" className="p-3 text-center">
+                  loading...
                 </td>
               </tr>
-            ) : filteredPositions.length === 0 ? (
+            ) : positions?.length === 0 ? (
               <tr>
-                <td colSpan="5" className="p-3 text-center text-gray-500">
+                <td colSpan="3" className="p-3 text-center text-gray-500">
                   No positions found.
                 </td>
               </tr>
             ) : (
-              filteredPositions.map((position) => (
-                <tr key={position.id} className="border-t">
-                  <td className="p-3">{position.title}</td>
-                  <td className="p-3">{position.description}</td>
-                  <td className="p-3">{position.department}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded ${
-                        position.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {position.status}
-                    </span>
+              positions?.map((position) => (
+                <tr key={position._id} className="border-t">
+                  <td className="p-2 text-lg capitalize">{position.name}</td>
+                  <td className="p-2 text-lg capitalize">
+                    {position.description}
                   </td>
-                  <td className="p-3 flex justify-center space-x-2">
+                  <td className="p-2 flex justify-end space-x-2">
                     <button
                       onClick={() => handleEdit(position)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
-                      Edit
+                      <FaEdit />
                     </button>
                     <button
-                      onClick={() => handleDeleteConfirm(position.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      onClick={() =>
+                        handleDeleteConfirm(position._id, position.name)
+                      }
+                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                       disabled={loading}
                     >
-                      Delete
+                      <FaTrashAlt />
                     </button>
                   </td>
                 </tr>
@@ -192,75 +185,90 @@ const Position = () => {
         </table>
       </div>
 
+      {/* Pagination  */}
+      {totalPosition <= perPage ? (
+        ""
+      ) : (
+        <div className="w-full flex justify-end mt-4 bottom-4 right-4">
+          <Pagination
+            pageNumber={currentPage}
+            setPageNumber={setCurrentPage}
+            totalItem={totalPosition}
+            perPage={perPage}
+            showItem={Math.min(5, Math.ceil(totalPosition / perPage))}
+          />
+        </div>
+      )}
+
       {/* Create/Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData.id ? "Edit Position" : "Add Position"}
+              {formData._id ? "Edit Position" : "Add Position"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
-                name="title"
-                placeholder="Position Title"
-                value={formData.title}
+                name="name"
+                placeholder="Position Name"
+                value={formData.name}
                 onChange={handleChange}
-                className="w-full p-2 border rounded"
+                className="w-full p-2 border rounded capitalize"
                 required
                 disabled={loading}
               />
-              <textarea
+
+              <input
+                type="text"
                 name="description"
-                placeholder="Position Description"
+                placeholder="Description"
                 value={formData.description}
                 onChange={handleChange}
-                className="w-full p-2 border rounded"
-                rows="3"
-                required
+                className="w-full p-2 border rounded capitalize"
                 disabled={loading}
               />
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-                required
-                disabled={loading}
-              >
-                <option value="">Select Department</option>
-                {departments.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-                required
-                disabled={loading}
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+              {formData._id && (
+                <input
+                  type="text"
+                  name="changeReason"
+                  placeholder="Update Reason"
+                  value={formData.updateReason}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded capitalize"
+                  required
+                  disabled={loading}
+                />
+              )}
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                  className={`bg-gray-500 text-white px-4 py-2 rounded ${
+                    loading ? "" : " hover:bg-gray-600"
+                  }`}
                   disabled={loading}
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  disabled={loading}
+                  disabled={loading ? true : false}
+                  className={`bg-blue-500 w-[100px] text-white px-4 py-2 rounded ${
+                    loading ? "" : " hover:bg-blue-600"
+                  } overflow-hidden`}
                 >
-                  {loading ? "Loading..." : formData.id ? "Update" : "Add"}
+                  {loading ? (
+                    <PropagateLoader
+                      color="#fff"
+                      cssOverride={buttonOverrideStyle}
+                    />
+                  ) : formData._id ? (
+                    "Update"
+                  ) : (
+                    "Add"
+                  )}
                 </button>
               </div>
             </form>
@@ -273,7 +281,7 @@ const Position = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>Are you sure you want to delete this position?</p>
+            <p>{`Are you sure you want to delete ${deleteName} position?`}</p>
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 onClick={() => setDeleteId(null)}
@@ -287,7 +295,7 @@ const Position = () => {
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                 disabled={loading}
               >
-                {loading ? "Loading..." : "Delete"}
+                {loading ? "loading..." : "Delete"}
               </button>
             </div>
           </div>
