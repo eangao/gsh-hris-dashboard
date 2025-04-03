@@ -21,6 +21,23 @@ export const fetchDepartments = createAsyncThunk(
   }
 );
 
+export const fetchAllDepartments = createAsyncThunk(
+  "department/fetchAllDepartments",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get("/fetch-all-departments", {
+        withCredentials: true,
+      });
+
+      // console.log(data);
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export const createDepartment = createAsyncThunk(
   "department/createDepartment",
   async (departmentData, { rejectWithValue, fulfillWithValue }) => {
@@ -87,6 +104,11 @@ const departmentSlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(fetchDepartments.fulfilled, (state, { payload }) => {
       state.totalDepartment = payload.totalDepartment;
+      state.departments = payload.departments;
+    });
+
+    // Fetch All Clusters
+    builder.addCase(fetchAllDepartments.fulfilled, (state, { payload }) => {
       state.departments = payload.departments;
     });
 

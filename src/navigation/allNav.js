@@ -36,6 +36,13 @@ export const allNav = [
     path: "/admin/dashboard/employees",
   },
   {
+    id: 4,
+    title: "Test",
+    icon: <FaPeopleGroup />,
+    role: "admin",
+    path: "/admin/dashboard/test",
+  },
+  {
     id: 5,
     title: "Departments",
     icon: <FaLayerGroup />,
@@ -63,6 +70,7 @@ export const allNav = [
     role: "admin",
     path: "/admin/dashboard/position",
   },
+
   {
     id: 9,
     title: "Work Schedule",
@@ -110,5 +118,19 @@ export const allNav = [
     icon: <AiOutlineDashboard />,
     role: "employee",
     path: "/employee/dashboard",
+  },
+  {
+    id: 15,
+    title: "Religion",
+    icon: <FiFileText />,
+    role: "admin",
+    path: "/admin/dashboard/religion",
+  },
+  {
+    id: 16,
+    title: "Employment Status",
+    icon: <FiFileText />,
+    role: "admin",
+    path: "/admin/dashboard/employment-status",
   },
 ];

@@ -43,7 +43,7 @@ const Sidebar = ({ showSidebar, setShowSidebar }) => {
           </Link>
         </div>
 
-        <div className="px-[16px]">
+        <div className="px-[16px] max-h-[90%] overflow-y-auto">
           <ul>
             {allNav.map((n, i) => (
               <li key={i}>

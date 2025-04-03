@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
-  fetchEmployees,
-  deleteEmployee,
+  // fetchEmployees,
+  // deleteEmployee,
   messageClear,
 } from "../../store/Reducers/employeeReducer";
+import toast from "react-hot-toast";
 
 const Employee = () => {
   const navigate = useNavigate();
@@ -13,9 +14,8 @@ const Employee = () => {
   const {
     employees = [],
     loading,
-    error,
-    success,
-    message,
+    errorMessage,
+    successMessage,
   } = useSelector((state) => state.employee);
   const { departments = [] } = useSelector((state) => state.department);
   const { positions = [] } = useSelector((state) => state.position);
@@ -25,22 +25,25 @@ const Employee = () => {
   const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchEmployees());
+    // dispatch(fetchEmployees());
   }, [dispatch]);
 
   useEffect(() => {
-    if (success) {
+    if (successMessage) {
       setDeleteId(null);
-      setTimeout(() => {
-        dispatch(messageClear());
-      }, 3000);
+      dispatch(messageClear());
     }
-  }, [success, dispatch]);
+
+    if (errorMessage) {
+      toast.error(errorMessage);
+      dispatch(messageClear());
+    }
+  }, [successMessage, errorMessage]);
 
   const handleDeleteConfirm = (id) => setDeleteId(id);
 
   const handleDelete = () => {
-    dispatch(deleteEmployee(deleteId));
+    // dispatch(deleteEmployee(deleteId));
   };
 
   const filteredEmployees = employees.filter(
@@ -57,18 +60,6 @@ const Employee = () => {
         Employee Management
       </h1>
 
-      {/* Success Message */}
-      {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-          {message}
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>
-      )}
-
       {/* Search and Add Employee */}
       <div className="flex justify-between mb-4">
         <input
@@ -79,7 +70,7 @@ const Employee = () => {
           className="p-2 border rounded w-64"
         />
         <button
-          onClick={() => navigate("/admin/dashboard/employee/add")}
+          onClick={() => navigate("/admin/dashboard/employees/add")}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
         >
@@ -92,12 +83,10 @@ const Employee = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Name</th>
+              <th className="p-3">Full Name</th>
               <th className="p-3">Department</th>
               <th className="p-3">Position</th>
-              <th className="p-3">Work Schedule</th>
-              <th className="p-3">Date Hired</th>
-              <th className="p-3">Status</th>
+              <th className="p-3">Employment Status</th>
               <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
@@ -116,22 +105,31 @@ const Employee = () => {
               </tr>
             ) : (
               filteredEmployees.map((employee) => (
-                <tr key={employee.id} className="border-t">
-                  <td className="p-3">{employee.name}</td>
-                  <td className="p-3">{employee.department}</td>
-                  <td className="p-3">{employee.position}</td>
+                <tr key={employee._id} className="border-t">
+                  <td className="p-3">{`${
+                    employee.personalInformation?.firstName || ""
+                  } ${employee.personalInformation?.lastName || ""}`}</td>
                   <td className="p-3">
-                    {workSchedules.find(
-                      (ws) => ws.id === employee.workScheduleId
+                    {departments.find(
+                      (dept) =>
+                        dept._id ===
+                        employee.employmentInformation?.departmentId
                     )?.name || "-"}
                   </td>
-                  <td className="p-3">{employee.dateHired}</td>
-                  <td className="p-3">{employee.status}</td>
+                  <td className="p-3">
+                    {positions.find(
+                      (pos) =>
+                        pos._id === employee.employmentInformation?.positionId
+                    )?.name || "-"}
+                  </td>
+                  <td className="p-3">
+                    {employee.employmentInformation?.employmentStatus || "-"}
+                  </td>
                   <td className="p-3 flex justify-center space-x-2">
                     <button
                       onClick={() =>
                         navigate(
-                          `/admin/dashboard/employee/details/${employee.id}`
+                          `/admin/dashboard/employees/details/${employee._id}`
                         )
                       }
                       className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
@@ -142,7 +140,7 @@ const Employee = () => {
                     <button
                       onClick={() =>
                         navigate(
-                          `/admin/dashboard/employee/edit/${employee.id}`
+                          `/admin/dashboard/employees/edit/${employee._id}`
                         )
                       }
                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
@@ -151,7 +149,7 @@ const Employee = () => {
                       Edit
                     </button>
                     <button
-                      onClick={() => handleDeleteConfirm(employee.id)}
+                      onClick={() => handleDeleteConfirm(employee._id)}
                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                       disabled={loading}
                     >

@@ -1,147 +1,162 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../../api/api";
 
-const initialState = {
-  employees: [],
-  loading: false,
-  error: null,
-  success: false,
-  message: "",
-};
+// Async Thunks
+// export const fetchDepartments = createAsyncThunk(
+//   "department/fetchDepartments",
+//   async (
+//     { perPage, page, searchValue },
+//     { rejectWithValue, fulfillWithValue }
+//   ) => {
+//     try {
+//       const { data } = await api.get(
+//         `/fetch-departments?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+//         { withCredentials: true }
+//       );
+
+//       return fulfillWithValue(data);
+//     } catch (error) {
+//       return rejectWithValue(error.response.data);
+//     }
+//   }
+// );
+
+// export const fetchAllDepartments = createAsyncThunk(
+//   "department/fetchAllDepartments",
+//   async (_, { rejectWithValue, fulfillWithValue }) => {
+//     try {
+//       const { data } = await api.get("/fetch-all-departments", {
+//         withCredentials: true,
+//       });
+
+//       // console.log(data);
+
+//       return fulfillWithValue(data);
+//     } catch (error) {
+//       return rejectWithValue(error.response.data);
+//     }
+//   }
+// );
+
+// export const createDepartment = createAsyncThunk(
+//   "department/createDepartment",
+//   async (departmentData, { rejectWithValue, fulfillWithValue }) => {
+//     try {
+//       const { data } = await api.post("/create-department", departmentData, {
+//         withCredentials: true,
+//       });
+//       return fulfillWithValue(data);
+//     } catch (error) {
+//       return rejectWithValue(error.response.data);
+//     }
+//   }
+// );
+
+// export const updateDepartment = createAsyncThunk(
+//   "department/updateDepartment",
+//   async ({ _id, ...departmentData }, { rejectWithValue, fulfillWithValue }) => {
+//     try {
+//       const { data } = await api.put(
+//         `/update-department/${_id}`,
+//         departmentData,
+//         {
+//           withCredentials: true,
+//         }
+//       );
+
+//       return fulfillWithValue(data);
+//     } catch (error) {
+//       return rejectWithValue(error.response.data);
+//     }
+//   }
+// );
+
+// export const deleteDepartment = createAsyncThunk(
+//   "department/deleteDepartment",
+//   async (id, { rejectWithValue, fulfillWithValue }) => {
+//     try {
+//       const { data } = await api.delete(`/delete-department/${id}`, {
+//         withCredentials: true,
+//       });
+//       return fulfillWithValue(data);
+//     } catch (error) {
+//       return rejectWithValue(error.response.data);
+//     }
+//   }
+// );
 
 const employeeSlice = createSlice({
   name: "employee",
-  initialState,
+  initialState: {
+    loading: false,
+    successMessage: "",
+    errorMessage: "",
+    employees: [],
+    employee: "",
+    totalEmployee: 0,
+  },
   reducers: {
-    setLoading: (state) => {
-      state.loading = true;
-      state.error = null;
-      state.success = false;
-      state.message = "";
-    },
-    setError: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-      state.success = false;
-      state.message = "";
-    },
-    setSuccess: (state, action) => {
-      state.loading = false;
-      state.error = null;
-      state.success = true;
-      state.message = action.payload;
-    },
     messageClear: (state) => {
-      state.error = null;
-      state.success = false;
-      state.message = "";
+      state.errorMessage = "";
+      state.successMessage = "";
     },
-    setEmployees: (state, action) => {
-      state.loading = false;
-      state.employees = action.payload;
-    },
-    addEmployee: (state, action) => {
-      state.employees.push(action.payload);
-    },
-    updateEmployeeState: (state, action) => {
-      const index = state.employees.findIndex(
-        (emp) => emp.id === action.payload.id
-      );
-      if (index !== -1) {
-        state.employees[index] = action.payload;
-      }
-    },
-    removeEmployee: (state, action) => {
-      state.employees = state.employees.filter(
-        (emp) => emp.id !== action.payload
-      );
-    },
+  },
+  extraReducers: (builder) => {
+    // builder.addCase(fetchDepartments.fulfilled, (state, { payload }) => {
+    //   state.totalDepartment = payload.totalDepartment;
+    //   state.departments = payload.departments;
+    // });
+    // // Fetch All Clusters
+    // builder.addCase(fetchAllDepartments.fulfilled, (state, { payload }) => {
+    //   state.departments = payload.departments;
+    // });
+    // builder
+    //   .addCase(createDepartment.pending, (state) => {
+    //     state.loading = true;
+    //   })
+    //   .addCase(createDepartment.rejected, (state, { payload }) => {
+    //     state.loading = false;
+    //     state.errorMessage = payload.error;
+    //   })
+    //   .addCase(createDepartment.fulfilled, (state, { payload }) => {
+    //     state.loading = false;
+    //     state.successMessage = payload.message;
+    //     state.departments = [...state.departments, payload.department];
+    //   });
+    // builder;
+    //   .addCase(updateDepartment.pending, (state) => {
+    //     state.loading = true;
+    //   })
+    //   .addCase(updateDepartment.rejected, (state, { payload }) => {
+    //     state.loading = false;
+    //     state.errorMessage = payload.error;
+    //   })
+    //   .addCase(updateDepartment.fulfilled, (state, { payload }) => {
+    //     state.loading = false;
+    //     state.successMessage = payload.message;
+    //     state.departments = state.departments.map((department) =>
+    //       department._id === payload.department._id
+    //         ? payload.department
+    //         : department
+    //     );
+    //   });
+    // builder
+    //   .addCase(deleteDepartment.pending, (state) => {
+    //     state.loading = true;
+    //   })
+    //   .addCase(deleteDepartment.rejected, (state, { payload }) => {
+    //     state.loading = false;
+    //     state.errorMessage = payload.error;
+    //   })
+    //   .addCase(deleteDepartment.fulfilled, (state, { payload }) => {
+    //     state.loading = false;
+    //     state.successMessage = payload.message;
+    //     state.departments = state.departments.filter(
+    //       (department) => department._id !== payload.departmentId
+    //     );
+    //   });
   },
 });
 
-export const {
-  setLoading,
-  setError,
-  setSuccess,
-  messageClear,
-  setEmployees,
-  addEmployee,
-  updateEmployeeState,
-  removeEmployee,
-} = employeeSlice.actions;
-
-// Async thunk actions
-export const fetchEmployees = () => async (dispatch) => {
-  try {
-    dispatch(setLoading());
-    // Temporary mock data until API is ready
-    const mockData = [
-      {
-        id: 1,
-        name: "John Doe",
-        email: "john@example.com",
-        phone: "1234567890",
-        address: "123 Main St",
-        gender: "Male",
-        birthdate: "1990-01-01",
-        salary: "50000",
-        dateHired: "2023-01-01",
-        departmentId: 1,
-        positionId: 1,
-        status: "Active",
-        workScheduleId: 1,
-      },
-    ];
-    dispatch(setEmployees(mockData));
-  } catch (error) {
-    dispatch(
-      setError("An error occurred while fetching employees. Please try again.")
-    );
-  }
-};
-
-export const createEmployee = (employeeData) => async (dispatch) => {
-  try {
-    dispatch(setLoading());
-    // Temporary mock response until API is ready
-    const mockResponse = {
-      ...employeeData,
-      id: Date.now(), // Generate a temporary ID
-    };
-    dispatch(addEmployee(mockResponse));
-    dispatch(setSuccess("Employee created successfully"));
-  } catch (error) {
-    dispatch(
-      setError("An error occurred while creating employee. Please try again.")
-    );
-  }
-};
-
-export const updateEmployee =
-  ({ id, employeeData }) =>
-  async (dispatch) => {
-    try {
-      dispatch(setLoading());
-      // Temporary mock update until API is ready
-      const mockResponse = {
-        ...employeeData,
-        id,
-      };
-      dispatch(updateEmployeeState(mockResponse));
-      dispatch(setSuccess("Employee updated successfully"));
-    } catch (error) {
-      dispatch(setError(error.message));
-    }
-  };
-
-export const deleteEmployee = (id) => async (dispatch) => {
-  try {
-    dispatch(setLoading());
-    // Temporary mock delete until API is ready
-    dispatch(removeEmployee(id));
-    dispatch(setSuccess("Employee deleted successfully"));
-  } catch (error) {
-    dispatch(setError(error.message));
-  }
-};
-
+export const { messageClear } = employeeSlice.actions;
 export default employeeSlice.reducer;

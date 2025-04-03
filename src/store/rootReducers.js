@@ -1,5 +1,7 @@
 import authReducer from "./Reducers/authReducer";
 import employeeReducer from "./Reducers/employeeReducer";
+import employmentStatusReducer from "./Reducers/employmentStatusReducer";
+import religionReducer from "./Reducers/religionReducer";
 import positionReducer from "./Reducers/positionReducer";
 import clusterReducer from "./Reducers/clusterReducer";
 import departmentReducer from "./Reducers/departmentReducer";
@@ -13,6 +15,8 @@ import workScheduleReducer from "./Reducers/workScheduleReducer";
 const rootReducer = {
   auth: authReducer,
   employee: employeeReducer,
+  employmentStatus: employmentStatusReducer,
+  religion: religionReducer,
   attendance: attendanceReducer,
   user: userReducer,
   holidays: holidayReducer,

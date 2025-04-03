@@ -3,6 +3,7 @@ import { lazy } from "react";
 const AdminDashboard = lazy(() => import("../../views/admin/AdminDashboard"));
 const Employee = lazy(() => import("../../views/employee/Employee"));
 const AddEmployee = lazy(() => import("../../views/employee/AddEmployee"));
+const Test = lazy(() => import("../../views/employee/Test"));
 const EditEmployee = lazy(() => import("../../views/employee/EditEmployee"));
 const EmployeeDetails = lazy(() =>
   import("../../views/employee/EmployeeDetails")
@@ -16,6 +17,10 @@ const DutySchedule = lazy(() => import("../../views/admin/DutySchedule"));
 const DailyAttendance = lazy(() => import("../../views/admin/DailyAttendance"));
 const Holiday = lazy(() => import("../../views/admin/Holiday"));
 const Role = lazy(() => import("../../views/admin/Role"));
+const Religion = lazy(() => import("../../views/admin/Religion"));
+const EmploymentStatus = lazy(() =>
+  import("../../views/admin/EmploymentStatus")
+);
 
 export const adminRoutes = [
   {
@@ -46,6 +51,11 @@ export const adminRoutes = [
   {
     path: "admin/dashboard/employees/add",
     element: <AddEmployee />,
+    role: "admin",
+  },
+  {
+    path: "admin/dashboard/test/add",
+    element: <Test />,
     role: "admin",
   },
   {
@@ -86,6 +96,17 @@ export const adminRoutes = [
   {
     path: "admin/dashboard/duty-schedule",
     element: <DutySchedule />,
+    role: "admin",
+  },
+
+  {
+    path: "admin/dashboard/religion",
+    element: <Religion />,
+    role: "admin",
+  },
+  {
+    path: "admin/dashboard/employment-status",
+    element: <EmploymentStatus />,
     role: "admin",
   },
 ];

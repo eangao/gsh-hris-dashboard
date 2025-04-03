@@ -104,116 +104,24 @@ const AddEmployee = () => {
     // dispatch(createEmployee(formData));
   };
 
-  //======================== School Attended Start============================
-
-  const [isSchoolModalOpen, setIsSchoolModalOpen] = useState(false);
-  const [isEditingSchool, setIsEditingSchool] = useState(false);
-  const [selectedSchoolIndex, setSelectedSchoolIndex] = useState(null);
-  const [isDeleteSchoolModalOpen, setIsDeleteSchoolModalOpen] = useState(false);
-
-  const [schoolFormData, setSchoolFormData] = useState({
-    schoolName: "",
-    educationLevel: "",
-    degree: "",
-    major: "",
-    yearGraduated: "",
-  });
-
-  // Reset School Form
-  const resetSchoolForm = () => {
-    setSchoolFormData({
-      schoolName: "",
-      educationLevel: "",
-      degree: "",
-      major: "",
-      yearGraduated: "",
-    });
-  };
-
-  const handleAddSchool = () => {
-    const { schoolName, educationLevel, yearGraduated } = schoolFormData;
-
-    // Validation check
-    if (!schoolName || !educationLevel || !yearGraduated) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    const schoolFormDatas = [...formData.educationInformation.schoolsAttended];
-    schoolFormDatas.push(schoolFormData);
-
-    setFormData({
-      ...formData,
-      educationInformation: {
-        ...formData.educationInformation,
-        schoolsAttended: schoolFormDatas,
-      },
-    });
-
-    setIsSchoolModalOpen(false);
-  };
-
-  const handleEditSchool = () => {
-    const { schoolName, educationLevel, yearGraduated } = schoolFormData;
-
-    // Validation check
-    if (!schoolName || !educationLevel || !yearGraduated) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-
-    const newSchools = [...formData.educationInformation.schoolsAttended];
-    newSchools[selectedSchoolIndex] = schoolFormData;
-
-    setFormData({
-      ...formData,
-      educationInformation: {
-        ...formData.educationInformation,
-        schoolsAttended: newSchools,
-      },
-    });
-
-    resetSchoolForm();
-    setIsEditingSchool(false);
-    setIsSchoolModalOpen(false);
-  };
-
-  const handleDeleteSchool = () => {
-    const newSchools = formData.educationInformation.schoolsAttended.filter(
-      (_, index) => index !== selectedSchoolIndex
-    );
-
-    setFormData({
-      ...formData,
-      educationInformation: {
-        ...formData.educationInformation,
-        schoolsAttended: newSchools,
-      },
-    });
-
-    setIsDeleteSchoolModalOpen(false);
-  };
-  //================ School Attended End  ===========
-
   //===================================================
   // Employment Status History
   //===================================================
 
   // Modal states for Employment Status History
   const [
-    isEmploymentStatusHistoryModalOpen,
-    setIsEmploymentStatusHistoryModalOpen,
+    isAddEmploymentStatusHistoryModalOpen,
+    setIsAddEmploymentStatusHistoryModalOpen,
   ] = useState(false);
-
   const [
-    isEditingEmploymentStatusHistory,
-    setIsEditingEmploymentStatusHistory,
+    isEditEmploymentStatusHistoryModalOpen,
+    setIsEditEmploymentStatusHistoryModalOpen,
   ] = useState(false);
-
   const [
     isDeleteEmploymentStatusHistoryModalOpen,
     setIsDeleteEmploymentStatusHistoryModalOpen,
   ] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(null);
   const [
     selectedEmploymentStatusHistoryIndex,
     setSelectedEmploymentStatusHistoryIndex,
@@ -227,7 +135,7 @@ const AddEmployee = () => {
       remarks: "",
     });
 
-  // Reset Employement Status History
+  // REset Employement Status History
   const resetEmploymentStatusHistoryForm = () => {
     setEmploymentStatusHistoryFormData({
       statusId: "",
@@ -236,6 +144,7 @@ const AddEmployee = () => {
     });
   };
 
+  // Employement Status History Handlers
   const handleAddEmploymentStatusHistory = () => {
     const { statusId, dateEffective, remarks } =
       employmentstatusHistoryFormData;
@@ -262,9 +171,7 @@ const AddEmployee = () => {
       dateEffective: "",
       remarks: "",
     });
-
-    resetEmploymentStatusHistoryForm();
-    setIsEmploymentStatusHistoryModalOpen(false);
+    setIsAddEmploymentStatusHistoryModalOpen(false);
   };
 
   const handleEditEmploymentStatusHistory = () => {
@@ -289,9 +196,12 @@ const AddEmployee = () => {
       },
     });
 
-    resetEmploymentStatusHistoryForm();
-    setIsEditingEmploymentStatusHistory(false);
-    setIsEmploymentStatusHistoryModalOpen(false);
+    setEmploymentStatusHistoryFormData({
+      statusId: "",
+      dateEffective: "",
+      remarks: "",
+    });
+    setIsEditEmploymentStatusHistoryModalOpen(false);
   };
 
   const handleDeleteEmploymentStatusHistory = () => {
@@ -310,14 +220,576 @@ const AddEmployee = () => {
 
     setIsDeleteEmploymentStatusHistoryModalOpen(false);
   };
-  //================ Employement Status History  ===========
+
+  //=====================================================
+
+  //===================================================
+  // Education Information
+  //===================================================
+
+  // Modal states for Schools Attended
+  const [isAddSchoolModalOpen, setIsAddSchoolModalOpen] = useState(false);
+  const [isEditSchoolModalOpen, setIsEditSchoolModalOpen] = useState(false);
+  const [isDeleteSchoolModalOpen, setIsDeleteSchoolModalOpen] = useState(false);
+  const [selectedSchoolIndex, setSelectedSchoolIndex] = useState(null);
+
+  // Schools Attended Modal Form State
+  const [schoolFormData, setSchoolFormData] = useState({
+    schoolName: "",
+    educationLevel: "",
+    degree: "",
+    major: "",
+    yearGraduated: "",
+  });
+
+  // Reset School Form
+  const resetSchoolForm = () => {
+    setSchoolFormData({
+      schoolName: "",
+      educationLevel: "",
+      degree: "",
+      major: "",
+      yearGraduated: "",
+    });
+  };
+
+  // School form focus ref
+  // const schoolFormFocusRef = useRef(null);
+
+  // useEffect(() => {
+  //   if (
+  //     isAddSchoolModalOpen ||
+  //     isEditSchoolModalOpen ||
+  //     isDeleteSchoolModalOpen
+  //   ) {
+  //     schoolFormFocusRef.current?.focus();
+  //   }
+  // }, [isAddSchoolModalOpen, isEditSchoolModalOpen, isDeleteSchoolModalOpen]);
+
+  // School Handlers
+  const handleAddSchool = () => {
+    const { schoolName, educationLevel, yearGraduated } = schoolFormData;
+
+    // Validation check
+    if (!schoolName || !educationLevel || !yearGraduated) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    const newSchools = [...formData.educationInformation.schoolsAttended];
+    newSchools.push(schoolFormData);
+
+    setFormData({
+      ...formData,
+      educationInformation: {
+        ...formData.educationInformation,
+        schoolsAttended: newSchools,
+      },
+    });
+
+    resetSchoolForm();
+    setIsAddSchoolModalOpen(false);
+  };
+
+  const handleEditSchool = () => {
+    const { schoolName, educationLevel, yearGraduated } = schoolFormData;
+
+    // Validation check
+    if (!schoolName || !educationLevel || !yearGraduated) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    const newSchools = [...formData.educationInformation.schoolsAttended];
+    newSchools[selectedSchoolIndex] = schoolFormData;
+
+    setFormData({
+      ...formData,
+      educationInformation: {
+        ...formData.educationInformation,
+        schoolsAttended: newSchools,
+      },
+    });
+
+    resetSchoolForm();
+    setIsEditSchoolModalOpen(false);
+  };
+
+  const handleDeleteSchool = () => {
+    const newSchools = formData.educationInformation.schoolsAttended.filter(
+      (_, index) => index !== selectedSchoolIndex
+    );
+
+    setFormData({
+      ...formData,
+      educationInformation: {
+        ...formData.educationInformation,
+        schoolsAttended: newSchools,
+      },
+    });
+
+    setIsDeleteSchoolModalOpen(false);
+  };
+
+  // Modal Components
+  const AddEmploymentStatusHistoryModal = () => (
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 ${
+        isAddEmploymentStatusHistoryModalOpen ? "flex" : "hidden"
+      } items-center justify-center`}
+    >
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h3 className="text-lg font-semibold mb-4">
+          Add Employment Status History
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Status <span className="text-red-700">*</span>
+            </label>
+            <select
+              value={employmentstatusHistoryFormData.statusId}
+              onChange={(e) =>
+                setEmploymentStatusHistoryFormData({
+                  ...employmentstatusHistoryFormData,
+                  statusId: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            >
+              <option value="">Select Employment Status</option>
+              {employmentStatuses.map((status) => (
+                <option key={status._id} value={status._id}>
+                  {status.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Date Effective <span className="text-red-700">*</span>
+            </label>
+            <input
+              type="date"
+              value={employmentstatusHistoryFormData.dateEffective}
+              onChange={(e) =>
+                setEmploymentStatusHistoryFormData({
+                  ...employmentstatusHistoryFormData,
+                  dateEffective: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Remarks
+            </label>
+            <textarea
+              value={employmentstatusHistoryFormData.remarks}
+              onChange={(e) =>
+                setEmploymentStatusHistoryFormData({
+                  ...employmentstatusHistoryFormData,
+                  remarks: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+              rows="3"
+            />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={() => setIsAddEmploymentStatusHistoryModalOpen(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddEmploymentStatusHistory}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Add Status
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const EditEmploymentStatusHistoryModal = () => (
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 ${
+        isEditEmploymentStatusHistoryModalOpen ? "flex" : "hidden"
+      } items-center justify-center`}
+    >
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h3 className="text-lg font-semibold mb-4">
+          Edit Employment Status History
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Status <span className="text-red-700">*</span>
+            </label>
+            <select
+              value={employmentstatusHistoryFormData.statusId}
+              onChange={(e) =>
+                setEmploymentStatusHistoryFormData({
+                  ...employmentstatusHistoryFormData,
+                  statusId: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            >
+              <option value="">Select Status</option>
+              {employmentStatuses.map((status) => (
+                <option key={status._id} value={status._id}>
+                  {status.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Date Effective <span className="text-red-700">*</span>
+            </label>
+            <input
+              type="date"
+              value={employmentstatusHistoryFormData.dateEffective}
+              onChange={(e) =>
+                setEmploymentStatusHistoryFormData({
+                  ...employmentstatusHistoryFormData,
+                  dateEffective: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Remarks
+            </label>
+            <textarea
+              value={employmentstatusHistoryFormData.remarks}
+              onChange={(e) =>
+                setEmploymentStatusHistoryFormData({
+                  ...employmentstatusHistoryFormData,
+                  remarks: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+              rows="3"
+            />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={() => setIsEditEmploymentStatusHistoryModalOpen(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditEmploymentStatusHistory}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Update Status
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const DeleteEmploymentStatusHistoryModal = () => (
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 ${
+        isDeleteEmploymentStatusHistoryModalOpen ? "flex" : "hidden"
+      } items-center justify-center`}
+    >
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h3 className="text-lg font-semibold mb-4">Delete Status History</h3>
+        <p>Are you sure you want to delete this status history?</p>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={() => setIsDeleteEmploymentStatusHistoryModalOpen(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteEmploymentStatusHistory}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Education Information Modals
+  const AddSchoolModal = () => (
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 ${
+        isAddSchoolModalOpen ? "flex" : "hidden"
+      } items-center justify-center`}
+    >
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h3 className="text-lg font-semibold mb-4">Add School</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              School Name <span className="text-red-700">*</span>
+            </label>
+            <input
+              type="text"
+              value={schoolFormData.schoolName}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  schoolName: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Education Level <span className="text-red-700">*</span>
+            </label>
+            <select
+              value={schoolFormData.educationLevel}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  educationLevel: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            >
+              <option value="">Select Education Level</option>
+              <option value="Elementary">Elementary</option>
+              <option value="High School">High School</option>
+              <option value="Undergraduate">Undergraduate</option>
+              <option value="Graduate">Graduate</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Degree
+            </label>
+            <input
+              type="text"
+              value={schoolFormData.degree}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  degree: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Major
+            </label>
+            <input
+              type="text"
+              value={schoolFormData.major}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  major: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Year Graduated <span className="text-red-700">*</span>
+            </label>
+            <input
+              type="number"
+              min="1900"
+              max={new Date().getFullYear()}
+              value={schoolFormData.yearGraduated}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  yearGraduated: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={() => setIsAddSchoolModalOpen(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAddSchool}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Add School
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const EditSchoolModal = () => (
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 ${
+        isEditSchoolModalOpen ? "flex" : "hidden"
+      } items-center justify-center`}
+    >
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h3 className="text-lg font-semibold mb-4">Edit School</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              School Name <span className="text-red-700">*</span>
+            </label>
+            <input
+              type="text"
+              value={schoolFormData.schoolName}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  schoolName: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Education Level <span className="text-red-700">*</span>
+            </label>
+            <select
+              value={schoolFormData.educationLevel}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  educationLevel: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            >
+              <option value="">Select Education Level</option>
+              <option value="Elementary">Elementary</option>
+              <option value="High School">High School</option>
+              <option value="Undergraduate">Undergraduate</option>
+              <option value="Graduate">Graduate</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Degree
+            </label>
+            <input
+              type="text"
+              value={schoolFormData.degree}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  degree: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Major
+            </label>
+            <input
+              type="text"
+              value={schoolFormData.major}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  major: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Year Graduated <span className="text-red-700">*</span>
+            </label>
+            <input
+              type="number"
+              min="1900"
+              max={new Date().getFullYear()}
+              value={schoolFormData.yearGraduated}
+              onChange={(e) =>
+                setSchoolFormData({
+                  ...schoolFormData,
+                  yearGraduated: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded mt-1"
+            />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={() => setIsEditSchoolModalOpen(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleEditSchool}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Update School
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const DeleteSchoolModal = () => (
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 ${
+        isDeleteSchoolModalOpen ? "flex" : "hidden"
+      } items-center justify-center`}
+    >
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h3 className="text-lg font-semibold mb-4">Delete School</h3>
+        <p>Are you sure you want to delete this school record?</p>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            onClick={() => setIsDeleteSchoolModalOpen(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleDeleteSchool}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-6 max-w-7xl mx-auto overflow-y-auto">
       <h1 className="text-2xl font-bold mb-4 text-center">Add New Employee</h1>
 
       <form onSubmit={handleSubmit}>
-        {/* ============================================================== */}
         {/* Personal Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
@@ -445,7 +917,6 @@ const AddEmployee = () => {
           </div>
         </div>
 
-        {/* ============================================================== */}
         {/* Contact Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
@@ -540,7 +1011,6 @@ const AddEmployee = () => {
           </div>
         </div>
 
-        {/* ============================================================== */}
         {/* Education Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
@@ -596,8 +1066,7 @@ const AddEmployee = () => {
                   type="button"
                   onClick={() => {
                     resetSchoolForm();
-                    setIsSchoolModalOpen(true);
-                    setIsEditingSchool(false);
+                    setIsAddSchoolModalOpen(true);
                   }}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
@@ -653,8 +1122,7 @@ const AddEmployee = () => {
                               onClick={() => {
                                 setSelectedSchoolIndex(index);
                                 setSchoolFormData(school);
-                                setIsEditingSchool(true);
-                                setIsSchoolModalOpen(true);
+                                setIsEditSchoolModalOpen(true);
                               }}
                               className="text-indigo-600 hover:text-indigo-900 mr-3"
                             >
@@ -681,7 +1149,6 @@ const AddEmployee = () => {
           </div>
         </div>
 
-        {/* ============================================================== */}
         {/* Employment Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
@@ -869,7 +1336,7 @@ const AddEmployee = () => {
                   type="button"
                   onClick={() => {
                     resetEmploymentStatusHistoryForm();
-                    setIsEmploymentStatusHistoryModalOpen(true);
+                    setIsAddEmploymentStatusHistoryModalOpen(true);
                   }}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
@@ -917,8 +1384,7 @@ const AddEmployee = () => {
                               onClick={() => {
                                 setSelectedEmploymentStatusHistoryIndex(index);
                                 setEmploymentStatusHistoryFormData(status);
-                                setIsEditingEmploymentStatusHistory(true);
-                                setIsEmploymentStatusHistoryModalOpen(true);
+                                setIsEditEmploymentStatusHistoryModalOpen(true);
                               }}
                               className="text-indigo-600 hover:text-indigo-900 mr-3"
                             >
@@ -947,7 +1413,6 @@ const AddEmployee = () => {
           </div>
         </div>
 
-        {/* ============================================================== */}
         {/* Government Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
@@ -1021,7 +1486,6 @@ const AddEmployee = () => {
           </div>
         </div>
 
-        {/* ============================================================== */}
         {/* Section Save Buttons */}
         <div className="flex justify-between items-center mt-6">
           <div className="flex space-x-2">
@@ -1044,278 +1508,13 @@ const AddEmployee = () => {
         </div>
       </form>
 
-      {/* =================Modal===================== */}
-      {/* Start Schools Attended Modal */}
-
-      {/* Add / Edit School Modal */}
-      {isSchoolModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">
-              {isEditingSchool ? "Edit School" : "Add School"}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  School Name <span className="text-red-700">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={schoolFormData.schoolName}
-                  onChange={(e) =>
-                    setSchoolFormData({
-                      ...schoolFormData,
-                      schoolName: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Education Level <span className="text-red-700">*</span>
-                </label>
-                <select
-                  value={schoolFormData.educationLevel}
-                  onChange={(e) =>
-                    setSchoolFormData({
-                      ...schoolFormData,
-                      educationLevel: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                >
-                  <option value="">Select Education Level</option>
-                  <option value="Elementary">Elementary</option>
-                  <option value="High School">High School</option>
-                  <option value="Undergraduate">Undergraduate</option>
-                  <option value="Graduate">Graduate</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Degree
-                </label>
-                <input
-                  type="text"
-                  value={schoolFormData.degree}
-                  onChange={(e) =>
-                    setSchoolFormData({
-                      ...schoolFormData,
-                      degree: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Major
-                </label>
-                <input
-                  type="text"
-                  value={schoolFormData.major}
-                  onChange={(e) =>
-                    setSchoolFormData({
-                      ...schoolFormData,
-                      major: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Year Graduated <span className="text-red-700">*</span>
-                </label>
-                <input
-                  type="number"
-                  min="1900"
-                  max={new Date().getFullYear()}
-                  value={schoolFormData.yearGraduated}
-                  onChange={(e) =>
-                    setSchoolFormData({
-                      ...schoolFormData,
-                      yearGraduated: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setIsSchoolModalOpen(false);
-                  setIsEditingSchool(false);
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={isEditingSchool ? handleEditSchool : handleAddSchool}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                {isEditingSchool ? "Update School" : "Add School"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Schoold Attended Modal */}
-      {isDeleteSchoolModalOpen && (
-        <div
-          className={`fixed inset-0 bg-black bg-opacity-50 flex  items-center justify-center`}
-        >
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">Delete School</h3>
-            <p>Are you sure you want to delete this school record?</p>
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => setIsDeleteSchoolModalOpen(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteSchool}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* End Schools Attended Modal */}
-      {/* ==================================================== */}
-
-      {/* Start Employment STatus History Modal */}
-      {isEmploymentStatusHistoryModalOpen && (
-        <div
-          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center`}
-        >
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">
-              {isEditingEmploymentStatusHistory
-                ? " Edit Employment Status History"
-                : " Add Employment Status History"}
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Status <span className="text-red-700">*</span>
-                </label>
-                <select
-                  value={employmentstatusHistoryFormData.statusId}
-                  onChange={(e) =>
-                    setEmploymentStatusHistoryFormData({
-                      ...employmentstatusHistoryFormData,
-                      statusId: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                >
-                  <option value="">Select Employment Status</option>
-                  {employmentStatuses.map((status) => (
-                    <option key={status._id} value={status._id}>
-                      {status.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Date Effective <span className="text-red-700">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={employmentstatusHistoryFormData.dateEffective}
-                  onChange={(e) =>
-                    setEmploymentStatusHistoryFormData({
-                      ...employmentstatusHistoryFormData,
-                      dateEffective: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Remarks
-                </label>
-                <textarea
-                  value={employmentstatusHistoryFormData.remarks}
-                  onChange={(e) =>
-                    setEmploymentStatusHistoryFormData({
-                      ...employmentstatusHistoryFormData,
-                      remarks: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                  rows="3"
-                />
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setIsEmploymentStatusHistoryModalOpen(false);
-                  setIsEditingEmploymentStatusHistory(false);
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={
-                  isEditingEmploymentStatusHistory
-                    ? handleEditEmploymentStatusHistory
-                    : handleAddEmploymentStatusHistory
-                }
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                {isEditingEmploymentStatusHistory
-                  ? "Update Status"
-                  : "Add Status"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Employment Status History Modal */}
-      {isDeleteEmploymentStatusHistoryModalOpen && (
-        <div
-          className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center`}
-        >
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h3 className="text-lg font-semibold mb-4">
-              Delete Status History
-            </h3>
-            <p>Are you sure you want to delete this status history?</p>
-            <div className="mt-6 flex justify-end space-x-3">
-              <button
-                onClick={() =>
-                  setIsDeleteEmploymentStatusHistoryModalOpen(false)
-                }
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteEmploymentStatusHistory}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modals */}
+      <AddEmploymentStatusHistoryModal />
+      <EditEmploymentStatusHistoryModal />
+      <DeleteEmploymentStatusHistoryModal />
+      <AddSchoolModal />
+      <EditSchoolModal />
+      <DeleteSchoolModal />
     </div>
   );
 };
