@@ -2,18 +2,19 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
 // Async Thunks
-export const fetchDepartments = createAsyncThunk(
-  "department/fetchDepartments",
+export const fetchEmployees = createAsyncThunk(
+  "employee/fetchEmployees",
   async (
     { perPage, page, searchValue },
     { rejectWithValue, fulfillWithValue }
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-departments?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/fetch-employees?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         { withCredentials: true }
       );
 
+      console.log(data);
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -102,10 +103,10 @@ const employeeSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // builder.addCase(fetchDepartments.fulfilled, (state, { payload }) => {
-    //   state.totalDepartment = payload.totalDepartment;
-    //   state.departments = payload.departments;
-    // });
+    builder.addCase(fetchEmployees.fulfilled, (state, { payload }) => {
+      state.totalEmployee = payload.totalEmployee;
+      state.employees = payload.employees;
+    });
     // // Fetch All Clusters
     // builder.addCase(fetchAllDepartments.fulfilled, (state, { payload }) => {
     //   state.departments = payload.departments;
@@ -121,7 +122,12 @@ const employeeSlice = createSlice({
       .addCase(createEmployee.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-        state.employees = [...state.employees, payload.employee];
+        state.employees = [...state.employees, payload.employee].sort((a, b) =>
+          a.personalInformation.lastName.localeCompare(
+            b.personalInformation.lastName
+          )
+        );
+        state.totalEmployee = state.totalEmployee + 1;
       });
     // builder;
     //   .addCase(updateDepartment.pending, (state) => {

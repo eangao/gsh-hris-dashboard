@@ -1,83 +1,56 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import {
-  // fetchEmployees,
-  // deleteEmployee,
-  messageClear,
-} from "../../store/Reducers/employeeReducer";
-import toast from "react-hot-toast";
+import { fetchEmployees } from "../../store/Reducers/employeeReducer";
+import Search from "../components/Search";
+import Pagination from "../components/Pagination";
 
 const Employee = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {
-    employees = [],
-    loading,
-    errorMessage,
-    successMessage,
-  } = useSelector((state) => state.employee);
-  const { departments = [] } = useSelector((state) => state.department);
-  const { positions = [] } = useSelector((state) => state.position);
-  const { workSchedules = [] } = useSelector((state) => state.workSchedule);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [deleteId, setDeleteId] = useState(null);
-
-  useEffect(() => {
-    // dispatch(fetchEmployees());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (successMessage) {
-      setDeleteId(null);
-      dispatch(messageClear());
-    }
-
-    if (errorMessage) {
-      toast.error(errorMessage);
-      dispatch(messageClear());
-    }
-  }, [successMessage, errorMessage]);
-
-  const handleDeleteConfirm = (id) => setDeleteId(id);
-
-  const handleDelete = () => {
-    // dispatch(deleteEmployee(deleteId));
-  };
-
-  const filteredEmployees = employees.filter(
-    (employee) =>
-      employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee?.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee?.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee?.status?.toLowerCase().includes(searchTerm.toLowerCase())
+  const { employees, totalEmployee, loading } = useSelector(
+    (state) => state.employee
   );
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchValue, setSearchValue] = useState("");
+  const [perPage, setPerpage] = useState(5);
+
+  useEffect(() => {
+    // Reset to page 1 if searchValue is not empty
+    if (searchValue && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchEmployees(obj));
+  }, [searchValue, currentPage, perPage, dispatch]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">
-        Employee Management
-      </h1>
-
-      {/* Search and Add Employee */}
       <div className="flex justify-between mb-4">
-        <input
-          type="text"
-          placeholder="Search employees..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 border rounded w-64"
-        />
+        <h1 className="text-2xl font-bold text-center">Employee Management</h1>
         <button
           onClick={() => navigate("/admin/dashboard/employees/add")}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          disabled={loading}
         >
           Add Employee
         </button>
       </div>
 
+      <div className="mb-4">
+        <Search
+          setPerpage={setPerpage}
+          setSearchValue={setSearchValue}
+          searchValue={searchValue}
+          inputPlaceholder="Search Employee..."
+        />
+      </div>
       {/* Employees Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full">
@@ -87,6 +60,7 @@ const Employee = () => {
               <th className="p-3">Department</th>
               <th className="p-3">Position</th>
               <th className="p-3">Employment Status</th>
+              <th className="p-3">Employee Id</th>
               <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
@@ -97,39 +71,46 @@ const Employee = () => {
                   Loading...
                 </td>
               </tr>
-            ) : filteredEmployees.length === 0 ? (
+            ) : employees.length === 0 ? (
               <tr>
                 <td colSpan="7" className="p-3 text-center text-gray-500">
                   No employees found.
                 </td>
               </tr>
             ) : (
-              filteredEmployees.map((employee) => (
+              employees.map((employee) => (
                 <tr key={employee._id} className="border-t">
-                  <td className="p-3">{`${
-                    employee.personalInformation?.firstName || ""
-                  } ${employee.personalInformation?.lastName || ""}`}</td>
                   <td className="p-3">
-                    {departments.find(
-                      (dept) =>
-                        dept._id ===
-                        employee.employmentInformation?.departmentId
-                    )?.name || "-"}
+                    <span className="capitalize">
+                      {employee.personalInformation?.lastName},
+                    </span>{" "}
+                    <span className="capitalize">
+                      {employee.personalInformation?.firstName}
+                    </span>{" "}
+                    {employee.personalInformation?.middleName && (
+                      <span className="capitalize">
+                        {employee.personalInformation?.middleName
+                          .charAt(0)
+                          .toUpperCase()}
+                        .
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    {positions.find(
-                      (pos) =>
-                        pos._id === employee.employmentInformation?.positionId
-                    )?.name || "-"}
+                  <td className="p-3 capitalize">
+                    {employee?.department?.name}
                   </td>
-                  <td className="p-3">
-                    {employee.employmentInformation?.employmentStatus || "-"}
+                  <td className="p-3 capitalize">{employee?.position?.name}</td>
+                  <td className="p-3 capitalize">
+                    {employee?.employmentStatus?.name}
+                  </td>
+                  <td className="p-3 capitalize">
+                    {employee?.employmentInformation?.hospitalEmployeeId}
                   </td>
                   <td className="p-3 flex justify-center space-x-2">
                     <button
                       onClick={() =>
                         navigate(
-                          `/admin/dashboard/employees/details/${employee._id}`
+                          `/admin/dashboard/employees/details/${employee?._id}`
                         )
                       }
                       className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
@@ -140,20 +121,13 @@ const Employee = () => {
                     <button
                       onClick={() =>
                         navigate(
-                          `/admin/dashboard/employees/edit/${employee._id}`
+                          `/admin/dashboard/employees/edit/${employee?._id}`
                         )
                       }
                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
                       Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteConfirm(employee._id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      disabled={loading}
-                    >
-                      Delete
                     </button>
                   </td>
                 </tr>
@@ -163,29 +137,18 @@ const Employee = () => {
         </table>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {deleteId !== null && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>Are you sure you want to delete this employee?</p>
-            <div className="flex justify-end space-x-2 mt-4">
-              <button
-                onClick={() => setDeleteId(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                disabled={loading}
-              >
-                {loading ? "Loading..." : "Delete"}
-              </button>
-            </div>
-          </div>
+      {/* Pagination  */}
+      {totalEmployee <= perPage ? (
+        ""
+      ) : (
+        <div className="w-full flex justify-end mt-4 bottom-4 right-4">
+          <Pagination
+            pageNumber={currentPage}
+            setPageNumber={setCurrentPage}
+            totalItem={totalEmployee}
+            perPage={perPage}
+            showItem={Math.min(5, Math.ceil(totalEmployee / perPage))}
+          />
         </div>
       )}
     </div>
