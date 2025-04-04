@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
-  // createEmployee,
+  createEmployee,
   messageClear,
 } from "../../store/Reducers/employeeReducer";
 import { fetchAllEmploymentStatus } from "../../store/Reducers/employmentStatusReducer";
@@ -49,7 +49,7 @@ const AddEmployee = () => {
       licenseNumber: "",
     },
     employmentInformation: {
-      employeeId: "",
+      hospitalEmployeeId: "",
       positionId: "",
       departmentId: "",
       clusterId: "",
@@ -101,7 +101,7 @@ const AddEmployee = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // dispatch(createEmployee(formData));
+    dispatch(createEmployee(formData));
   };
 
   //======================== School Attended Start============================
@@ -332,8 +332,14 @@ const AddEmployee = () => {
               <input
                 type="text"
                 name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
+                value={formData.personalInformation.firstName}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "firstName",
+                    e.target.value
+                  )
+                }
                 className="w-full p-2 border rounded mt-1"
                 required
               />
@@ -345,8 +351,14 @@ const AddEmployee = () => {
               <input
                 type="text"
                 name="middleName"
-                value={formData.middleName}
-                onChange={handleChange}
+                value={formData.personalInformation.middleName}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "middleName",
+                    e.target.value
+                  )
+                }
                 className="w-full p-2 border rounded mt-1"
               />
             </div>
@@ -357,8 +369,14 @@ const AddEmployee = () => {
               <input
                 type="text"
                 name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
+                value={formData.personalInformation.lastName}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "lastName",
+                    e.target.value
+                  )
+                }
                 className="w-full p-2 border rounded mt-1"
                 required
               />
@@ -369,8 +387,14 @@ const AddEmployee = () => {
               </label>
               <select
                 name="civilStatus"
-                value={formData.civilStatus}
-                onChange={handleChange}
+                value={formData.personalInformation.civilStatus}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "civilStatus",
+                    e.target.value
+                  )
+                }
                 className="w-full p-2 border rounded mt-1"
                 required
               >
@@ -389,10 +413,15 @@ const AddEmployee = () => {
               <input
                 type="text"
                 name="maidenName"
-                value={formData.maidenName}
-                onChange={handleChange}
+                value={formData.personalInformation.maidenName}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "maidenName",
+                    e.target.value
+                  )
+                }
                 className="w-full p-2 border rounded mt-1"
-                required
               />
             </div>
             <div>
@@ -402,8 +431,14 @@ const AddEmployee = () => {
               <input
                 type="date"
                 name="birthdate"
-                value={formData.birthdate}
-                onChange={handleChange}
+                value={formData.personalInformation.birthdate}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "birthdate",
+                    e.target.value
+                  )
+                }
                 className="w-full p-2 border rounded mt-1"
                 required
               />
@@ -414,8 +449,10 @@ const AddEmployee = () => {
               </label>
               <select
                 name="gender"
-                value={formData.gender}
-                onChange={handleChange}
+                value={formData.personalInformation.gender}
+                onChange={(e) =>
+                  handleChange("personalInformation", "gender", e.target.value)
+                }
                 className="w-full p-2 border rounded mt-1"
                 required
               >
@@ -430,8 +467,14 @@ const AddEmployee = () => {
               </label>
               <select
                 name="religionId"
-                value={formData.religionId}
-                onChange={handleChange}
+                value={formData.personalInformation.religionId}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "religionId",
+                    e.target.value
+                  )
+                }
                 className="w-full p-2 border rounded mt-1"
               >
                 <option value="">Select Religion</option>
@@ -693,12 +736,12 @@ const AddEmployee = () => {
                 Employee ID
               </label>
               <input
-                type="text"
-                value={formData.employmentInformation.employeeId}
+                type="number"
+                value={formData.employmentInformation.hospitalEmployeeId}
                 onChange={(e) =>
                   handleChange(
                     "employmentInformation",
-                    "employeeId",
+                    "hospitalEmployeeId",
                     e.target.value
                   )
                 }
@@ -1316,6 +1359,9 @@ const AddEmployee = () => {
           </div>
         </div>
       )}
+
+      {/* End Employment Status History  Modal */}
+      {/* ==================================================== */}
     </div>
   );
 };

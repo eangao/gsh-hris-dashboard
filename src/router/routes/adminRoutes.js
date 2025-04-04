@@ -3,7 +3,6 @@ import { lazy } from "react";
 const AdminDashboard = lazy(() => import("../../views/admin/AdminDashboard"));
 const Employee = lazy(() => import("../../views/employee/Employee"));
 const AddEmployee = lazy(() => import("../../views/employee/AddEmployee"));
-const Test = lazy(() => import("../../views/employee/Test"));
 const EditEmployee = lazy(() => import("../../views/employee/EditEmployee"));
 const EmployeeDetails = lazy(() =>
   import("../../views/employee/EmployeeDetails")
@@ -53,11 +52,7 @@ export const adminRoutes = [
     element: <AddEmployee />,
     role: "admin",
   },
-  {
-    path: "admin/dashboard/test/add",
-    element: <Test />,
-    role: "admin",
-  },
+
   {
     path: "admin/dashboard/employees/edit/:id",
     element: <EditEmployee />,

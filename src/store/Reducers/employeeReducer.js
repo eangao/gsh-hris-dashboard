@@ -2,24 +2,24 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
 // Async Thunks
-// export const fetchDepartments = createAsyncThunk(
-//   "department/fetchDepartments",
-//   async (
-//     { perPage, page, searchValue },
-//     { rejectWithValue, fulfillWithValue }
-//   ) => {
-//     try {
-//       const { data } = await api.get(
-//         `/fetch-departments?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
-//         { withCredentials: true }
-//       );
+export const fetchDepartments = createAsyncThunk(
+  "department/fetchDepartments",
+  async (
+    { perPage, page, searchValue },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const { data } = await api.get(
+        `/fetch-departments?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        { withCredentials: true }
+      );
 
-//       return fulfillWithValue(data);
-//     } catch (error) {
-//       return rejectWithValue(error.response.data);
-//     }
-//   }
-// );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
 
 // export const fetchAllDepartments = createAsyncThunk(
 //   "department/fetchAllDepartments",
@@ -38,19 +38,19 @@ import api from "../../api/api";
 //   }
 // );
 
-// export const createDepartment = createAsyncThunk(
-//   "department/createDepartment",
-//   async (departmentData, { rejectWithValue, fulfillWithValue }) => {
-//     try {
-//       const { data } = await api.post("/create-department", departmentData, {
-//         withCredentials: true,
-//       });
-//       return fulfillWithValue(data);
-//     } catch (error) {
-//       return rejectWithValue(error.response.data);
-//     }
-//   }
-// );
+export const createEmployee = createAsyncThunk(
+  "employee/createEmployee",
+  async (employeeData, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post("/create-employee", employeeData, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
 
 // export const updateDepartment = createAsyncThunk(
 //   "department/updateDepartment",
@@ -110,19 +110,19 @@ const employeeSlice = createSlice({
     // builder.addCase(fetchAllDepartments.fulfilled, (state, { payload }) => {
     //   state.departments = payload.departments;
     // });
-    // builder
-    //   .addCase(createDepartment.pending, (state) => {
-    //     state.loading = true;
-    //   })
-    //   .addCase(createDepartment.rejected, (state, { payload }) => {
-    //     state.loading = false;
-    //     state.errorMessage = payload.error;
-    //   })
-    //   .addCase(createDepartment.fulfilled, (state, { payload }) => {
-    //     state.loading = false;
-    //     state.successMessage = payload.message;
-    //     state.departments = [...state.departments, payload.department];
-    //   });
+    builder
+      .addCase(createEmployee.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(createEmployee.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(createEmployee.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+        state.employees = [...state.employees, payload.employee];
+      });
     // builder;
     //   .addCase(updateDepartment.pending, (state) => {
     //     state.loading = true;

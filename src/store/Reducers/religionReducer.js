@@ -51,7 +51,7 @@ export const createReligion = createAsyncThunk(
 
       return fulfillWithValue(data);
     } catch (error) {
-      console.log(error.response.data);
+      // console.log(error.response.data);
       return rejectWithValue(error.response.data);
     }
   }

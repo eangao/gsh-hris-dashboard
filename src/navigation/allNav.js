@@ -35,13 +35,7 @@ export const allNav = [
     role: "admin",
     path: "/admin/dashboard/employees",
   },
-  {
-    id: 4,
-    title: "Test",
-    icon: <FaPeopleGroup />,
-    role: "admin",
-    path: "/admin/dashboard/test",
-  },
+
   {
     id: 5,
     title: "Departments",
