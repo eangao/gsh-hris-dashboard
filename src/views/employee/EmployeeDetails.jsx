@@ -73,18 +73,19 @@ const EmployeeDetails = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-4">
         {/* Personal Information with Photo */}
         <div className="bg-white p-6 rounded-lg shadow-md print:shadow-none print:p-4 print:border print:border-gray-200">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="flex-1">
+          <div className="flex flex-col md:flex-col lg:flex-row gap-6 items-start">
+            {/* Personal Info */}
+            <div className="flex-1 order-2 lg:order-1">
               <h2 className="text-xl font-semibold mb-4 text-gray-800">
                 Personal Information
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <p className="text-lg font-medium text-gray-900">
                   {employee.personalInformation?.firstName}{" "}
                   {employee.personalInformation?.middleName}{" "}
                   {employee.personalInformation?.lastName}
                 </p>
-                <div className="grid grid-cols-1 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InfoItem
                     label="Civil Status"
                     value={employee.personalInformation?.civilStatus}
@@ -108,8 +109,10 @@ const EmployeeDetails = () => {
                 </div>
               </div>
             </div>
-            <div className="w-full md:w-1/3 flex justify-center">
-              <div className="w-48 h-48 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+
+            {/* Profile Photo */}
+            <div className="w-full sm:w-48 flex justify-center lg:justify-end order-1 lg:order-2">
+              <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shadow-sm border border-gray-200 transition-all duration-300">
                 {employee.personalInformation?.photoUrl ? (
                   <img
                     src={employee.personalInformation.photoUrl}
@@ -120,7 +123,7 @@ const EmployeeDetails = () => {
                   <img
                     src="/images/user.png"
                     alt="Default profile"
-                    className="w-32 h-32 object-contain"
+                    className="w-32 h-32 object-contain opacity-75"
                   />
                 )}
               </div>
@@ -195,20 +198,25 @@ const EmployeeDetails = () => {
 
           {employee.employmentInformation?.statusHistory?.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Status History</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-4">Status History</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {employee.employmentInformation.statusHistory.map(
                   (status, index) => (
-                    <div key={index} className="bg-gray-50 p-4 rounded-md">
-                      <InfoItem
-                        label="Employment Status"
-                        value={status?.statusId?.name}
-                      />
-                      <InfoItem
-                        label="Date Effective"
-                        value={formatDate(status.dateEffective)}
-                      />
-                      <InfoItem label="Remarks" value={status.remarks} />
+                    <div
+                      key={index}
+                      className="bg-gray-50 p-4 rounded-lg border border-gray-100 hover:shadow-sm transition-shadow"
+                    >
+                      <div className="space-y-3">
+                        <InfoItem
+                          label="Employment Status"
+                          value={status?.statusId?.name}
+                        />
+                        <InfoItem
+                          label="Date Effective"
+                          value={formatDate(status.dateEffective)}
+                        />
+                        <InfoItem label="Remarks" value={status.remarks} />
+                      </div>
                     </div>
                   )
                 )}
