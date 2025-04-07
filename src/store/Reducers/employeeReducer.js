@@ -37,6 +37,21 @@ export const fetchEmployeeById = createAsyncThunk(
   }
 );
 
+export const fetchEmployeeDetailsById = createAsyncThunk(
+  "employee/fetchEmployeeDetailsById",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(`/employee-details/${id}`, {
+        withCredentials: true,
+      });
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 // export const fetchAllDepartments = createAsyncThunk(
 //   "department/fetchAllDepartments",
 //   async (_, { rejectWithValue, fulfillWithValue }) => {
@@ -121,6 +136,14 @@ const employeeSlice = createSlice({
     builder.addCase(fetchEmployeeById.fulfilled, (state, { payload }) => {
       state.employee = payload.employee;
     });
+
+    builder.addCase(
+      fetchEmployeeDetailsById.fulfilled,
+      (state, { payload }) => {
+        state.employee = payload.employee;
+      }
+    );
+
     //  Fetch All Clusters
     // builder.addCase(fetchAllDepartments.fulfilled, (state, { payload }) => {
     //   state.departments = payload.departments;

@@ -1,174 +1,301 @@
-import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useSelector } from "react-redux";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router-dom";
+import { fetchEmployeeDetailsById } from "../../store/Reducers/employeeReducer";
 
 const EmployeeDetails = () => {
+  const dispatch = useDispatch();
   const { id } = useParams();
-  const navigate = useNavigate();
+  const { employee, loading } = useSelector((state) => state.employee);
 
-  const { employees = [] } = useSelector((state) => state.employee);
-  const { departments = [] } = useSelector((state) => state.department);
-  const { positions = [] } = useSelector((state) => state.position);
-  const { workSchedules = [] } = useSelector((state) => state.workSchedule);
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchEmployeeDetailsById(id));
+    }
+  }, [dispatch, id]);
 
-  const employee = employees.find((emp) => emp.id === Number(id));
+  const formatDate = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
-  if (!employee) {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  if (loading) {
     return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <div className="text-center text-red-600">Employee not found.</div>
-        <div className="text-center mt-4">
-          <button
-            onClick={() => navigate("/admin/dashboard/employee")}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Back to Employees
-          </button>
-        </div>
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  const department = departments.find(
-    (dept) => dept.id === employee.departmentId
-  );
-  const position = positions.find((pos) => pos.id === employee.positionId);
-  const workSchedule = workSchedules.find(
-    (schedule) => schedule.id === employee.workScheduleId
-  );
+  if (!employee) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-gray-500">No employee data found</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Employee Details</h1>
+    <div className="container mx-auto px-4 py-6 max-w-7xl print:px-0 print:py-0 print:max-w-none">
+      {/* Header with Print Button */}
+      <div className="flex justify-between items-center mb-6 print:hidden">
+        <h1 className="text-2xl font-bold text-gray-800">Employee Details</h1>
         <button
-          onClick={() => navigate("/admin/dashboard/employee")}
-          className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          onClick={handlePrint}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
-          Back
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+            />
+          </svg>
+          Print
         </button>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Personal Information */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Name
-                </label>
-                <div className="mt-1 text-gray-900">{employee.name}</div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Email
-                </label>
-                <div className="mt-1 text-gray-900">{employee.email}</div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Phone
-                </label>
-                <div className="mt-1 text-gray-900">{employee.phone}</div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Address
-                </label>
-                <div className="mt-1 text-gray-900">{employee.address}</div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Gender
-                </label>
-                <div className="mt-1 text-gray-900">{employee.gender}</div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Birthdate
-                </label>
-                <div className="mt-1 text-gray-900">{employee.birthdate}</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-4">
+        {/* Personal Information with Photo */}
+        <div className="bg-white p-6 rounded-lg shadow-md print:shadow-none print:p-4 print:border print:border-gray-200">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                Personal Information
+              </h2>
+              <div className="space-y-3">
+                <p className="text-lg font-medium text-gray-900">
+                  {employee.personalInformation?.firstName}{" "}
+                  {employee.personalInformation?.middleName}{" "}
+                  {employee.personalInformation?.lastName}
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  <InfoItem
+                    label="Civil Status"
+                    value={employee.personalInformation?.civilStatus}
+                  />
+                  <InfoItem
+                    label="Maiden Name"
+                    value={employee.personalInformation?.maidenName}
+                  />
+                  <InfoItem
+                    label="Gender"
+                    value={employee.personalInformation?.gender}
+                  />
+                  <InfoItem
+                    label="Birthdate"
+                    value={formatDate(employee.personalInformation?.birthdate)}
+                  />
+                  <InfoItem
+                    label="Religion"
+                    value={employee.personalInformation?.religionId?.name}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Employment Information */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Employment Information
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Department
-                </label>
-                <div className="mt-1 text-gray-900">
-                  {department?.name || "-"}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Position
-                </label>
-                <div className="mt-1 text-gray-900">
-                  {position?.name || "-"}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Work Schedule
-                </label>
-                <div className="mt-1 text-gray-900">
-                  {workSchedule?.name || "-"}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Status
-                </label>
-                <div className="mt-1 text-gray-900">{employee.status}</div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Salary
-                </label>
-                <div className="mt-1 text-gray-900">${employee.salary}</div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-600">
-                  Date Hired
-                </label>
-                <div className="mt-1 text-gray-900">{employee.dateHired}</div>
+            <div className="w-full md:w-1/3 flex justify-center">
+              <div className="w-48 h-48 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+                {employee.personalInformation?.photoUrl ? (
+                  <img
+                    src={employee.personalInformation.photoUrl}
+                    alt={`${employee.personalInformation?.firstName} ${employee.personalInformation?.lastName}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src="/images/user.png"
+                    alt="Default profile"
+                    className="w-32 h-32 object-contain"
+                  />
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={() =>
-              navigate(`/admin/dashboard/employee/edit/${employee.id}`)
-            }
-            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-          >
-            Edit Employee
-          </button>
+        {/* Contact Information */}
+        <div className="bg-white p-6 rounded-lg shadow-md print:shadow-none print:p-4 print:border print:border-gray-200">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Contact Information
+          </h2>
+          <div className="space-y-3">
+            <InfoItem
+              label="Temporary Address"
+              value={employee.contactInformation?.temporaryAddress}
+            />
+            <InfoItem
+              label="Permanent Address"
+              value={employee.contactInformation?.permanentAddress}
+            />
+            <InfoItem
+              label="Phone Number"
+              value={employee.contactInformation?.phoneNumber}
+            />
+            <InfoItem
+              label="Personal Email"
+              value={employee.contactInformation?.personalEmail}
+            />
+            <InfoItem
+              label="Company Email"
+              value={employee.contactInformation?.campanyEmail}
+            />
+          </div>
+        </div>
+
+        {/* Employment Information */}
+        <div className="bg-white p-6 rounded-lg shadow-md print:shadow-none print:p-4 print:border print:border-gray-200 col-span-1 md:col-span-2">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Employment Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InfoItem
+              label="Hospital Employee ID"
+              value={employee.employmentInformation?.hospitalEmployeeId}
+            />
+            <InfoItem
+              label="Position"
+              value={employee.employmentInformation?.positionId?.name}
+            />
+            <InfoItem
+              label="Department"
+              value={employee.employmentInformation?.departmentId?.name}
+            />
+            <InfoItem
+              label="Cluster"
+              value={employee.employmentInformation?.clusterId?.name}
+            />
+            <InfoItem
+              label="Employment Status"
+              value={employee.employmentInformation?.employmentStatusId?.name}
+            />
+            <InfoItem
+              label="Date Started"
+              value={formatDate(employee.employmentInformation?.dateStarted)}
+            />
+            <InfoItem
+              label="Date Employed"
+              value={formatDate(employee.employmentInformation?.dateEmployed)}
+            />
+          </div>
+
+          {employee.employmentInformation?.statusHistory?.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-3">Status History</h3>
+              <div className="space-y-4">
+                {employee.employmentInformation.statusHistory.map(
+                  (status, index) => (
+                    <div key={index} className="bg-gray-50 p-4 rounded-md">
+                      <InfoItem
+                        label="Employment Status"
+                        value={status?.statusId?.name}
+                      />
+                      <InfoItem
+                        label="Date Effective"
+                        value={formatDate(status.dateEffective)}
+                      />
+                      <InfoItem label="Remarks" value={status.remarks} />
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Government Information */}
+        <div className="bg-white p-6 rounded-lg shadow-md col-span-1 md:col-span-2">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Government Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InfoItem
+              label="SSS Number"
+              value={employee.governmentInformation?.sssNumber}
+            />
+            <InfoItem
+              label="PhilHealth Number"
+              value={employee.governmentInformation?.philhealthNumber}
+            />
+            <InfoItem
+              label="PAG-IBIG Number"
+              value={employee.governmentInformation?.pagibigNumber}
+            />
+            <InfoItem label="TIN" value={employee.governmentInformation?.tin} />
+          </div>
+        </div>
+
+        {/* Education Information */}
+        <div className="bg-white p-6 rounded-lg shadow-md col-span-1 md:col-span-2">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Education Information
+          </h2>
+          <div className="space-y-4">
+            <InfoItem
+              label="Highest Attainment"
+              value={employee.educationInformation?.highestAttainment}
+            />
+            <InfoItem
+              label="License Number"
+              value={employee.educationInformation?.licenseNumber}
+            />
+
+            {employee.educationInformation?.schoolsAttended?.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-3">Schools Attended</h3>
+                <div className="space-y-4">
+                  {employee.educationInformation.schoolsAttended.map(
+                    (school, index) => (
+                      <div key={index} className="bg-gray-50 p-4 rounded-md">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <InfoItem
+                            label="School Name"
+                            value={school.schoolName}
+                          />
+                          <InfoItem
+                            label="Education Level"
+                            value={school.educationLevel}
+                          />
+                          <InfoItem label="Degree" value={school.degree} />
+                          <InfoItem label="Major" value={school.major} />
+                          <InfoItem
+                            label="Year Graduated"
+                            value={school.yearGraduated}
+                          />
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+// Reusable component for displaying information items
+const InfoItem = ({ label, value }) => (
+  <div className="flex flex-col">
+    <span className="text-sm font-medium text-gray-500">{label}</span>
+    <span className="text-gray-900">{value || "-"}</span>
+  </div>
+);
 
 export default EmployeeDetails;
