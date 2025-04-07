@@ -128,7 +128,6 @@ const positionSlice = createSlice({
       .addCase(createPosition.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-        state.positions = [...state.positions, payload.position];
       });
 
     // Update Position

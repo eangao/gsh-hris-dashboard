@@ -14,7 +14,22 @@ export const fetchEmployees = createAsyncThunk(
         { withCredentials: true }
       );
 
-      console.log(data);
+      // console.log(data);
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchEmployeeById = createAsyncThunk(
+  "employee/fetchEmployeeById",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(`/fetch-employee/${id}`, {
+        withCredentials: true,
+      });
+
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -53,24 +68,19 @@ export const createEmployee = createAsyncThunk(
   }
 );
 
-// export const updateDepartment = createAsyncThunk(
-//   "department/updateDepartment",
-//   async ({ _id, ...departmentData }, { rejectWithValue, fulfillWithValue }) => {
-//     try {
-//       const { data } = await api.put(
-//         `/update-department/${_id}`,
-//         departmentData,
-//         {
-//           withCredentials: true,
-//         }
-//       );
-
-//       return fulfillWithValue(data);
-//     } catch (error) {
-//       return rejectWithValue(error.response.data);
-//     }
-//   }
-// );
+export const updateEmployee = createAsyncThunk(
+  "employee/updateEmployee",
+  async ({ id, employeeData }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.put(`/update-employee/${id}`, employeeData, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
 
 // export const deleteDepartment = createAsyncThunk(
 //   "department/deleteDepartment",
@@ -107,7 +117,11 @@ const employeeSlice = createSlice({
       state.totalEmployee = payload.totalEmployee;
       state.employees = payload.employees;
     });
-    // // Fetch All Clusters
+
+    builder.addCase(fetchEmployeeById.fulfilled, (state, { payload }) => {
+      state.employee = payload.employee;
+    });
+    //  Fetch All Clusters
     // builder.addCase(fetchAllDepartments.fulfilled, (state, { payload }) => {
     //   state.departments = payload.departments;
     // });
@@ -129,23 +143,19 @@ const employeeSlice = createSlice({
         );
         state.totalEmployee = state.totalEmployee + 1;
       });
-    // builder;
-    //   .addCase(updateDepartment.pending, (state) => {
-    //     state.loading = true;
-    //   })
-    //   .addCase(updateDepartment.rejected, (state, { payload }) => {
-    //     state.loading = false;
-    //     state.errorMessage = payload.error;
-    //   })
-    //   .addCase(updateDepartment.fulfilled, (state, { payload }) => {
-    //     state.loading = false;
-    //     state.successMessage = payload.message;
-    //     state.departments = state.departments.map((department) =>
-    //       department._id === payload.department._id
-    //         ? payload.department
-    //         : department
-    //     );
-    //   });
+
+    builder
+      .addCase(updateEmployee.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateEmployee.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(updateEmployee.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      });
     // builder
     //   .addCase(deleteDepartment.pending, (state) => {
     //     state.loading = true;

@@ -36,7 +36,7 @@ const Employee = () => {
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold text-center">Employee Management</h1>
         <button
-          onClick={() => navigate("/admin/dashboard/employees/add")}
+          onClick={() => navigate("/admin/dashboard/employee/add")}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Add Employee
@@ -110,7 +110,7 @@ const Employee = () => {
                     <button
                       onClick={() =>
                         navigate(
-                          `/admin/dashboard/employees/details/${employee?._id}`
+                          `/admin/dashboard/employee/details/${employee?._id}`
                         )
                       }
                       className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
@@ -121,7 +121,7 @@ const Employee = () => {
                     <button
                       onClick={() =>
                         navigate(
-                          `/admin/dashboard/employees/edit/${employee?._id}`
+                          `/admin/dashboard/employee/edit/${employee?._id}`
                         )
                       }
                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"

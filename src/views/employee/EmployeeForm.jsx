@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   createEmployee,
+  fetchEmployeeById,
   messageClear,
+  updateEmployee,
 } from "../../store/Reducers/employeeReducer";
 import { fetchAllEmploymentStatus } from "../../store/Reducers/employmentStatusReducer";
 import { fetchAllReligions } from "../../store/Reducers/religionReducer";
@@ -12,10 +14,13 @@ import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
 import { fetchAllClusters } from "../../store/Reducers/clusterReducer";
 import toast from "react-hot-toast";
 
-const AddEmployee = () => {
+const EmployeeForm = () => {
+  const { id } = useParams(); // This will be undefined for add
+  const isEditMode = !!id;
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loading, errorMessage, successMessage } = useSelector(
+  const { employee, loading, errorMessage, successMessage } = useSelector(
     (state) => state.employee
   );
   const { departments } = useSelector((state) => state.department);
@@ -74,13 +79,43 @@ const AddEmployee = () => {
     dispatch(fetchAllReligions());
     dispatch(fetchAllEmploymentStatus());
     dispatch(fetchAllClusters());
-  }, [dispatch]);
+
+    if (isEditMode) {
+      dispatch(fetchEmployeeById(id)); // Assuming you have this action
+    }
+  }, [dispatch, isEditMode, id]);
+
+  useEffect(() => {
+    if (isEditMode && employee) {
+      setFormData({
+        ...employee,
+        personalInformation: {
+          ...employee.personalInformation,
+          birthdate: formatDateForInput(
+            employee.personalInformation?.birthdate
+          ),
+        },
+        employmentInformation: {
+          ...employee.employmentInformation,
+          dateStarted: formatDateForInput(
+            employee.employmentInformation?.dateStarted
+          ),
+          dateEmployed: formatDateForInput(
+            employee.employmentInformation?.dateEmployed
+          ),
+          dateTransferToGSH: formatDateForInput(
+            employee.employmentInformation?.dateTransferToGSH
+          ),
+        },
+      });
+    }
+  }, [employee, isEditMode]);
 
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
       dispatch(messageClear());
-      navigate("/admin/dashboard/employees");
+      navigate("/admin/dashboard/employee");
     }
 
     if (errorMessage) {
@@ -101,7 +136,28 @@ const AddEmployee = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(createEmployee(formData));
+
+    if (isEditMode) {
+      // Remove the createdAt and isDeleted properties from employeeData
+      const {
+        createdAt,
+        isDeleted,
+        updatedAt,
+        __v,
+        ...employeeDataWithoutUnwantedFields
+      } = formData;
+
+      dispatch(
+        updateEmployee({ id, employeeData: employeeDataWithoutUnwantedFields })
+      );
+    } else {
+      dispatch(createEmployee(formData));
+    }
+  };
+
+  const formatDateForInput = (isoDate) => {
+    if (!isoDate) return "";
+    return new Date(isoDate).toISOString().split("T")[0]; // returns "yyyy-MM-dd"
   };
 
   //======================== School Attended Start============================
@@ -1070,7 +1126,7 @@ const AddEmployee = () => {
           <div className="flex space-x-2">
             <button
               type="button"
-              onClick={() => navigate("/admin/dashboard/employees")}
+              onClick={() => navigate("/admin/dashboard/employee")}
               className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               disabled={loading}
             >
@@ -1081,7 +1137,7 @@ const AddEmployee = () => {
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               disabled={loading}
             >
-              {loading ? "Adding..." : "Save Employee"}
+              {isEditMode ? "Update Employee" : "Add New Employee"}
             </button>
           </div>
         </div>
@@ -1366,4 +1422,4 @@ const AddEmployee = () => {
   );
 };
 
-export default AddEmployee;
+export default EmployeeForm;

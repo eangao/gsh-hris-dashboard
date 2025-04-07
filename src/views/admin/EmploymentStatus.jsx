@@ -36,6 +36,10 @@ const EmploymentStatus = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
+    getEmploymentStatus();
+  }, [searchValue, currentPage, perPage, dispatch]);
+
+  const getEmploymentStatus = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
@@ -43,7 +47,7 @@ const EmploymentStatus = () => {
     };
 
     dispatch(fetchEmploymentStatus(obj));
-  }, [searchValue, currentPage, perPage, dispatch]);
+  };
 
   const [formData, setFormData] = useState({
     _id: null,
@@ -59,6 +63,9 @@ const EmploymentStatus = () => {
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
+
+      getEmploymentStatus();
+
       setIsModalOpen(false);
       setDeleteId(null);
 

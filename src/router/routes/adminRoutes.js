@@ -2,8 +2,7 @@ import { lazy } from "react";
 
 const AdminDashboard = lazy(() => import("../../views/admin/AdminDashboard"));
 const Employee = lazy(() => import("../../views/employee/Employee"));
-const AddEmployee = lazy(() => import("../../views/employee/AddEmployee"));
-const EditEmployee = lazy(() => import("../../views/employee/EditEmployee"));
+const EmployeeForm = lazy(() => import("../../views/employee/EmployeeForm"));
 const EmployeeDetails = lazy(() =>
   import("../../views/employee/EmployeeDetails")
 );
@@ -23,7 +22,7 @@ const EmploymentStatus = lazy(() =>
 
 export const adminRoutes = [
   {
-    path: "admin/dashboard/roles",
+    path: "admin/dashboard/role",
     element: <Role />,
     role: "admin",
   },
@@ -33,7 +32,7 @@ export const adminRoutes = [
     role: "admin",
   },
   {
-    path: "admin/dashboard/holidays",
+    path: "admin/dashboard/holiday",
     element: <Holiday />,
     role: "admin",
   },
@@ -43,28 +42,28 @@ export const adminRoutes = [
     role: "admin",
   },
   {
-    path: "admin/dashboard/employees",
+    path: "admin/dashboard/employee",
     element: <Employee />,
     role: "admin",
   },
   {
-    path: "admin/dashboard/employees/add",
-    element: <AddEmployee />,
+    path: "admin/dashboard/employee/add",
+    element: <EmployeeForm />,
     role: "admin",
   },
 
   {
-    path: "admin/dashboard/employees/edit/:id",
-    element: <EditEmployee />,
+    path: "admin/dashboard/employee/edit/:id",
+    element: <EmployeeForm />,
     role: "admin",
   },
   {
-    path: "admin/dashboard/employees/details/:id",
+    path: "admin/dashboard/employee/details/:id",
     element: <EmployeeDetails />,
     role: "admin",
   },
   {
-    path: "admin/dashboard/users",
+    path: "admin/dashboard/user",
     element: <UserManagement />,
     role: "admin",
   },
@@ -74,12 +73,12 @@ export const adminRoutes = [
     role: "admin",
   },
   {
-    path: "admin/dashboard/clusters",
+    path: "admin/dashboard/cluster",
     element: <Cluster />,
     role: "admin",
   },
   {
-    path: "admin/dashboard/departments",
+    path: "admin/dashboard/department",
     element: <Department />,
     role: "admin",
   },

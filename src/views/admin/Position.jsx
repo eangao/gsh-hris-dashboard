@@ -31,6 +31,10 @@ const Position = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
+    getPositions();
+  }, [searchValue, currentPage, perPage, dispatch]);
+
+  const getPositions = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
@@ -38,7 +42,7 @@ const Position = () => {
     };
 
     dispatch(fetchPositions(obj));
-  }, [searchValue, currentPage, perPage, dispatch]);
+  };
 
   const [formData, setFormData] = useState({
     _id: null,
@@ -54,6 +58,9 @@ const Position = () => {
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
+
+      getPositions();
+
       setIsModalOpen(false);
       setDeleteId(null);
 

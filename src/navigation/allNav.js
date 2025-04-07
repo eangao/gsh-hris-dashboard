@@ -23,39 +23,39 @@ export const allNav = [
   },
   {
     id: 3,
-    title: "Users",
+    title: "User",
     icon: <FaUserCog />,
     role: "admin",
-    path: "/admin/dashboard/users",
+    path: "/admin/dashboard/user",
   },
   {
     id: 4,
-    title: "Employees",
+    title: "Employee",
     icon: <FaPeopleGroup />,
     role: "admin",
-    path: "/admin/dashboard/employees",
+    path: "/admin/dashboard/employee",
   },
 
   {
     id: 5,
-    title: "Departments",
+    title: "Department",
     icon: <FaLayerGroup />,
     role: "admin",
-    path: "/admin/dashboard/departments",
+    path: "/admin/dashboard/department",
   },
   {
     id: 6,
     title: "Cluster",
     icon: <AiOutlineCluster />,
     role: "admin",
-    path: "/admin/dashboard/clusters",
+    path: "/admin/dashboard/cluster",
   },
   {
     id: 7,
     title: "Role",
     icon: <FaUserCog />,
     role: "admin",
-    path: "/admin/dashboard/roles",
+    path: "/admin/dashboard/role",
   },
   {
     id: 8,
@@ -81,10 +81,10 @@ export const allNav = [
   },
   {
     id: 11,
-    title: "Holidays",
+    title: "Holiday",
     icon: <MdHolidayVillage />,
     role: "admin",
-    path: "/admin/dashboard/holidays",
+    path: "/admin/dashboard/holiday",
   },
 
   // HR Dashboard Navigation

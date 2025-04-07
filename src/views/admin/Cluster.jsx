@@ -31,6 +31,10 @@ const Cluster = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
+    getClusters();
+  }, [searchValue, currentPage, perPage, dispatch]);
+
+  const getClusters = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
@@ -38,7 +42,7 @@ const Cluster = () => {
     };
 
     dispatch(fetchClusters(obj));
-  }, [searchValue, currentPage, perPage, dispatch]);
+  };
 
   const [formData, setFormData] = useState({
     _id: null,
@@ -53,6 +57,9 @@ const Cluster = () => {
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
+
+      getClusters();
+
       setIsModalOpen(false);
       setDeleteId(null);
 

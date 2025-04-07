@@ -128,7 +128,6 @@ const religionSlice = createSlice({
       .addCase(createReligion.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-        state.religions = [...state.religions, payload.religion];
       });
 
     // Update Religion

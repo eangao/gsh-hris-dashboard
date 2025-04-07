@@ -142,10 +142,6 @@ const employmentStatusSlice = createSlice({
       .addCase(createEmploymentStatus.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-        state.employmentStatuses = [
-          ...state.employmentStatuses,
-          payload.employmentStatus,
-        ];
       });
 
     // Update EmploymentStatus

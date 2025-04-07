@@ -127,10 +127,6 @@ const clusterSlice = createSlice({
       .addCase(createCluster.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-        state.clusters = [...state.clusters, payload.cluster].sort((a, b) =>
-          a.name.localeCompare(b.name)
-        );
-        state.totalCluster = state.totalCluster + 1;
       });
 
     // Update Cluster

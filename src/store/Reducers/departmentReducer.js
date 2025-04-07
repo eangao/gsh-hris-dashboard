@@ -123,7 +123,6 @@ const departmentSlice = createSlice({
       .addCase(createDepartment.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-        state.departments = [...state.departments, payload.department];
       });
 
     builder

@@ -31,6 +31,10 @@ const Religion = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
+    getReligions();
+  }, [searchValue, currentPage, perPage, dispatch]);
+
+  const getReligions = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
@@ -38,7 +42,7 @@ const Religion = () => {
     };
 
     dispatch(fetchReligions(obj));
-  }, [searchValue, currentPage, perPage, dispatch]);
+  };
 
   const [formData, setFormData] = useState({
     _id: null,
@@ -53,6 +57,9 @@ const Religion = () => {
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
+
+      getReligions();
+
       setIsModalOpen(false);
       setDeleteId(null);
 

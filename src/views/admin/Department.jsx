@@ -39,6 +39,11 @@ const Department = () => {
       setCurrentPage(1);
     }
 
+    getDepartments();
+    dispatch(fetchAllClusters());
+  }, [searchValue, currentPage, perPage, dispatch]);
+
+  const getDepartments = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
@@ -46,8 +51,7 @@ const Department = () => {
     };
 
     dispatch(fetchDepartments(obj));
-    dispatch(fetchAllClusters());
-  }, [searchValue, currentPage, perPage, dispatch]);
+  };
 
   const [formData, setFormData] = useState({
     _id: null,
@@ -63,6 +67,9 @@ const Department = () => {
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
+
+      getDepartments();
+
       setIsModalOpen(false);
       setDeleteId(null);
       dispatch(messageClear());

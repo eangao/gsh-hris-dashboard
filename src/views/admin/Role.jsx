@@ -31,6 +31,10 @@ const Role = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
+    getRoles();
+  }, [searchValue, currentPage, perPage, dispatch]);
+
+  const getRoles = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
@@ -38,7 +42,7 @@ const Role = () => {
     };
 
     dispatch(fetchRoles(obj));
-  }, [searchValue, currentPage, perPage, dispatch]);
+  };
 
   const [formData, setFormData] = useState({
     _id: null,
@@ -52,6 +56,9 @@ const Role = () => {
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
+
+      getRoles();
+
       setIsModalOpen(false);
       setDeleteId(null);
 
