@@ -142,11 +142,6 @@ const positionSlice = createSlice({
       .addCase(updatePosition.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-
-        // Find and replace the updated position
-        state.positions = state.positions.map((position) =>
-          position._id === payload.position._id ? payload.position : position
-        );
       });
 
     // Delete Position

@@ -53,7 +53,6 @@ const EmploymentStatus = () => {
     _id: null,
     name: "",
     description: "",
-    changeReason: "",
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,7 +109,6 @@ const EmploymentStatus = () => {
       _id: null,
       name: "",
       description: "",
-      changeReason: "",
     });
   };
 
@@ -171,10 +169,10 @@ const EmploymentStatus = () => {
               employmentStatuses?.map((employmentStatus) => (
                 <tr key={employmentStatus._id} className="border-t">
                   <td className="p-2 text-lg capitalize">
-                    {employmentStatus.name}
+                    {employmentStatus.name.toLowerCase()}
                   </td>
                   <td className="p-2 text-lg capitalize">
-                    {employmentStatus.description}
+                    {employmentStatus.description.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button
@@ -249,18 +247,7 @@ const EmploymentStatus = () => {
                 className="w-full p-2 border rounded capitalize"
                 disabled={loading}
               />
-              {formData._id && (
-                <input
-                  type="text"
-                  name="changeReason"
-                  placeholder="Update Reason"
-                  value={formData.updateReason}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded capitalize"
-                  required
-                  disabled={loading}
-                />
-              )}
+
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"

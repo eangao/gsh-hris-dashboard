@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchDepartments,
+  fetchDepartmentById,
   createDepartment,
   updateDepartment,
   deleteDepartment,
@@ -20,6 +21,7 @@ const Department = () => {
   const dispatch = useDispatch();
 
   const {
+    department,
     departments,
     totalDepartment,
     loading,
@@ -56,11 +58,11 @@ const Department = () => {
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
-    clusterId: "",
-    changeReason: "",
+    cluster: "",
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
 
@@ -92,10 +94,19 @@ const Department = () => {
       : dispatch(createDepartment(formData));
   };
 
-  const handleEdit = (department) => {
-    setFormData(department);
-    setIsModalOpen(true);
+  //====edit============
+  const handleEdit = (departmentId) => {
+    setSelectedId(departmentId);
+    dispatch(fetchDepartmentById(departmentId));
   };
+  useEffect(() => {
+    if (department && department._id === selectedId) {
+      console.log(department);
+      setFormData(department);
+      setIsModalOpen(true);
+    }
+  }, [department, selectedId]);
+  //====edit============
 
   const handleDeleteConfirm = (id, name) => {
     setDeleteId(id);
@@ -110,8 +121,7 @@ const Department = () => {
     setFormData({
       _id: null,
       name: "",
-      clusterId: "",
-      changeReason: "",
+      cluster: "",
     });
   };
 
@@ -172,16 +182,15 @@ const Department = () => {
             ) : (
               departments?.map((dept) => (
                 <tr key={dept._id} className="border-t">
-                  <td className="p-2 text-lg capitalize">{dept.name}</td>
-                  <td className="p-2 text-lg capitalize">
-                    {clusters.find((c) => c._id === dept.clusterId)?.name ||
-                      "N/A"}
+                  <td className="p-2  capitalize">{dept.name.toLowerCase()}</td>
+                  <td className="p-2 capitalize">
+                    {dept.cluster.name.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button
                       onClick={() => {
                         getAllClusters();
-                        handleEdit(dept);
+                        handleEdit(dept._id);
                       }}
                       className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
@@ -234,10 +243,10 @@ const Department = () => {
               />
 
               <select
-                name="clusterId"
-                value={formData.clusterId}
+                name="cluster"
+                value={formData.cluster._id}
                 onChange={(e) =>
-                  setFormData({ ...formData, clusterId: e.target.value })
+                  setFormData({ ...formData, cluster: e.target.value })
                 }
                 className="w-full p-2 border rounded capitalize"
                 required
@@ -250,19 +259,6 @@ const Department = () => {
                   </option>
                 ))}
               </select>
-
-              {formData._id && (
-                <input
-                  type="text"
-                  name="changeReason"
-                  placeholder="Update Reason"
-                  value={formData.updateReason}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded capitalize"
-                  required
-                  disabled={loading}
-                />
-              )}
 
               <div className="flex justify-end space-x-2">
                 <button

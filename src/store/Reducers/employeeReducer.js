@@ -22,6 +22,7 @@ export const fetchEmployees = createAsyncThunk(
   }
 );
 
+//for edit
 export const fetchEmployeeById = createAsyncThunk(
   "employee/fetchEmployeeById",
   async (id, { rejectWithValue, fulfillWithValue }) => {

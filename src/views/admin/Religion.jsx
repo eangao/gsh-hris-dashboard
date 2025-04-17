@@ -47,7 +47,6 @@ const Religion = () => {
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
-    changeReason: "",
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -103,7 +102,6 @@ const Religion = () => {
     setFormData({
       _id: null,
       name: "",
-      changeReason: "",
     });
   };
 
@@ -124,7 +122,7 @@ const Religion = () => {
         </button>
       </div>
 
-      {/* Search and Add Religion */}
+      {/* Search  */}
 
       <div className=" mb-4">
         <Search
@@ -160,7 +158,9 @@ const Religion = () => {
             ) : (
               religions?.map((religion) => (
                 <tr key={religion._id} className="border-t">
-                  <td className="p-2 text-lg capitalize">{religion.name}</td>
+                  <td className="p-2 capitalize">
+                    {religion.name.toLowerCase()}
+                  </td>
 
                   <td className="p-2 flex justify-end space-x-2">
                     <button
@@ -221,18 +221,6 @@ const Religion = () => {
                 disabled={loading}
               />
 
-              {formData._id && (
-                <input
-                  type="text"
-                  name="changeReason"
-                  placeholder="Update Reason"
-                  value={formData.updateReason}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded capitalize"
-                  required
-                  disabled={loading}
-                />
-              )}
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"

@@ -38,7 +38,7 @@ const EmployeeForm = () => {
       maidenName: "",
       birthdate: "",
       gender: "",
-      religionId: "",
+      religion: "",
       photoUrl: "",
     },
     contactInformation: {
@@ -55,10 +55,11 @@ const EmployeeForm = () => {
     },
     employmentInformation: {
       hospitalEmployeeId: "",
-      positionId: "",
-      departmentId: "",
-      clusterId: "",
-      employmentStatusId: "",
+      scheduleType: "",
+      position: "",
+      department: null,
+      cluster: null,
+      employmentStatus: "",
       dateStarted: "",
       dateTransferToGSH: "",
       dateEmployed: "",
@@ -138,18 +139,17 @@ const EmployeeForm = () => {
     e.preventDefault();
 
     if (isEditMode) {
+      //hande in select query find by id
       // Remove the createdAt and isDeleted properties from employeeData
-      const {
-        createdAt,
-        isDeleted,
-        updatedAt,
-        __v,
-        ...employeeDataWithoutUnwantedFields
-      } = formData;
+      // const {
+      // createdAt,
+      // isDeleted,
+      // updatedAt,
+      // __v,
+      //   ...employeeDataWithoutUnwantedFields
+      // } = formData;
 
-      dispatch(
-        updateEmployee({ id, employeeData: employeeDataWithoutUnwantedFields })
-      );
+      dispatch(updateEmployee({ id, employeeData: formData }));
     } else {
       dispatch(createEmployee(formData));
     }
@@ -368,6 +368,47 @@ const EmployeeForm = () => {
   };
   //================ Employement Status History  ===========
 
+  //===============Handle Maiden Name start====================
+  const [isMaiden, setIsMaiden] = useState(false);
+
+  const handleMaidenNameVisibility = (civilStatus, gender) => {
+    if (civilStatus !== "Single" && civilStatus !== "" && gender === "Female") {
+      setIsMaiden(true);
+    } else {
+      setIsMaiden(false);
+      handleChange("personalInformation", "maidenName", "");
+    }
+  };
+  //===============Handle Maiden Name end====================
+
+  //===============Handle position====================
+  const [selectedPositionName, setSelectedPositionName] = useState("");
+
+  const handlePositionChange = (selectedId) => {
+    const selectedPos = positions.find((pos) => pos._id === selectedId);
+    const name = selectedPos?.name?.toLowerCase() || "";
+
+    setSelectedPositionName(name);
+    handleChange("employmentInformation", "position", selectedId);
+
+    // Clear hidden fields
+    if (name === "president" || name === "physician") {
+      handleChange("employmentInformation", "department", null);
+      handleChange("employmentInformation", "cluster", null);
+    } else if (name === "director") {
+      handleChange("employmentInformation", "department", null);
+    } else {
+      handleChange("employmentInformation", "cluster", null);
+    }
+  };
+
+  const isDepartmentVisible = () =>
+    selectedPositionName !== "president" &&
+    selectedPositionName !== "director" &&
+    selectedPositionName !== "physician";
+
+  const isClusterVisible = () => selectedPositionName === "director";
+
   return (
     <div className="p-6 max-w-7xl mx-auto overflow-y-auto">
       <h1 className="text-2xl font-bold mb-4 text-center">Add New Employee</h1>
@@ -444,13 +485,15 @@ const EmployeeForm = () => {
               <select
                 name="civilStatus"
                 value={formData.personalInformation.civilStatus}
-                onChange={(e) =>
-                  handleChange(
-                    "personalInformation",
-                    "civilStatus",
-                    e.target.value
-                  )
-                }
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleChange("personalInformation", "civilStatus", value);
+
+                  handleMaidenNameVisibility(
+                    value,
+                    formData.personalInformation.gender
+                  );
+                }}
                 className="w-full p-2 border rounded mt-1"
                 required
               >
@@ -464,22 +507,49 @@ const EmployeeForm = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Maiden Name
+                Gender
               </label>
-              <input
-                type="text"
-                name="maidenName"
-                value={formData.personalInformation.maidenName}
-                onChange={(e) =>
-                  handleChange(
-                    "personalInformation",
-                    "maidenName",
-                    e.target.value
-                  )
-                }
+              <select
+                name="gender"
+                value={formData.personalInformation.gender}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  handleChange("personalInformation", "gender", value);
+                  handleMaidenNameVisibility(
+                    formData.personalInformation.civilStatus,
+                    value
+                  );
+                }}
                 className="w-full p-2 border rounded mt-1"
-              />
+                required
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
             </div>
+            {/* Maiden Name Field - Hidden if Civil Status is 'Single' */}
+            {isMaiden && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Maiden Name
+                </label>
+                <input
+                  type="text"
+                  name="maidenName"
+                  value={formData.personalInformation.maidenName}
+                  onChange={(e) =>
+                    handleChange(
+                      "personalInformation",
+                      "maidenName",
+                      e.target.value
+                    )
+                  }
+                  className="w-full p-2 border rounded mt-1"
+                  required={isMaiden} // only required when visible
+                />
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Birthdate
@@ -501,33 +571,15 @@ const EmployeeForm = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <select
-                name="gender"
-                value={formData.personalInformation.gender}
-                onChange={(e) =>
-                  handleChange("personalInformation", "gender", e.target.value)
-                }
-                className="w-full p-2 border rounded mt-1"
-                required
-              >
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
                 Religion
               </label>
               <select
-                name="religionId"
-                value={formData.personalInformation.religionId}
+                name="religion"
+                value={formData.personalInformation.religion}
                 onChange={(e) =>
                   handleChange(
                     "personalInformation",
-                    "religionId",
+                    "religion",
                     e.target.value
                   )
                 }
@@ -640,147 +692,6 @@ const EmployeeForm = () => {
         </div>
 
         {/* ============================================================== */}
-        {/* Education Information Section */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-            Education Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Highest Educational Attainment
-              </label>
-              <select
-                value={formData.educationInformation.highestAttainment}
-                onChange={(e) =>
-                  handleChange(
-                    "educationInformation",
-                    "highestAttainment",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
-                required
-              >
-                <option value="">Select Highest Attainment</option>
-                <option value="Elementary">Elementary</option>
-                <option value="High School">High School</option>
-                <option value="Undergraduate">Undergraduate</option>
-                <option value="Graduate">Graduate</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                License Number
-              </label>
-              <input
-                type="text"
-                value={formData.educationInformation.licenseNumber}
-                onChange={(e) =>
-                  handleChange(
-                    "educationInformation",
-                    "licenseNumber",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
-              />
-            </div>
-
-            {/* Schools Attended Table */}
-            <div className="col-span-2 mt-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Schools Attended</h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetSchoolForm();
-                    setIsSchoolModalOpen(true);
-                    setIsEditingSchool(false);
-                  }}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Add School
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        School Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Education Level
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Degree
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Major
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Year Graduated
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {formData.educationInformation.schoolsAttended.map(
-                      (school, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.schoolName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.educationLevel}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.degree || "-"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.major || "-"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.yearGraduated}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedSchoolIndex(index);
-                                setSchoolFormData(school);
-                                setIsEditingSchool(true);
-                                setIsSchoolModalOpen(true);
-                              }}
-                              className="text-indigo-600 hover:text-indigo-900 mr-3"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedSchoolIndex(index);
-                                setIsDeleteSchoolModalOpen(true);
-                              }}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ============================================================== */}
         {/* Employment Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
@@ -807,17 +718,33 @@ const EmployeeForm = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Position
+                Schedule Type
               </label>
               <select
-                value={formData.employmentInformation.positionId}
+                name="scheduleType"
+                value={formData.employmentInformation?.scheduleType}
                 onChange={(e) =>
                   handleChange(
                     "employmentInformation",
-                    "positionId",
+                    "scheduleType",
                     e.target.value
                   )
                 }
+                className="w-full p-2 border rounded mt-1"
+                required
+              >
+                <option value="">Select Schedule Type</option>
+                <option value="Standard">Standard</option>
+                <option value="Shifting">Shifting</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Position
+              </label>
+              <select
+                value={formData.employmentInformation.position}
+                onChange={(e) => handlePositionChange(e.target.value)}
                 className="w-full p-2 border rounded mt-1"
                 required
               >
@@ -829,66 +756,71 @@ const EmployeeForm = () => {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Department
-              </label>
-              <select
-                value={formData.employmentInformation.departmentId}
-                onChange={(e) =>
-                  handleChange(
-                    "employmentInformation",
-                    "departmentId",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
-                required
-              >
-                <option value="">Select Department</option>
-                {departments.map((dept) => (
-                  <option key={dept._id} value={dept._id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Cluster
-              </label>
-              <select
-                value={formData.employmentInformation.clusterId}
-                onChange={(e) =>
-                  handleChange(
-                    "employmentInformation",
-                    "clusterId",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
-                required
-              >
-                <option value="">Select Cluster</option>
-                {clusters.map((cluster) => (
-                  <option key={cluster._id} value={cluster._id}>
-                    {cluster.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {isDepartmentVisible() && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Department
+                </label>
+                <select
+                  value={formData.employmentInformation.department}
+                  onChange={(e) =>
+                    handleChange(
+                      "employmentInformation",
+                      "department",
+                      e.target.value
+                    )
+                  }
+                  className="w-full p-2 border rounded mt-1"
+                  required={isDepartmentVisible()} // ✅ required only if visible
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((dept) => (
+                    <option key={dept._id} value={dept._id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {isClusterVisible() && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cluster
+                </label>
+                <select
+                  value={formData.employmentInformation.cluster}
+                  onChange={(e) =>
+                    handleChange(
+                      "employmentInformation",
+                      "cluster",
+                      e.target.value
+                    )
+                  }
+                  className="w-full p-2 border rounded mt-1"
+                  required={isClusterVisible()} // ✅ required only if visible
+                >
+                  <option value="">Select Cluster</option>
+                  {clusters.map((cluster) => (
+                    <option key={cluster._id} value={cluster._id}>
+                      {cluster.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Employment Status
               </label>
               <select
-                value={formData.employmentInformation.employmentStatusId}
+                value={formData.employmentInformation.employmentStatus}
                 onChange={(e) =>
                   handleChange(
                     "employmentInformation",
-                    "employmentStatusId",
+                    "employmentStatus",
                     e.target.value
                   )
                 }
@@ -1030,6 +962,147 @@ const EmployeeForm = () => {
                                 setIsDeleteEmploymentStatusHistoryModalOpen(
                                   true
                                 );
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ============================================================== */}
+        {/* Education Information Section */}
+        <div className="bg-white shadow rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
+            Education Information
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Highest Educational Attainment
+              </label>
+              <select
+                value={formData.educationInformation.highestAttainment}
+                onChange={(e) =>
+                  handleChange(
+                    "educationInformation",
+                    "highestAttainment",
+                    e.target.value
+                  )
+                }
+                className="w-full p-2 border rounded mt-1"
+                required
+              >
+                <option value="">Select Highest Attainment</option>
+                <option value="Elementary">Elementary</option>
+                <option value="High School">High School</option>
+                <option value="Undergraduate">Undergraduate</option>
+                <option value="Graduate">Graduate</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                License Number
+              </label>
+              <input
+                type="text"
+                value={formData.educationInformation.licenseNumber}
+                onChange={(e) =>
+                  handleChange(
+                    "educationInformation",
+                    "licenseNumber",
+                    e.target.value
+                  )
+                }
+                className="w-full p-2 border rounded mt-1"
+              />
+            </div>
+
+            {/* Schools Attended Table */}
+            <div className="col-span-2 mt-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Schools Attended</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    resetSchoolForm();
+                    setIsSchoolModalOpen(true);
+                    setIsEditingSchool(false);
+                  }}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Add School
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        School Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Education Level
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Degree
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Major
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Year Graduated
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {formData.educationInformation.schoolsAttended.map(
+                      (school, index) => (
+                        <tr key={index}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {school.schoolName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {school.educationLevel}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {school.degree || "-"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {school.major || "-"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {school.yearGraduated}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSchoolIndex(index);
+                                setSchoolFormData(school);
+                                setIsEditingSchool(true);
+                                setIsSchoolModalOpen(true);
+                              }}
+                              className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedSchoolIndex(index);
+                                setIsDeleteSchoolModalOpen(true);
                               }}
                               className="text-red-600 hover:text-red-900"
                             >

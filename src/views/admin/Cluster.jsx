@@ -47,7 +47,6 @@ const Cluster = () => {
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
-    changeReason: "",
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -103,7 +102,6 @@ const Cluster = () => {
     setFormData({
       _id: null,
       name: "",
-      changeReason: "",
     });
   };
 
@@ -160,7 +158,9 @@ const Cluster = () => {
             ) : (
               clusters?.map((cluster) => (
                 <tr key={cluster._id} className="border-t">
-                  <td className="p-2 text-lg capitalize">{cluster.name}</td>
+                  <td className="p-2  capitalize">
+                    {cluster.name.toLowerCase()}
+                  </td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button
                       onClick={() => handleEdit(cluster)}
@@ -219,18 +219,7 @@ const Cluster = () => {
                 required
                 disabled={loading}
               />
-              {formData._id && (
-                <input
-                  type="text"
-                  name="changeReason"
-                  placeholder="Update Reason"
-                  value={formData.updateReason}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded capitalize"
-                  required
-                  disabled={loading}
-                />
-              )}
+
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"

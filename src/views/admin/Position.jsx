@@ -48,7 +48,6 @@ const Position = () => {
     _id: null,
     name: "",
     description: "",
-    changeReason: "",
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -105,7 +104,6 @@ const Position = () => {
       _id: null,
       name: "",
       description: "",
-      changeReason: "",
     });
   };
 
@@ -163,27 +161,33 @@ const Position = () => {
             ) : (
               positions?.map((position) => (
                 <tr key={position._id} className="border-t">
-                  <td className="p-2 text-lg capitalize">{position.name}</td>
                   <td className="p-2 text-lg capitalize">
-                    {position.description}
+                    {position.name.toLowerCase()}
+                  </td>
+                  <td className="p-2 text-lg capitalize">
+                    {position.description.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
-                    <button
-                      onClick={() => handleEdit(position)}
-                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
-                      disabled={loading}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleDeleteConfirm(position._id, position.name)
-                      }
-                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                      disabled={loading}
-                    >
-                      <FaTrashAlt />
-                    </button>
+                    {!position?.locked && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(position)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                          disabled={loading}
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDeleteConfirm(position._id, position.name)
+                          }
+                          className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                          disabled={loading}
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
@@ -235,18 +239,7 @@ const Position = () => {
                 className="w-full p-2 border rounded capitalize"
                 disabled={loading}
               />
-              {formData._id && (
-                <input
-                  type="text"
-                  name="changeReason"
-                  placeholder="Update Reason"
-                  value={formData.updateReason}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded capitalize"
-                  required
-                  disabled={loading}
-                />
-              )}
+
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"

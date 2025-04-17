@@ -97,7 +97,7 @@ const Employee = () => {
                     )}
                   </td>
                   <td className="p-3 capitalize">
-                    {employee?.department?.name}
+                    {employee?.department?.name || "-"}
                   </td>
                   <td className="p-3 capitalize">{employee?.position?.name}</td>
                   <td className="p-3 capitalize">

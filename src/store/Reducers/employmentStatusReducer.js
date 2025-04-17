@@ -156,14 +156,6 @@ const employmentStatusSlice = createSlice({
       .addCase(updateEmploymentStatus.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-
-        // Find and replace the updated EmploymentStatus
-        state.employmentStatuses = state.employmentStatuses.map(
-          (employmentStatus) =>
-            employmentStatus._id === payload.employmentStatus._id
-              ? payload.employmentStatus
-              : employmentStatus
-        );
       });
 
     // Delete EmploymentStatus

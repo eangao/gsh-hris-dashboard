@@ -104,7 +104,7 @@ const EmployeeDetails = () => {
                   />
                   <InfoItem
                     label="Religion"
-                    value={employee.personalInformation?.religionId?.name}
+                    value={employee.personalInformation?.religion?.name}
                   />
                 </div>
               </div>
@@ -172,19 +172,19 @@ const EmployeeDetails = () => {
             />
             <InfoItem
               label="Position"
-              value={employee.employmentInformation?.positionId?.name}
+              value={employee.employmentInformation?.position?.name}
             />
             <InfoItem
               label="Department"
-              value={employee.employmentInformation?.departmentId?.name}
+              value={employee.employmentInformation?.department?.name}
             />
             <InfoItem
               label="Cluster"
-              value={employee.employmentInformation?.clusterId?.name}
+              value={employee.employmentInformation?.cluster?.name}
             />
             <InfoItem
               label="Employment Status"
-              value={employee.employmentInformation?.employmentStatusId?.name}
+              value={employee.employmentInformation?.employmentStatus?.name}
             />
             <InfoItem
               label="Date Started"

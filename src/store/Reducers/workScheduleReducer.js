@@ -4,10 +4,19 @@ import api from "../../api/api";
 // Async Thunks
 export const fetchWorkSchedules = createAsyncThunk(
   "workSchedule/fetchWorkSchedules",
-  async (_, { rejectWithValue }) => {
+  async (
+    { perPage, page, searchValue },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
-      const { data } = await api.get("/work-schedule");
-      return data;
+      const { data } = await api.get(
+        `/fetch-work-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -16,10 +25,12 @@ export const fetchWorkSchedules = createAsyncThunk(
 
 export const createWorkSchedule = createAsyncThunk(
   "workSchedule/createWorkSchedule",
-  async (scheduleData, { rejectWithValue }) => {
+  async (scheduleData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/work-schedule", scheduleData);
-      return data;
+      const { data } = await api.post("/create-work-schedule", scheduleData, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -28,10 +39,12 @@ export const createWorkSchedule = createAsyncThunk(
 
 export const updateWorkSchedule = createAsyncThunk(
   "workSchedule/updateWorkSchedule",
-  async ({ id, scheduleData }, { rejectWithValue }) => {
+  async ({ id, scheduleData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/work-schedule/${id}`, scheduleData);
-      return data;
+      const { data } = await api.put(`/work-schedule/${id}`, scheduleData, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -40,10 +53,12 @@ export const updateWorkSchedule = createAsyncThunk(
 
 export const deleteWorkSchedule = createAsyncThunk(
   "workSchedule/deleteWorkSchedule",
-  async ({ id, dateKey }, { rejectWithValue }) => {
+  async ({ id, dateKey }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/work-schedule/${id}`);
-      return { id, dateKey, ...data };
+      const { data } = await api.delete(`/work-schedule/${id}`, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -53,58 +68,39 @@ export const deleteWorkSchedule = createAsyncThunk(
 const workScheduleSlice = createSlice({
   name: "workSchedule",
   initialState: {
-    schedules: {},
     loading: false,
-    error: null,
-    success: false,
-    message: "",
+    successMessage: "",
+    errorMessage: "",
+    schedules: [],
+    schedule: "",
+    totalSchedule: 0,
   },
   reducers: {
     messageClear: (state) => {
-      state.error = null;
-      state.success = false;
-      state.message = "";
-    },
-    updateLocalSchedule: (state, action) => {
-      const { dateKey, schedules } = action.payload;
-      state.schedules = {
-        ...state.schedules,
-        [dateKey]: schedules,
-      };
+      state.errorMessage = "";
+      state.successMessage = "";
     },
   },
   extraReducers: (builder) => {
     // Fetch Schedules
-    builder.addCase(fetchWorkSchedules.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(fetchWorkSchedules.fulfilled, (state, action) => {
-      state.loading = false;
-      state.schedules = action.payload || {};
-    });
-    builder.addCase(fetchWorkSchedules.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
+    builder.addCase(fetchWorkSchedules.fulfilled, (state, { payload }) => {
+      state.totalSchedule = payload.totalSchedule;
+      state.schedules = payload.schedules;
     });
 
     // Create Schedule
-    builder.addCase(createWorkSchedule.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(createWorkSchedule.fulfilled, (state, action) => {
-      state.loading = false;
-      state.success = true;
-      state.message = "Schedule created successfully";
-      const { dateKey, schedule } = action.payload;
-      if (!state.schedules[dateKey]) {
-        state.schedules[dateKey] = [];
-      }
-      state.schedules[dateKey] = [...state.schedules[dateKey], schedule];
-    });
-    builder.addCase(createWorkSchedule.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
-    });
+    builder
+      .addCase(createWorkSchedule.pending, (state, { payload }) => {
+        state.loading = true;
+      })
+      .addCase(createWorkSchedule.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(createWorkSchedule.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      });
 
     // Update Schedule
     builder.addCase(updateWorkSchedule.pending, (state) => {

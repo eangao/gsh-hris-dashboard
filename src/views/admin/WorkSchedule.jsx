@@ -7,70 +7,89 @@ import {
   deleteWorkSchedule,
   messageClear,
 } from "../../store/Reducers/workScheduleReducer";
+import DaysOfWeekSelector from "../components/DaysOfWeekSelector ";
+import Search from "../components/Search";
+import toast from "react-hot-toast";
+import Pagination from "../components/Pagination";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
+import { PropagateLoader } from "react-spinners";
+import { buttonOverrideStyle } from "../../utils/utils";
 
 const WorkSchedule = () => {
-  const dispatch = useDispatch();
-  const { schedules, loading, error, success, message } = useSelector(
-    (state) => state.workSchedule
-  );
+  const [daysOfWeek, setDaysOfWeek] = useState([]);
 
-  // Convert schedules object to array for rendering
-  const schedulesList = React.useMemo(() => {
-    return Object.values(schedules).flat();
-  }, [schedules]);
+  const dispatch = useDispatch();
+  const { schedules, totalSchedule, loading, errorMessage, successMessage } =
+    useSelector((state) => state.workSchedule);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchValue, setSearchValue] = useState("");
+  const [perPage, setPerpage] = useState(5);
+
+  useEffect(() => {
+    // Reset to page 1 if searchValue is not empty
+    if (searchValue && currentPage !== 1) {
+      setCurrentPage(1); // Reset page to 1 when a search is triggered
+    }
+
+    getWorkSchedules();
+  }, [searchValue, currentPage, perPage, dispatch]);
+
+  const getWorkSchedules = () => {
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchWorkSchedules(obj));
+  };
 
   const [formData, setFormData] = useState({
     id: null,
     name: "",
+    daysOfWeek: "",
     startTime: "",
     endTime: "",
     description: "",
-    status: "active",
+    status: "",
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [deleteName, setDeleteName] = useState(null);
 
   useEffect(() => {
     dispatch(fetchWorkSchedules());
   }, [dispatch]);
 
   useEffect(() => {
-    if (success) {
+    if (successMessage) {
+      toast.success(successMessage);
+
+      getWorkSchedules();
+
       setIsModalOpen(false);
       setDeleteId(null);
-      setFormData({
-        id: null,
-        name: "",
-        startTime: "",
-        endTime: "",
-        description: "",
-        status: "active",
-      });
-      setTimeout(() => {
-        dispatch(messageClear());
-      }, 3000);
+
+      dispatch(messageClear());
     }
-  }, [success, dispatch]);
+
+    if (errorMessage) {
+      toast.error(errorMessage);
+      dispatch(messageClear());
+    }
+  }, [successMessage, errorMessage]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const today = new Date().toISOString().split("T")[0];
-
-    if (formData.id) {
-      dispatch(
-        updateWorkSchedule({
-          id: formData.id,
-          scheduleData: { ...formData, dateKey: today },
-        })
-      );
+    if (formData._id) {
+      dispatch(updateWorkSchedule(formData));
     } else {
-      dispatch(createWorkSchedule({ ...formData, dateKey: today }));
+      dispatch(createWorkSchedule(formData));
     }
   };
 
@@ -79,46 +98,39 @@ const WorkSchedule = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteConfirm = (id) => setDeleteId(id);
-
-  const handleDelete = () => {
-    const today = new Date().toISOString().split("T")[0];
-    dispatch(deleteWorkSchedule({ id: deleteId, dateKey: today }));
+  const handleDeleteConfirm = (id, name) => {
+    setDeleteId(id);
+    setDeleteName(name);
   };
 
-  const filteredSchedules = schedulesList.filter((schedule) =>
-    schedule?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDelete = () => {
+    dispatch(deleteWorkSchedule(deleteId));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      id: null,
+      name: "",
+      daysOfWeek: "",
+      startTime: "",
+      endTime: "",
+      description: "",
+      status: "",
+    });
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">
-        Work Schedule Management
-      </h1>
-
-      {/* Success Message */}
-      {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-          {message}
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>
-      )}
-
-      {/* Search and Add Schedule */}
+      {/*  Header and Add  Work Schedule  */}
       <div className="flex justify-between mb-4">
-        <input
-          type="text"
-          placeholder="Search schedules..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 border rounded w-64"
-        />
+        <h1 className="text-2xl font-bold  text-center">
+          Work Schedule Management
+        </h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            resetForm();
+            setIsModalOpen(true);
+          }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
         >
@@ -126,12 +138,23 @@ const WorkSchedule = () => {
         </button>
       </div>
 
+      {/* Search  */}
+
+      <div className=" mb-4">
+        <Search
+          setPerpage={setPerpage}
+          setSearchValue={setSearchValue}
+          searchValue={searchValue}
+          inputPlaceholder={"Search Work Schedule..."}
+        />
+      </div>
       {/* Schedules Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
               <th className="p-3">Name</th>
+              <th className="p-3">Days of Week</th>
               <th className="p-3">Time Range</th>
               <th className="p-3">Description</th>
               <th className="p-3">Status</th>
@@ -145,16 +168,17 @@ const WorkSchedule = () => {
                   Loading...
                 </td>
               </tr>
-            ) : filteredSchedules.length === 0 ? (
+            ) : schedules.length === 0 ? (
               <tr>
                 <td colSpan="5" className="p-3 text-center text-gray-500">
                   No schedules found.
                 </td>
               </tr>
             ) : (
-              filteredSchedules.map((schedule) => (
+              schedules?.map((schedule) => (
                 <tr key={schedule.id} className="border-t">
                   <td className="p-3">{schedule.name}</td>
+                  <td className="p-3">{schedule.daysOfWeek}</td>
                   <td className="p-3">
                     {schedule.startTime} - {schedule.endTime}
                   </td>
@@ -176,14 +200,16 @@ const WorkSchedule = () => {
                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
-                      Edit
+                      <FaEdit />
                     </button>
                     <button
-                      onClick={() => handleDeleteConfirm(schedule.id)}
+                      onClick={() =>
+                        handleDeleteConfirm(schedule.id, schedule.name)
+                      }
                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                       disabled={loading}
                     >
-                      Delete
+                      <FaTrashAlt />
                     </button>
                   </td>
                 </tr>
@@ -192,6 +218,21 @@ const WorkSchedule = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination  */}
+      {totalSchedule <= perPage ? (
+        ""
+      ) : (
+        <div className="w-full flex justify-end mt-4 bottom-4 right-4">
+          <Pagination
+            pageNumber={currentPage}
+            setPageNumber={setCurrentPage}
+            totalItem={totalSchedule}
+            perPage={perPage}
+            showItem={Math.min(5, Math.ceil(totalSchedule / perPage))}
+          />
+        </div>
+      )}
 
       {/* Create/Edit Modal */}
       {isModalOpen && (
@@ -214,6 +255,15 @@ const WorkSchedule = () => {
                   className="w-full p-2 border rounded mt-1"
                   required
                   disabled={loading}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Select Days of the Week
+                </label>
+                <DaysOfWeekSelector
+                  selectedDays={daysOfWeek}
+                  onChange={setDaysOfWeek}
                 />
               </div>
 
@@ -263,22 +313,26 @@ const WorkSchedule = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded mt-1"
-                  required
-                  disabled={loading}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
+              {formData.id ? (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded mt-1"
+                    required
+                    disabled={loading}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              ) : (
+                ""
+              )}
 
               <div className="flex justify-end space-x-2">
                 <button
@@ -291,10 +345,21 @@ const WorkSchedule = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  disabled={loading}
+                  disabled={loading ? true : false}
+                  className={`bg-blue-500 w-[100px] text-white px-4 py-2 rounded ${
+                    loading ? "" : " hover:bg-blue-600"
+                  } overflow-hidden`}
                 >
-                  {loading ? "Loading..." : formData.id ? "Update" : "Add"}
+                  {loading ? (
+                    <PropagateLoader
+                      color="#fff"
+                      cssOverride={buttonOverrideStyle}
+                    />
+                  ) : formData._id ? (
+                    "Update"
+                  ) : (
+                    "Add"
+                  )}
                 </button>
               </div>
             </form>

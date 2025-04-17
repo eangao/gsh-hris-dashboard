@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
+import { user_register } from "./authReducer";
 
 // Async Thunks
 export const fetchDepartments = createAsyncThunk(
@@ -30,6 +31,22 @@ export const fetchAllDepartments = createAsyncThunk(
       });
 
       // console.log(data);
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+//for edit
+export const fetchDepartmentById = createAsyncThunk(
+  "department/fetchDepartmentById",
+  async (_id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(`/fetch-department/${_id}`, {
+        withCredentials: true,
+      });
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -112,6 +129,10 @@ const departmentSlice = createSlice({
       state.departments = payload.departments;
     });
 
+    builder.addCase(fetchDepartmentById.fulfilled, (state, { payload }) => {
+      state.department = payload.department;
+    });
+
     builder
       .addCase(createDepartment.pending, (state) => {
         state.loading = true;
@@ -136,12 +157,6 @@ const departmentSlice = createSlice({
       .addCase(updateDepartment.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-
-        state.departments = state.departments.map((department) =>
-          department._id === payload.department._id
-            ? payload.department
-            : department
-        );
       });
 
     builder

@@ -141,11 +141,6 @@ const clusterSlice = createSlice({
       .addCase(updateCluster.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-
-        // Find and replace the updated cluster
-        state.clusters = state.clusters.map((cluster) =>
-          cluster._id === payload.cluster._id ? payload.cluster : cluster
-        );
       });
 
     // Delete Cluster

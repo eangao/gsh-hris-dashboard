@@ -142,11 +142,6 @@ const religionSlice = createSlice({
       .addCase(updateReligion.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
-
-        // Find and replace the updated religion
-        state.religions = state.religions.map((religion) =>
-          religion._id === payload.religion._id ? payload.religion : religion
-        );
       });
 
     // Delete Religion
