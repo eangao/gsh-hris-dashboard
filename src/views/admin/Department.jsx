@@ -182,9 +182,11 @@ const Department = () => {
             ) : (
               departments?.map((dept) => (
                 <tr key={dept._id} className="border-t">
-                  <td className="p-2  capitalize">{dept.name.toLowerCase()}</td>
+                  <td className="p-2  capitalize">
+                    {dept?.name?.toLowerCase()}
+                  </td>
                   <td className="p-2 capitalize">
-                    {dept.cluster.name.toLowerCase()}
+                    {dept?.cluster?.name?.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button

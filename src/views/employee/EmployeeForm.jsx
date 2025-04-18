@@ -381,7 +381,7 @@ const EmployeeForm = () => {
   };
   //===============Handle Maiden Name end====================
 
-  //===============Handle position====================
+  //===============Handle position start====================
   const [selectedPositionName, setSelectedPositionName] = useState("");
 
   const handlePositionChange = (selectedId) => {
@@ -402,12 +402,27 @@ const EmployeeForm = () => {
     }
   };
 
-  const isDepartmentVisible = () =>
-    selectedPositionName !== "president" &&
-    selectedPositionName !== "director" &&
-    selectedPositionName !== "physician";
+  const isDepartmentVisible = () => {
+    return (
+      selectedPositionName !== "president" &&
+      selectedPositionName !== "director" &&
+      selectedPositionName !== "physician"
+    );
+  };
 
   const isClusterVisible = () => selectedPositionName === "director";
+
+  //to handel the edit
+  useEffect(() => {
+    const selectedId = formData?.employmentInformation?.position;
+    if (selectedId && positions.length > 0) {
+      const selectedPos = positions.find((pos) => pos._id === selectedId);
+      const name = selectedPos?.name?.toLowerCase() || "";
+      setSelectedPositionName(name);
+    }
+  }, [formData?.employmentInformation?.position, positions]);
+
+  //===============Handle position end====================
 
   return (
     <div className="p-6 max-w-7xl mx-auto overflow-y-auto">

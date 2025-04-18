@@ -43,6 +43,17 @@ const EmployeeDetails = () => {
     );
   }
 
+  //hide position
+  const positionName =
+    employee.employmentInformation?.position?.name?.toLowerCase() || "";
+
+  const isDepartmentVisible = () =>
+    positionName !== "president" &&
+    positionName !== "director" &&
+    positionName !== "physician";
+
+  const isClusterVisible = () => positionName === "director";
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl print:px-0 print:py-0 print:max-w-none">
       {/* Header with Print Button */}
@@ -90,14 +101,23 @@ const EmployeeDetails = () => {
                     label="Civil Status"
                     value={employee.personalInformation?.civilStatus}
                   />
-                  <InfoItem
-                    label="Maiden Name"
-                    value={employee.personalInformation?.maidenName}
-                  />
+
                   <InfoItem
                     label="Gender"
                     value={employee.personalInformation?.gender}
                   />
+
+                  {/* Conditionally render Maiden Name when Civil Status is not "Single" and Gender is not "Male" */}
+                  {employee.personalInformation?.civilStatus?.toLowerCase() !==
+                    "single" &&
+                    employee.personalInformation?.gender?.toLowerCase() ===
+                      "female" && (
+                      <InfoItem
+                        label="Maiden Name"
+                        value={employee.personalInformation?.maidenName}
+                      />
+                    )}
+
                   <InfoItem
                     label="Birthdate"
                     value={formatDate(employee.personalInformation?.birthdate)}
@@ -174,14 +194,23 @@ const EmployeeDetails = () => {
               label="Position"
               value={employee.employmentInformation?.position?.name}
             />
-            <InfoItem
-              label="Department"
-              value={employee.employmentInformation?.department?.name}
-            />
-            <InfoItem
-              label="Cluster"
-              value={employee.employmentInformation?.cluster?.name}
-            />
+
+            {/* Conditionally render Department */}
+            {isDepartmentVisible() && (
+              <InfoItem
+                label="Department"
+                value={employee.employmentInformation?.department?.name}
+              />
+            )}
+
+            {/* Conditionally render Cluster */}
+            {isClusterVisible() && (
+              <InfoItem
+                label="Cluster"
+                value={employee.employmentInformation?.cluster?.name}
+              />
+            )}
+
             <InfoItem
               label="Employment Status"
               value={employee.employmentInformation?.employmentStatus?.name}
