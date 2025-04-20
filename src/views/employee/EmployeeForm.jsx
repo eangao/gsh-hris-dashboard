@@ -1315,10 +1315,8 @@ const EmployeeForm = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   Year Graduated <span className="text-red-700">*</span>
                 </label>
-                <input
-                  type="number"
-                  min="1900"
-                  max={new Date().getFullYear()}
+                <select
+                  required
                   value={schoolFormData.yearGraduated}
                   onChange={(e) =>
                     setSchoolFormData({
@@ -1327,7 +1325,17 @@ const EmployeeForm = () => {
                     })
                   }
                   className="w-full p-2 border rounded mt-1"
-                />
+                >
+                  <option value="">Select Year</option>
+                  {Array.from(
+                    { length: new Date().getFullYear() - 1950 + 1 },
+                    (_, i) => 1950 + i
+                  ).map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="mt-6 flex justify-end space-x-3">

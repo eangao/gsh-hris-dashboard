@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
+import WorkSchedule from "./../../views/admin/WorkSchedule";
 
 // Async Thunks
 export const fetchWorkSchedules = createAsyncThunk(
@@ -39,11 +40,15 @@ export const createWorkSchedule = createAsyncThunk(
 
 export const updateWorkSchedule = createAsyncThunk(
   "workSchedule/updateWorkSchedule",
-  async ({ id, scheduleData }, { rejectWithValue, fulfillWithValue }) => {
+  async ({ _id, ...scheduleData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/work-schedule/${id}`, scheduleData, {
-        withCredentials: true,
-      });
+      const { data } = await api.put(
+        `/update-work-schedule/${_id}`,
+        scheduleData,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -53,9 +58,9 @@ export const updateWorkSchedule = createAsyncThunk(
 
 export const deleteWorkSchedule = createAsyncThunk(
   "workSchedule/deleteWorkSchedule",
-  async ({ id, dateKey }, { rejectWithValue, fulfillWithValue }) => {
+  async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/work-schedule/${id}`, {
+      const { data } = await api.delete(`/delete-work-schedule/${id}`, {
         withCredentials: true,
       });
       return fulfillWithValue(data);
@@ -71,9 +76,9 @@ const workScheduleSlice = createSlice({
     loading: false,
     successMessage: "",
     errorMessage: "",
-    schedules: [],
-    schedule: "",
-    totalSchedule: 0,
+    workSchedules: [],
+    workSchedule: "",
+    totalWorkSchedule: 0,
   },
   reducers: {
     messageClear: (state) => {
@@ -82,13 +87,13 @@ const workScheduleSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch Schedules
+    // Fetch workScheduless
     builder.addCase(fetchWorkSchedules.fulfilled, (state, { payload }) => {
-      state.totalSchedule = payload.totalSchedule;
-      state.schedules = payload.schedules;
+      state.totalWorkSchedule = payload.totalWorkSchedule;
+      state.workSchedules = payload.workSchedules;
     });
 
-    // Create Schedule
+    // Create workSchedules
     builder
       .addCase(createWorkSchedule.pending, (state, { payload }) => {
         state.loading = true;
@@ -102,47 +107,40 @@ const workScheduleSlice = createSlice({
         state.successMessage = payload.message;
       });
 
-    // Update Schedule
-    builder.addCase(updateWorkSchedule.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(updateWorkSchedule.fulfilled, (state, action) => {
-      state.loading = false;
-      state.success = true;
-      state.message = "Schedule updated successfully";
-      const { dateKey, schedule } = action.payload;
-      if (state.schedules[dateKey]) {
-        state.schedules[dateKey] = state.schedules[dateKey].map((s) =>
-          s.id === schedule.id ? schedule : s
-        );
-      }
-    });
-    builder.addCase(updateWorkSchedule.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
-    });
+    // Update workSchedules
+    builder
+      .addCase(updateWorkSchedule.pending, (state, { payload }) => {
+        state.loading = true;
+      })
+      .addCase(updateWorkSchedule.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(updateWorkSchedule.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      });
 
-    // Delete Schedule
-    builder.addCase(deleteWorkSchedule.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(deleteWorkSchedule.fulfilled, (state, action) => {
-      state.loading = false;
-      state.success = true;
-      state.message = "Schedule deleted successfully";
-      const { dateKey, id } = action.payload;
-      if (state.schedules[dateKey]) {
-        state.schedules[dateKey] = state.schedules[dateKey].filter(
-          (s) => s.id !== id
+    // Delete workSchedules
+    builder
+      .addCase(deleteWorkSchedule.pending, (state, { payload }) => {
+        state.loading = true;
+      })
+      .addCase(deleteWorkSchedule.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(deleteWorkSchedule.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+
+        // Remove the deleted workSchedules from the state
+        state.workSchedules = state.workSchedules.filter(
+          (workSchedule) => workSchedule._id !== payload.workScheduleId
         );
-      }
-    });
-    builder.addCase(deleteWorkSchedule.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
-    });
+      });
   },
 });
 
-export const { messageClear, updateLocalSchedule } = workScheduleSlice.actions;
+export const { messageClear } = workScheduleSlice.actions;
 export default workScheduleSlice.reducer;
