@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
-import WorkSchedule from "./../../views/admin/WorkSchedule";
 
 // Async Thunks
 export const fetchWorkSchedules = createAsyncThunk(
@@ -16,6 +15,21 @@ export const fetchWorkSchedules = createAsyncThunk(
           withCredentials: true,
         }
       );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchAllWorkSchedules = createAsyncThunk(
+  "workSchedule/fetchAllWorkSchedules",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get("/fetch-all-work-schedules", {
+        withCredentials: true,
+      });
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -90,6 +104,10 @@ const workScheduleSlice = createSlice({
     // Fetch workScheduless
     builder.addCase(fetchWorkSchedules.fulfilled, (state, { payload }) => {
       state.totalWorkSchedule = payload.totalWorkSchedule;
+      state.workSchedules = payload.workSchedules;
+    });
+
+    builder.addCase(fetchAllWorkSchedules.fulfilled, (state, { payload }) => {
       state.workSchedules = payload.workSchedules;
     });
 

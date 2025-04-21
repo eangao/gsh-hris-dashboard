@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchEmployees } from "../../store/Reducers/employeeReducer";
+import {
+  fetchEmployees,
+  deleteEmployee,
+  messageClear,
+} from "../../store/Reducers/employeeReducer";
 import Search from "../components/Search";
 import Pagination from "../components/Pagination";
+import { FaTrashAlt } from "react-icons/fa";
+import toast from "react-hot-toast";
 
 const Employee = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { employees, totalEmployee, loading } = useSelector(
-    (state) => state.employee
-  );
+
+  const { employees, totalEmployee, loading, successMessage, errorMessage } =
+    useSelector((state) => state.employee);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -30,6 +36,32 @@ const Employee = () => {
 
     dispatch(fetchEmployees(obj));
   }, [searchValue, currentPage, perPage, dispatch]);
+
+  useEffect(() => {
+    if (successMessage) {
+      toast.success(successMessage);
+      dispatch(messageClear());
+    }
+
+    if (errorMessage) {
+      toast.error(errorMessage);
+      dispatch(messageClear());
+    }
+  }, [successMessage, errorMessage]);
+
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteName, setDeleteName] = useState(null);
+
+  const handleDelete = () => {
+    dispatch(deleteEmployee(deleteId));
+
+    setDeleteId(null);
+  };
+
+  const handleDeleteConfirm = (id, name) => {
+    setDeleteId(id);
+    setDeleteName(name);
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -129,6 +161,18 @@ const Employee = () => {
                     >
                       Edit
                     </button>
+                    {/* <button
+                      onClick={() =>
+                        handleDeleteConfirm(
+                          employee._id,
+                          `${employee.personalInformation?.lastName}, ${employee.personalInformation?.firstName}`
+                        )
+                      }
+                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                      disabled={loading}
+                    >
+                      <FaTrashAlt />
+                    </button> */}
                   </td>
                 </tr>
               ))
@@ -149,6 +193,32 @@ const Employee = () => {
             perPage={perPage}
             showItem={Math.min(5, Math.ceil(totalEmployee / perPage))}
           />
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteId !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
+            <p>{`Are you sure you want to delete ${deleteName}?`}</p>
+            <div className="flex justify-end space-x-2 mt-4">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                disabled={loading}
+              >
+                {loading ? "loading..." : "Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

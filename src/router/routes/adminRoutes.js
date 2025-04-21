@@ -6,12 +6,18 @@ const EmployeeForm = lazy(() => import("../../views/employee/EmployeeForm"));
 const EmployeeDetails = lazy(() =>
   import("../../views/employee/EmployeeDetails")
 );
+
 const UserManagement = lazy(() => import("../../views/admin/UserManagement"));
 const Position = lazy(() => import("../../views/admin/Position"));
 const Cluster = lazy(() => import("../../views/admin/Cluster"));
 const Department = lazy(() => import("../../views/admin/Department"));
 const WorkSchedule = lazy(() => import("../../views/admin/WorkSchedule"));
+
 const DutySchedule = lazy(() => import("../../views/admin/DutySchedule"));
+const DutyScheduleForm = lazy(() =>
+  import("../../views/admin/DutyScheduleForm")
+);
+
 const DailyAttendance = lazy(() => import("../../views/admin/DailyAttendance"));
 const Holiday = lazy(() => import("../../views/admin/Holiday"));
 const Role = lazy(() => import("../../views/admin/Role"));
@@ -90,6 +96,18 @@ export const adminRoutes = [
   {
     path: "admin/dashboard/duty-schedule",
     element: <DutySchedule />,
+    role: "admin",
+  },
+
+  {
+    path: "admin/dashboard/duty-schedule/add",
+    element: <DutyScheduleForm />,
+    role: "admin",
+  },
+
+  {
+    path: "admin/dashboard/duty-schedule/edit/:id",
+    element: <DutyScheduleForm />,
     role: "admin",
   },
 

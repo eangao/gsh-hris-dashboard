@@ -53,22 +53,22 @@ export const fetchEmployeeDetailsById = createAsyncThunk(
   }
 );
 
-// export const fetchAllDepartments = createAsyncThunk(
-//   "department/fetchAllDepartments",
-//   async (_, { rejectWithValue, fulfillWithValue }) => {
-//     try {
-//       const { data } = await api.get("/fetch-all-departments", {
-//         withCredentials: true,
-//       });
+export const fetchAllEmployees = createAsyncThunk(
+  "employee/fetchAllEmployees",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get("/fetch-all-employees", {
+        withCredentials: true,
+      });
 
-//       // console.log(data);
+      // console.log(data);
 
-//       return fulfillWithValue(data);
-//     } catch (error) {
-//       return rejectWithValue(error.response.data);
-//     }
-//   }
-// );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
 
 export const createEmployee = createAsyncThunk(
   "employee/createEmployee",
@@ -98,19 +98,19 @@ export const updateEmployee = createAsyncThunk(
   }
 );
 
-// export const deleteDepartment = createAsyncThunk(
-//   "department/deleteDepartment",
-//   async (id, { rejectWithValue, fulfillWithValue }) => {
-//     try {
-//       const { data } = await api.delete(`/delete-department/${id}`, {
-//         withCredentials: true,
-//       });
-//       return fulfillWithValue(data);
-//     } catch (error) {
-//       return rejectWithValue(error.response.data);
-//     }
-//   }
-// );
+export const deleteEmployee = createAsyncThunk(
+  "employee/deleteEmployee",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.delete(`/delete-employee/${id}`, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
 
 const employeeSlice = createSlice({
   name: "employee",
@@ -145,10 +145,11 @@ const employeeSlice = createSlice({
       }
     );
 
-    //  Fetch All Clusters
-    // builder.addCase(fetchAllDepartments.fulfilled, (state, { payload }) => {
-    //   state.departments = payload.departments;
-    // });
+    //  Fetch All Employees
+    builder.addCase(fetchAllEmployees.fulfilled, (state, { payload }) => {
+      state.employees = payload.employees;
+    });
+
     builder
       .addCase(createEmployee.pending, (state) => {
         state.loading = true;
@@ -180,21 +181,22 @@ const employeeSlice = createSlice({
         state.loading = false;
         state.successMessage = payload.message;
       });
-    // builder
-    //   .addCase(deleteDepartment.pending, (state) => {
-    //     state.loading = true;
-    //   })
-    //   .addCase(deleteDepartment.rejected, (state, { payload }) => {
-    //     state.loading = false;
-    //     state.errorMessage = payload.error;
-    //   })
-    //   .addCase(deleteDepartment.fulfilled, (state, { payload }) => {
-    //     state.loading = false;
-    //     state.successMessage = payload.message;
-    //     state.departments = state.departments.filter(
-    //       (department) => department._id !== payload.departmentId
-    //     );
-    //   });
+
+    builder
+      .addCase(deleteEmployee.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteEmployee.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(deleteEmployee.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+        state.employees = state.employees.filter(
+          (employee) => employee._id !== payload.employeeId
+        );
+      });
   },
 });
 

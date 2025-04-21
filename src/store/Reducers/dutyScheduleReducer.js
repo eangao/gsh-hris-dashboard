@@ -1,12 +1,38 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
+// Async Thunks
 export const fetchDutySchedules = createAsyncThunk(
   "dutySchedule/fetchDutySchedules",
-  async (_, { rejectWithValue }) => {
+  async (
+    { perPage, page, searchValue },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
-      const { data } = await api.get("/duty-schedule");
-      return data;
+      const { data } = await api.get(
+        `/fetch-duty-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+//for edit
+export const fetchDutyScheduleById = createAsyncThunk(
+  "dutySchedule/fetchDutyScheduleById",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(`/fetch-duty-schedule/${id}`, {
+        withCredentials: true,
+      });
+
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -15,10 +41,12 @@ export const fetchDutySchedules = createAsyncThunk(
 
 export const createDutySchedule = createAsyncThunk(
   "dutySchedule/createDutySchedule",
-  async (scheduleData, { rejectWithValue }) => {
+  async (scheduleData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/duty-schedule", scheduleData);
-      return data;
+      const { data } = await api.post("/create-duty-schedule", scheduleData, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -27,10 +55,16 @@ export const createDutySchedule = createAsyncThunk(
 
 export const updateDutySchedule = createAsyncThunk(
   "dutySchedule/updateDutySchedule",
-  async ({ id, scheduleData }, { rejectWithValue }) => {
+  async ({ _id, ...scheduleData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/duty-schedule/${id}`, scheduleData);
-      return data;
+      const { data } = await api.put(
+        `/update-duty-schedule/${_id}`,
+        scheduleData,
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -39,10 +73,12 @@ export const updateDutySchedule = createAsyncThunk(
 
 export const deleteDutySchedule = createAsyncThunk(
   "dutySchedule/deleteDutySchedule",
-  async (id, { rejectWithValue }) => {
+  async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/duty-schedule/${id}`);
-      return data;
+      const { data } = await api.delete(`/delete-duty-schedule/${id}`, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -52,96 +88,85 @@ export const deleteDutySchedule = createAsyncThunk(
 const dutyScheduleSlice = createSlice({
   name: "dutySchedule",
   initialState: {
-    schedules: {},
     loading: false,
-    error: null,
-    success: false,
-    message: "",
+    successMessage: "",
+    errorMessage: "",
+    dutySchedules: [],
+    dutySchedule: "",
+    totalDutySchedule: 0,
   },
   reducers: {
     messageClear: (state) => {
-      state.error = null;
-      state.success = false;
-      state.message = "";
-    },
-    updateLocalSchedule: (state, action) => {
-      const { dateKey, schedules } = action.payload;
-      state.schedules = {
-        ...state.schedules,
-        [dateKey]: schedules,
-      };
+      state.errorMessage = "";
+      state.successMessage = "";
     },
   },
   extraReducers: (builder) => {
-    // Fetch Schedules
-    builder.addCase(fetchDutySchedules.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(fetchDutySchedules.fulfilled, (state, action) => {
-      state.loading = false;
-      state.schedules = action.payload;
-    });
-    builder.addCase(fetchDutySchedules.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
-    });
+    builder
+      .addCase(fetchDutySchedules.fulfilled, (state, { payload }) => {
+        state.totalDutySchedule = payload.totalDutySchedule;
+        state.dutySchedules = payload.dutySchedules;
+      })
+      .addCase(fetchDutyScheduleById.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchDutyScheduleById.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.dutySchedule = payload.dutySchedule;
+      })
+      .addCase(fetchDutyScheduleById.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      });
 
-    // Create Schedule
-    builder.addCase(createDutySchedule.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(createDutySchedule.fulfilled, (state, action) => {
-      state.loading = false;
-      state.success = true;
-      state.message = "Schedule created successfully";
-      const { dateKey, schedule } = action.payload;
-      state.schedules[dateKey] = [
-        ...(state.schedules[dateKey] || []),
-        schedule,
-      ];
-    });
-    builder.addCase(createDutySchedule.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
-    });
+    builder
+      .addCase(createDutySchedule.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(createDutySchedule.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(createDutySchedule.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+        state.dutySchedules = [
+          ...state.dutySchedules,
+          payload.dutySchedule,
+        ].sort((a, b) => a.name.localeCompare(b.name));
+        state.totalDutySchedule = state.totalDutySchedule + 1;
+      });
 
-    // Update Schedule
-    builder.addCase(updateDutySchedule.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(updateDutySchedule.fulfilled, (state, action) => {
-      state.loading = false;
-      state.success = true;
-      state.message = "Schedule updated successfully";
-      const { dateKey, schedule } = action.payload;
-      state.schedules[dateKey] = state.schedules[dateKey].map((s) =>
-        s.id === schedule.id ? schedule : s
-      );
-    });
-    builder.addCase(updateDutySchedule.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
-    });
+    builder
+      .addCase(updateDutySchedule.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateDutySchedule.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(updateDutySchedule.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      });
 
-    // Delete Schedule
-    builder.addCase(deleteDutySchedule.pending, (state) => {
-      state.loading = true;
-    });
-    builder.addCase(deleteDutySchedule.fulfilled, (state, action) => {
-      state.loading = false;
-      state.success = true;
-      state.message = "Schedule deleted successfully";
-      const { dateKey, id } = action.payload;
-      state.schedules[dateKey] = state.schedules[dateKey].filter(
-        (s) => s.id !== id
-      );
-    });
-    builder.addCase(deleteDutySchedule.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload?.message;
-    });
+    builder
+      .addCase(deleteDutySchedule.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(deleteDutySchedule.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(deleteDutySchedule.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+        state.dutySchedules = state.dutySchedules.filter(
+          (schedule) => schedule._id !== payload.dutyScheduleId
+        );
+      });
   },
 });
 
-export const { messageClear, updateLocalSchedule } = dutyScheduleSlice.actions;
+export const { messageClear } = dutyScheduleSlice.actions;
 export default dutyScheduleSlice.reducer;

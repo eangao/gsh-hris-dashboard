@@ -51,9 +51,11 @@ const Pagination = ({
   return (
     <div className="flex justify-between items-center w-full">
       {/* Page Indicator */}
-      <span className="text-gray-700 font-medium">
-        {pageNumber > 0 && `Page ${pageNumber} of ${totalPage}`}
-      </span>
+      {totalItem > 0 && pageNumber > 0 && (
+        <span className="text-gray-700 font-medium">
+          Page {pageNumber} of {totalPage}
+        </span>
+      )}
 
       {/* Pagination Buttons */}
       <ul className="flex gap-2">
