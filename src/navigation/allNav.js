@@ -15,6 +15,13 @@ export const allNav = [
     path: "/admin/dashboard",
   },
   {
+    id: 12,
+    title: "Dashboard",
+    icon: <AiOutlineDashboard />,
+    role: "hr",
+    path: "/hr/dashboard",
+  },
+  {
     id: 2,
     title: "Daily Attendance",
     icon: <MdOutlinePersonPin />,
@@ -32,8 +39,8 @@ export const allNav = [
     id: 4,
     title: "Employee",
     icon: <FaPeopleGroup />,
-    role: "admin",
-    path: "/admin/dashboard/employee",
+    role: "hr",
+    path: "/hr/dashboard/employee",
   },
 
   {
@@ -88,13 +95,6 @@ export const allNav = [
   },
 
   // HR Dashboard Navigation
-  {
-    id: 12,
-    title: "Dashboard",
-    icon: <AiOutlineDashboard />,
-    role: "hr",
-    path: "/hr/dashboard",
-  },
 
   // Manager Dashboard Navigation
   {

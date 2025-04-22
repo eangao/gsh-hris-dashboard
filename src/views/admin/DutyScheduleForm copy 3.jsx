@@ -13,8 +13,6 @@ import { fetchAllEmployees } from "../../store/Reducers/employeeReducer";
 import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
 
 import toast from "react-hot-toast";
-import { PropagateLoader } from "react-spinners";
-import { buttonOverrideStyle } from "./../../utils/utils";
 
 // Holiday data for 2025
 const HOLIDAYS_2025 = [
@@ -216,6 +214,33 @@ const DutyScheduleForm = () => {
     return isWeekend(date) || isHoliday(date);
   };
 
+  const handlePrevMonth = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
+      const today = new Date();
+      const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const prevMonth = new Date(
+        newDate.getFullYear(),
+        newDate.getMonth() - 1,
+        1
+      );
+
+      if (prevMonth >= currentMonth) {
+        return prevMonth;
+      } else {
+        return prev;
+      }
+    });
+  };
+
+  const handleNextMonth = () => {
+    setCurrentDate((prev) => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
+  };
+
   const handleDateClick = (date) => {
     if (!date) return;
     setSelectedDate(date);
@@ -376,114 +401,13 @@ const DutyScheduleForm = () => {
     }));
   };
 
-  const [allEntries, setAllEntries] = useState([]); // Master state for all dates
-
-  const getCustomDateRange = (date) => {
-    const end = new Date(date.getFullYear(), date.getMonth(), 25);
-    const start = new Date(date.getFullYear(), date.getMonth() - 1, 26);
-    return { start, end };
-  };
-
-  // complete working code to filter entries by start and end date, with
-  // proper timezone handling for the Philippines (UTC+8):
-  const normalizeDate = (date, isEnd = false) => {
-    const d = new Date(date);
-    if (isEnd) {
-      d.setHours(23, 59, 59, 999); // End of the day
-    } else {
-      d.setHours(0, 0, 0, 0); // Start of the day
-    }
-    return d;
-  };
-
-  const filterEntriesByDateRange = (entries, start, end) => {
-    const normalizedStart = normalizeDate(start);
-    const normalizedEnd = normalizeDate(end, true);
-
-    return entries.filter((entry) => {
-      const entryDate = normalizeDate(new Date(entry.date));
-      return entryDate >= normalizedStart && entryDate <= normalizedEnd;
-    });
-  };
-
-  const handleMonthChange = (newDate) => {
-    // Save current entries before changing
-    const updatedAllEntries = [...allEntries];
-
-    // Remove current range entries first
-    const { start: currentStart, end: currentEnd } =
-      getCustomDateRange(currentDate);
-    const preserved = updatedAllEntries.filter(
-      (entry) =>
-        new Date(entry.date) < currentStart || new Date(entry.date) > currentEnd
-    );
-
-    // Merge current entries into allEntries
-    const merged = [...preserved, ...localDutySchedule.entries];
-
-    setAllEntries(merged); // Save all entries
-
-    // Set new range
-    const { start, end } = getCustomDateRange(newDate);
-    const filtered = filterEntriesByDateRange(merged, start, end);
-
-    setLocalDutySchedule((prev) => ({
-      ...prev,
-      startDate: start,
-      endDate: end,
-      entries: filtered,
-    }));
-
-    setCurrentDate(newDate);
-  };
-
-  const handleNextMonth = () => {
-    const nextDate = new Date(currentDate);
-    nextDate.setMonth(nextDate.getMonth() + 1);
-    handleMonthChange(nextDate);
-  };
-
-  const handlePrevMonth = () => {
-    const prevDate = new Date(currentDate);
-    prevDate.setMonth(prevDate.getMonth() - 1);
-    const today = new Date();
-    const currentMonthStart = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      1
-    );
-
-    if (prevDate >= currentMonthStart) {
-      handleMonthChange(prevDate);
-    }
-  };
-
-  const handleSave = async () => {
-    const { startDate, endDate } = localDutySchedule;
-
-    // Filter only entries in current range
-    const filteredEntries = filterEntriesByDateRange(
-      allEntries,
-      startDate,
-      endDate
-    );
-
-    console.log(startDate);
-    console.log(endDate);
-    console.log(allEntries);
-    console.log(filteredEntries);
-
-    const payload = {
-      ...localDutySchedule,
-      entries: filteredEntries,
-    };
-
+  const handleSave = () => {
     if (isEditMode) {
-      console.log(payload);
-      dispatch(updateDutySchedule({ _id: id, ...payload }));
+      console.log(localDutySchedule);
+      dispatch(updateDutySchedule({ _id: id, ...localDutySchedule }));
     } else {
-      console.log(payload);
-      dispatch(createDutySchedule(payload));
+      console.log(localDutySchedule);
+      dispatch(createDutySchedule(localDutySchedule));
     }
   };
 
@@ -798,21 +722,12 @@ const DutyScheduleForm = () => {
           >
             Cancel
           </button>
-
           <button
             onClick={handleSave}
-            disabled={loading ? true : false}
-            className={`bg-blue-500  text-white px-4 py-2 rounded ${
-              loading ? "" : " hover:bg-blue-600"
-            } overflow-hidden`}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            disabled={loading}
           >
-            {loading ? (
-              <PropagateLoader color="#fff" cssOverride={buttonOverrideStyle} />
-            ) : isEditMode ? (
-              "Update Duty Schedule"
-            ) : (
-              "Create Duty Schedule"
-            )}
+            {isEditMode ? "Update Duty Schedule" : "Create Duty Schedule"}
           </button>
         </div>
       </div>

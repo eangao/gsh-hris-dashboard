@@ -378,13 +378,18 @@ const DutyScheduleForm = () => {
 
   const [allEntries, setAllEntries] = useState([]); // Master state for all dates
 
-  const getCustomDateRange = (date) => {
-    const end = new Date(date.getFullYear(), date.getMonth(), 25);
-    const start = new Date(date.getFullYear(), date.getMonth() - 1, 26);
-    return { start, end };
-  };
+  // const formatToLocalDate = (date) => {
+  //   // Add 8 hours for Philippines timezone (UTC+8)
+  //   const philippinesDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+  //   return philippinesDate.toISOString().split("T")[0];
+  // };
 
-  // complete working code to filter entries by start and end date, with
+  // const getCustomDateRange = (date) => {
+  //   const end = new Date(date.getFullYear(), date.getMonth(), 25);
+  //   const start = new Date(date.getFullYear(), date.getMonth() - 1, 26);
+  //   return { start, end };
+  // };
+
   // proper timezone handling for the Philippines (UTC+8):
   const normalizeDate = (date, isEnd = false) => {
     const d = new Date(date);
