@@ -14,6 +14,59 @@ import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { PropagateLoader } from "react-spinners";
 import { buttonOverrideStyle } from "../../utils/utils";
 
+const shiftColors = [
+  "bg-yellow-100",
+  "bg-blue-100",
+  "bg-purple-100",
+  "bg-green-100",
+  "bg-pink-100",
+  "bg-orange-100",
+  "bg-red-100",
+  "bg-teal-100",
+  "bg-indigo-100",
+  "bg-gray-100",
+  "bg-lime-100",
+  "bg-amber-100",
+  "bg-cyan-100",
+  "bg-rose-100",
+  "bg-violet-100",
+  "bg-fuchsia-100",
+  "bg-emerald-100",
+  "bg-sky-100",
+  "bg-slate-100",
+  "bg-zinc-100",
+  "bg-yellow-200",
+  "bg-blue-200",
+  "bg-purple-200",
+  "bg-green-200",
+  "bg-pink-200",
+  "bg-orange-200",
+  "bg-red-200",
+  "bg-teal-200",
+  "bg-indigo-200",
+  "bg-gray-200",
+  "bg-lime-200",
+  "bg-amber-200",
+  "bg-cyan-200",
+  "bg-rose-200",
+  "bg-violet-200",
+  "bg-fuchsia-200",
+  "bg-emerald-200",
+  "bg-sky-200",
+  "bg-slate-200",
+  "bg-zinc-200",
+  "bg-yellow-300",
+  "bg-blue-300",
+  "bg-purple-300",
+  "bg-green-300",
+  "bg-pink-300",
+  "bg-orange-300",
+  "bg-red-300",
+  "bg-teal-300",
+  "bg-indigo-300",
+  "bg-gray-300",
+];
+
 const WorkSchedule = () => {
   const dispatch = useDispatch();
   const {
@@ -87,13 +140,23 @@ const WorkSchedule = () => {
     }));
   };
 
+  const getUniqueShiftColor = () => {
+    const usedColors = workSchedules.map((ws) => ws.shiftColor);
+    const availableColors = shiftColors.filter(
+      (color) => !usedColors.includes(color)
+    );
+    return availableColors.length > 0 ? availableColors[0] : "bg-white";
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (formData._id) {
       dispatch(updateWorkSchedule(formData));
     } else {
-      dispatch(createWorkSchedule(formData));
+      const uniqueColor = getUniqueShiftColor();
+      const newFormData = { ...formData, shiftColor: uniqueColor };
+      dispatch(createWorkSchedule(newFormData));
     }
   };
 

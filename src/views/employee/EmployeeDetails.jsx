@@ -48,9 +48,7 @@ const EmployeeDetails = () => {
     employee.employmentInformation?.position?.name?.toLowerCase() || "";
 
   const isDepartmentVisible = () =>
-    positionName !== "president" &&
-    positionName !== "director" &&
-    positionName !== "physician";
+    positionName !== "president" && positionName !== "director";
 
   const isClusterVisible = () => positionName === "director";
 

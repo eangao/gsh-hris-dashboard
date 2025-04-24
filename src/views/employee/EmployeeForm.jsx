@@ -392,7 +392,7 @@ const EmployeeForm = () => {
     handleChange("employmentInformation", "position", selectedId);
 
     // Clear hidden fields
-    if (name === "president" || name === "physician") {
+    if (name === "president") {
       handleChange("employmentInformation", "department", null);
       handleChange("employmentInformation", "cluster", null);
     } else if (name === "director") {
