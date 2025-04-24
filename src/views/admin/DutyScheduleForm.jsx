@@ -53,13 +53,14 @@ const DutyScheduleForm = () => {
   const { departments } = useSelector((state) => state.department);
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [days, setDays] = useState([]);
+
+  const [allEntries, setAllEntries] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [employeeInput, setEmployeeInput] = useState("");
   const [selectedShift, setSelectedShift] = useState("");
   const [description, setDescription] = useState("");
-
-  const [days, setDays] = useState([]);
 
   const [localDutySchedule, setLocalDutySchedule] = useState({
     name: "",
@@ -93,26 +94,31 @@ const DutyScheduleForm = () => {
 
   // Update local state when duty schedule data is loaded
   useEffect(() => {
-    //Edit Schedule
+    // Edit Schedule
     if (isEditMode && dutySchedule) {
       const startDateObj = new Date(dutySchedule.startDate);
       const endDateObj = new Date(dutySchedule.endDate);
 
       if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
+        // Set local duty schedule without entries
         setLocalDutySchedule({
           ...dutySchedule,
           name: dutySchedule.name,
           department: dutySchedule.department?._id || dutySchedule.department,
-          startDate: formatDateToString(startDateObj),
-          endDate: formatDateToString(endDateObj),
-          entries:
-            dutySchedule.entries?.map((entry) => ({
-              ...entry,
-              date: new Date(entry.date),
-              employeeSchedules: entry.employeeSchedules || [],
-            })) || [],
+          startDate: formatToPHDateString(startDateObj),
+          endDate: formatToPHDateString(endDateObj),
         });
 
+        // Set allEntries state with the entries from dutySchedule
+        setAllEntries(
+          dutySchedule.entries?.map((entry) => ({
+            ...entry,
+            date: new Date(entry.date),
+            employeeSchedules: entry.employeeSchedules || [],
+          })) || []
+        );
+
+        // Set the current date to the end date of the duty schedule
         setCurrentDate(endDateObj);
       }
     }
@@ -122,11 +128,7 @@ const DutyScheduleForm = () => {
   // ex.output =>  May 2025, April 2025
   //and will set the startDate and endDate
   useEffect(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    const startDate = new Date(year, month - 1, 26);
-    const endDate = new Date(year, month, 25);
+    const { startDate, endDate } = calculateDutyPeriod(currentDate);
 
     const days = [];
     const currentDateSelected = new Date(startDate);
@@ -138,19 +140,15 @@ const DutyScheduleForm = () => {
       );
     }
 
-    // ✅ This part only runs if not editing
-    if (!isEditMode) {
-      setLocalDutySchedule((prev) => ({
-        ...prev,
-        name: formatDate(currentDate),
-        startDate: formatToLocalDate(startDate),
-        endDate: formatToLocalDate(endDate),
-      }));
-    }
+    setLocalDutySchedule((prev) => ({
+      ...prev,
+      name: formatPHMonthYear(currentDate),
+      startDate: formatToPHDateString(startDate),
+      endDate: formatToPHDateString(endDate),
+    }));
 
-    // ✅ Always update the days list
     setDays(days);
-  }, [currentDate, isEditMode]);
+  }, [currentDate]);
 
   // Handle success/error messages
   useEffect(() => {
@@ -177,30 +175,35 @@ const DutyScheduleForm = () => {
     }
   }, [successMessage, errorMessage, dispatch, isEditMode, navigate]);
 
+  const calculateDutyPeriod = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    const startDate = new Date(year, month - 1, 26);
+    const endDate = new Date(year, month, 25);
+
+    return {
+      startDate,
+      endDate,
+    };
+  };
+
   //You can use this to format it as YYYY-MM-DD in Philippines timezone:
-  const formatToLocalDate = (date) => {
+  const formatToPHDateString = (date) => {
     // Add 8 hours for Philippines timezone (UTC+8)
     const philippinesDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
     return philippinesDate.toISOString().split("T")[0];
   };
 
-  const formatDateToString = (date) => {
-    if (!date) return "";
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
   const isHoliday = (date) => {
     if (!date) return false;
-    const dateStr = formatDateToString(date);
+    const dateStr = formatToPHDateString(date);
     return HOLIDAYS_2025.some((holiday) => holiday.date === dateStr);
   };
 
   const getHolidayName = (date) => {
     if (!date) return null;
-    const dateStr = formatDateToString(date);
+    const dateStr = formatToPHDateString(date);
     const holiday = HOLIDAYS_2025?.find((h) => h.date === dateStr);
     return holiday ? holiday.name : null;
   };
@@ -227,10 +230,10 @@ const DutyScheduleForm = () => {
 
   const getEmployeesForDate = (date) => {
     if (!date) return [];
-    const dateKey = formatDateToString(date);
+    const dateKey = formatToPHDateString(date);
 
-    const entry = localDutySchedule.entries?.find(
-      (e) => formatDateToString(new Date(e.date)) === dateKey
+    const entry = allEntries?.find(
+      (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
     if (!entry) return [];
 
@@ -247,12 +250,28 @@ const DutyScheduleForm = () => {
           : es.workSchedule?._id;
       const workSchedule = workSchedules.find((ws) => ws._id === wsId);
 
+      const shiftName = workSchedule?.name?.toLowerCase() || "unknown";
+
+      const shiftTime = workSchedule
+        ? workSchedule.type === "Standard"
+          ? `(${formatTimePH(workSchedule.morningIn)}-${formatTimePH(
+              workSchedule.morningOut
+            )}, ${formatTimePH(workSchedule.afternoonIn)}-${formatTimePH(
+              workSchedule.afternoonOut
+            )})`
+          : `(${formatTimePH(workSchedule.startTime)}-${formatTimePH(
+              workSchedule.endTime
+            )})`
+        : "";
+
       return {
         id: empId,
         name: employee
           ? `${employee.personalInformation.lastName}, ${employee.personalInformation.firstName}`
           : "Unknown",
-        shift: workSchedule ? workSchedule.name.toLowerCase() : "unknown",
+        shiftName,
+        shiftTime,
+        shift: `${shiftName} ${shiftTime}`,
         description: es.remarks || "",
       };
     });
@@ -261,13 +280,17 @@ const DutyScheduleForm = () => {
   const handleEmployeeAdd = () => {
     if (!employeeInput || !selectedShift || !selectedDate) return;
 
-    const dateKey = formatDateToString(selectedDate);
-    let entries = [...localDutySchedule.entries];
+    const dateKey = formatToPHDateString(selectedDate);
+
+    // Create a deep copy of allEntries to avoid mutation errors
+    let entries = JSON.parse(JSON.stringify(allEntries));
+
     let entryIndex = entries.findIndex(
-      (e) => formatDateToString(new Date(e.date)) === dateKey
+      (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
 
     if (entryIndex === -1) {
+      // If no entry found for the selected date, create a new one
       entries.push({
         date: selectedDate,
         employeeSchedules: [
@@ -285,12 +308,14 @@ const DutyScheduleForm = () => {
       );
 
       if (existingIndex === -1) {
+        // If employee not already scheduled, add new schedule
         employeeSchedules.push({
           employee: employeeInput,
           workSchedule: selectedShift,
           remarks: description,
         });
       } else {
+        // If employee is already scheduled, update their schedule
         employeeSchedules[existingIndex] = {
           employee: employeeInput,
           workSchedule: selectedShift,
@@ -301,17 +326,20 @@ const DutyScheduleForm = () => {
       entries[entryIndex].employeeSchedules = employeeSchedules;
     }
 
-    setLocalDutySchedule({ ...localDutySchedule, entries });
+    // Update the allEntries state with the modified entries
+    setAllEntries(entries);
+
+    // Close the modal
     setIsModalOpen(false);
   };
 
   const handleEmployeeRemove = (date, employeeId) => {
     if (!date || !employeeId) return;
 
-    const dateKey = formatDateToString(date);
-    let entries = [...localDutySchedule.entries];
+    const dateKey = formatToPHDateString(date);
+    let entries = [...allEntries]; // Change localDutySchedule.entries to allEntries
     let entryIndex = entries.findIndex(
-      (e) => formatDateToString(new Date(e.date)) === dateKey
+      (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
 
     if (entryIndex === -1) return;
@@ -325,47 +353,71 @@ const DutyScheduleForm = () => {
 
     if (employeeSchedules.length === 0) {
       entries = entries.filter(
-        (e) => formatDateToString(new Date(e.date)) !== dateKey
+        (e) => formatToPHDateString(new Date(e.date)) !== dateKey
       );
     } else {
       entries[entryIndex].employeeSchedules = employeeSchedules;
     }
 
-    setLocalDutySchedule({ ...localDutySchedule, entries });
+    // Save the updated entries to allEntries instead of localDutySchedule
+    setAllEntries(entries); // Update the allEntries state
   };
 
-  const formatDate = (date, includeDay = false) => {
+  // output ex. April 2025
+  const formatPHMonthYear = (date, includeDay = false) => {
     if (!date) return "";
     return new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Manila", // This ensures it uses PH timezone
       month: "long",
       year: "numeric",
       ...(includeDay && { day: "numeric" }),
     }).format(date);
   };
 
-  const getShiftColor = (shiftType) => {
-    switch (shiftType) {
-      case "morning":
-        return "bg-yellow-100";
-      case "afternoon":
-        return "bg-blue-100";
-      case "night":
-        return "bg-purple-100";
-      case "off":
-        return "bg-gray-100";
-      default:
-        return "bg-white";
-    }
+  const shiftColors = [
+    "bg-yellow-100",
+    "bg-blue-100",
+    "bg-purple-100",
+    "bg-green-100",
+    "bg-pink-100",
+    "bg-orange-100",
+    "bg-red-100",
+    "bg-teal-100",
+    "bg-indigo-100",
+    "bg-gray-100",
+    "bg-lime-100",
+    "bg-amber-100",
+    "bg-cyan-100",
+    "bg-rose-100",
+    "bg-violet-100",
+    "bg-fuchsia-100",
+    "bg-emerald-100",
+    "bg-sky-100",
+    "bg-slate-100",
+    "bg-zinc-100",
+  ];
+
+  const getShiftColor = (shiftName) => {
+    const scheduleIndex = workSchedules.findIndex(
+      (ws) => ws.name.toLowerCase() === shiftName.toLowerCase()
+    );
+
+    if (scheduleIndex === -1) return "bg-white"; // fallback
+
+    return shiftColors[scheduleIndex % shiftColors.length];
   };
 
-  const formatTime = (time24) => {
+  const formatTimePH = (time24) => {
     if (!time24) return "";
-    const [hours, minutes] = time24.split(":")?.map(Number);
-    const date = new Date();
-    date.setHours(hours);
-    date.setMinutes(minutes);
-    const options = { hour: "numeric", minute: "numeric", hour12: true };
-    return date.toLocaleTimeString([], options);
+    const [hours, minutes] = time24.split(":").map(Number);
+    const date = new Date(Date.UTC(1970, 0, 1, hours - 8, minutes)); // UTC time minus 8 to align with PH time
+    const options = {
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+      timeZone: "Asia/Manila",
+    };
+    return new Intl.DateTimeFormat("en-US", options).format(date);
   };
 
   const handleInputChange = (e) => {
@@ -376,76 +428,37 @@ const DutyScheduleForm = () => {
     }));
   };
 
-  const [allEntries, setAllEntries] = useState([]); // Master state for all dates
-
-  const getCustomDateRange = (date) => {
-    const end = new Date(date.getFullYear(), date.getMonth(), 25);
-    const start = new Date(date.getFullYear(), date.getMonth() - 1, 26);
-    return { start, end };
-  };
-
-  // complete working code to filter entries by start and end date, with
-  // proper timezone handling for the Philippines (UTC+8):
-  const normalizeDate = (date, isEnd = false) => {
-    const d = new Date(date);
-    if (isEnd) {
-      d.setHours(23, 59, 59, 999); // End of the day
-    } else {
-      d.setHours(0, 0, 0, 0); // Start of the day
-    }
-    return d;
-  };
-
+  // Filter entries by date range
   const filterEntriesByDateRange = (entries, start, end) => {
-    const normalizedStart = normalizeDate(start);
-    const normalizedEnd = normalizeDate(end, true);
+    // Use the formatToPHDateString to format start and end dates in Philippines timezone (YYYY-MM-DD)
+    const startDate = formatToPHDateString(new Date(start));
+    const endDate = formatToPHDateString(new Date(end));
 
     return entries.filter((entry) => {
-      const entryDate = normalizeDate(new Date(entry.date));
-      return entryDate >= normalizedStart && entryDate <= normalizedEnd;
+      // Format the entry date using the same function
+      const entryDate = formatToPHDateString(new Date(entry.date));
+
+      // Debugging logs
+      // console.log("Entry date:", entryDate);
+      // console.log("Start date:", startDate);
+      // console.log("End date:", endDate);
+
+      return entryDate >= startDate && entryDate <= endDate;
     });
-  };
-
-  const handleMonthChange = (newDate) => {
-    // Save current entries before changing
-    const updatedAllEntries = [...allEntries];
-
-    // Remove current range entries first
-    const { start: currentStart, end: currentEnd } =
-      getCustomDateRange(currentDate);
-    const preserved = updatedAllEntries.filter(
-      (entry) =>
-        new Date(entry.date) < currentStart || new Date(entry.date) > currentEnd
-    );
-
-    // Merge current entries into allEntries
-    const merged = [...preserved, ...localDutySchedule.entries];
-
-    setAllEntries(merged); // Save all entries
-
-    // Set new range
-    const { start, end } = getCustomDateRange(newDate);
-    const filtered = filterEntriesByDateRange(merged, start, end);
-
-    setLocalDutySchedule((prev) => ({
-      ...prev,
-      startDate: start,
-      endDate: end,
-      entries: filtered,
-    }));
-
-    setCurrentDate(newDate);
   };
 
   const handleNextMonth = () => {
     const nextDate = new Date(currentDate);
     nextDate.setMonth(nextDate.getMonth() + 1);
-    handleMonthChange(nextDate);
+
+    // Update the currentDate to reflect the next month
+    setCurrentDate(nextDate);
   };
 
   const handlePrevMonth = () => {
     const prevDate = new Date(currentDate);
     prevDate.setMonth(prevDate.getMonth() - 1);
+
     const today = new Date();
     const currentMonthStart = new Date(
       today.getFullYear(),
@@ -453,36 +466,45 @@ const DutyScheduleForm = () => {
       1
     );
 
+    // Only update the currentDate if the previous month is not earlier than the current month
     if (prevDate >= currentMonthStart) {
-      handleMonthChange(prevDate);
+      setCurrentDate(prevDate);
     }
   };
 
   const handleSave = async () => {
-    const { startDate, endDate } = localDutySchedule;
-
-    // Filter only entries in current range
-    const filteredEntries = filterEntriesByDateRange(
-      allEntries,
-      startDate,
-      endDate
-    );
-
-    console.log(startDate);
-    console.log(endDate);
-    console.log(allEntries);
-    console.log(filteredEntries);
-
-    const payload = {
-      ...localDutySchedule,
-      entries: filteredEntries,
-    };
-
+    // If in edit mode, update the duty schedule, otherwise create a new one
     if (isEditMode) {
-      console.log(payload);
+      const payload = {
+        ...localDutySchedule,
+        entries: allEntries, // becuase next and prev month button is hidden
+      };
+
+      // console.log("Updating duty schedule:", localDutySchedule);
       dispatch(updateDutySchedule({ _id: id, ...payload }));
     } else {
-      console.log(payload);
+      const { startDate, endDate } = localDutySchedule;
+
+      // Debugging logs
+      // console.log("Start Date:", startDate);
+      // console.log("End Date:", endDate);
+      // console.log("All Entries:", allEntries);
+
+      // Filter entries based on current date rangez
+      const filteredEntries = filterEntriesByDateRange(
+        allEntries,
+        startDate,
+        endDate
+      );
+
+      // Debugging log for filtered entries
+      // console.log("Filtered Entries:", filteredEntries);
+
+      const payload = {
+        ...localDutySchedule,
+        entries: filteredEntries,
+      };
+      // console.log("Creating new duty schedule:", payload);
       dispatch(createDutySchedule(payload));
     }
   };
@@ -505,7 +527,7 @@ const DutyScheduleForm = () => {
               </button>
             )}
             <span className="text-lg font-semibold text-center">
-              {formatDate(currentDate)}
+              {formatPHMonthYear(currentDate)}
             </span>
             <button
               onClick={handleNextMonth}
@@ -611,15 +633,13 @@ const DutyScheduleForm = () => {
                           {getEmployeesForDate(day).map((emp) => (
                             <div
                               key={emp.id}
-                              className={`text-xs p-1 rounded flex flex-col ${getShiftColor(
-                                emp.shift
+                              className={`text-sm p-2 rounded ${getShiftColor(
+                                emp.shiftName
                               )}`}
                             >
                               <div className="flex justify-between items-center">
                                 <span>
-                                  {emp.name} -{" "}
-                                  {emp.shift.charAt(0).toUpperCase() +
-                                    emp.shift.slice(1)}
+                                  {emp.name} - {emp.shift}
                                 </span>
                                 <button
                                   onClick={(e) => {
@@ -656,7 +676,7 @@ const DutyScheduleForm = () => {
               Add Employee Schedule
               <br />
               <span className="text-sm font-normal">
-                {formatDate(selectedDate, true)}
+                {formatPHMonthYear(selectedDate, true)}
               </span>
             </h2>
             <div className="space-y-4">
@@ -664,29 +684,52 @@ const DutyScheduleForm = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   Employee Name
                 </label>
-                <select
-                  required
-                  value={employeeInput}
-                  onChange={(e) => setEmployeeInput(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  autoFocus
-                >
-                  <option value="">-- Select Employee --</option>
-                  {employees?.map((employee) => (
-                    <option
-                      key={employee._id}
-                      value={employee._id}
-                      className="capitalize"
+
+                {(() => {
+                  const dateKey = formatToPHDateString(selectedDate);
+                  const scheduledEmployeeIds =
+                    allEntries
+                      ?.find(
+                        (entry) =>
+                          formatToPHDateString(new Date(entry.date)) === dateKey
+                      )
+                      ?.employeeSchedules.map((es) =>
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id
+                      ) || [];
+
+                  const availableEmployees = employees?.filter(
+                    (employee) => !scheduledEmployeeIds.includes(employee._id)
+                  );
+
+                  return (
+                    <select
+                      required
+                      value={employeeInput}
+                      onChange={(e) => setEmployeeInput(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      autoFocus
                     >
-                      {employee.personalInformation.lastName},{" "}
-                      {employee.personalInformation.firstName}{" "}
-                      {employee.personalInformation.middleName
-                        ? employee.personalInformation.middleName.charAt(0) +
-                          "."
-                        : ""}
-                    </option>
-                  ))}
-                </select>
+                      <option value="">-- Select Employee --</option>
+                      {availableEmployees?.map((employee) => (
+                        <option
+                          key={employee._id}
+                          value={employee._id}
+                          className="capitalize"
+                        >
+                          {employee.personalInformation.lastName},{" "}
+                          {employee.personalInformation.firstName}{" "}
+                          {employee.personalInformation.middleName
+                            ? employee.personalInformation.middleName.charAt(
+                                0
+                              ) + "."
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
               </div>
 
               <div>
@@ -703,12 +746,12 @@ const DutyScheduleForm = () => {
                     <option key={schedule._id} value={schedule._id}>
                       {schedule.name}{" "}
                       {schedule.type === "Standard"
-                        ? `(${formatTime(schedule.morningIn)}-${formatTime(
+                        ? `(${formatTimePH(schedule.morningIn)}-${formatTimePH(
                             schedule.morningOut
-                          )}, ${formatTime(schedule.afternoonIn)}-${formatTime(
-                            schedule.afternoonOut
-                          )})`
-                        : `(${formatTime(schedule.startTime)}-${formatTime(
+                          )}, ${formatTimePH(
+                            schedule.afternoonIn
+                          )}-${formatTimePH(schedule.afternoonOut)})`
+                        : `(${formatTimePH(schedule.startTime)}-${formatTimePH(
                             schedule.endTime
                           )})`}
                     </option>
@@ -755,14 +798,12 @@ const DutyScheduleForm = () => {
                     <div
                       key={emp.id}
                       className={`text-sm p-2 rounded ${getShiftColor(
-                        emp.shift
+                        emp.shiftName
                       )}`}
                     >
                       <div className="flex justify-between items-center">
                         <span>
-                          {emp.name} -{" "}
-                          {emp.shift.charAt(0).toUpperCase() +
-                            emp.shift.slice(1)}
+                          {emp.name} - {emp.shift}
                         </span>
                         <button
                           onClick={() =>

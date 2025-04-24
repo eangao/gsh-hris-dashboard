@@ -5,6 +5,9 @@ import { Navigate } from "react-router-dom";
 const ProtectedRoute = ({ route, children }) => {
   const { role, userInfo } = useSelector((state) => state.auth);
 
+  // console.log("ProtectedRoute route:", route);
+  // console.log("userInfo.role:", userInfo?.role);
+
   if (role) {
     if (route.role) {
       if (userInfo) {

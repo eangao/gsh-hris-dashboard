@@ -13,6 +13,8 @@ import { fetchAllEmployees } from "../../store/Reducers/employeeReducer";
 import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
 
 import toast from "react-hot-toast";
+import { PropagateLoader } from "react-spinners";
+import { buttonOverrideStyle } from "./../../utils/utils";
 
 // Holiday data for 2025
 const HOLIDAYS_2025 = [
@@ -51,13 +53,14 @@ const DutyScheduleForm = () => {
   const { departments } = useSelector((state) => state.department);
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [days, setDays] = useState([]);
+
+  const [allEntries, setAllEntries] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [employeeInput, setEmployeeInput] = useState("");
   const [selectedShift, setSelectedShift] = useState("");
   const [description, setDescription] = useState("");
-
-  const [days, setDays] = useState([]);
 
   const [localDutySchedule, setLocalDutySchedule] = useState({
     name: "",
@@ -91,26 +94,31 @@ const DutyScheduleForm = () => {
 
   // Update local state when duty schedule data is loaded
   useEffect(() => {
-    //Edit Schedule
+    // Edit Schedule
     if (isEditMode && dutySchedule) {
       const startDateObj = new Date(dutySchedule.startDate);
       const endDateObj = new Date(dutySchedule.endDate);
 
       if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
+        // Set local duty schedule without entries
         setLocalDutySchedule({
           ...dutySchedule,
           name: dutySchedule.name,
           department: dutySchedule.department?._id || dutySchedule.department,
-          startDate: formatDateToString(startDateObj),
-          endDate: formatDateToString(endDateObj),
-          entries:
-            dutySchedule.entries?.map((entry) => ({
-              ...entry,
-              date: new Date(entry.date),
-              employeeSchedules: entry.employeeSchedules || [],
-            })) || [],
+          startDate: formatToPHDateString(startDateObj),
+          endDate: formatToPHDateString(endDateObj),
         });
 
+        // Set allEntries state with the entries from dutySchedule
+        setAllEntries(
+          dutySchedule.entries?.map((entry) => ({
+            ...entry,
+            date: new Date(entry.date),
+            employeeSchedules: entry.employeeSchedules || [],
+          })) || []
+        );
+
+        // Set the current date to the end date of the duty schedule
         setCurrentDate(endDateObj);
       }
     }
@@ -120,11 +128,7 @@ const DutyScheduleForm = () => {
   // ex.output =>  May 2025, April 2025
   //and will set the startDate and endDate
   useEffect(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    const startDate = new Date(year, month - 1, 26);
-    const endDate = new Date(year, month, 25);
+    const { startDate, endDate } = calculateDutyPeriod(currentDate);
 
     const days = [];
     const currentDateSelected = new Date(startDate);
@@ -136,19 +140,15 @@ const DutyScheduleForm = () => {
       );
     }
 
-    // ✅ This part only runs if not editing
-    if (!isEditMode) {
-      setLocalDutySchedule((prev) => ({
-        ...prev,
-        name: formatDate(currentDate),
-        startDate: formatToLocalDate(startDate),
-        endDate: formatToLocalDate(endDate),
-      }));
-    }
+    setLocalDutySchedule((prev) => ({
+      ...prev,
+      name: formatPHMonthYear(currentDate),
+      startDate: formatToPHDateString(startDate),
+      endDate: formatToPHDateString(endDate),
+    }));
 
-    // ✅ Always update the days list
     setDays(days);
-  }, [currentDate, isEditMode]);
+  }, [currentDate]);
 
   // Handle success/error messages
   useEffect(() => {
@@ -175,30 +175,35 @@ const DutyScheduleForm = () => {
     }
   }, [successMessage, errorMessage, dispatch, isEditMode, navigate]);
 
+  const calculateDutyPeriod = (date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+
+    const startDate = new Date(year, month - 1, 26);
+    const endDate = new Date(year, month, 25);
+
+    return {
+      startDate,
+      endDate,
+    };
+  };
+
   //You can use this to format it as YYYY-MM-DD in Philippines timezone:
-  const formatToLocalDate = (date) => {
+  const formatToPHDateString = (date) => {
     // Add 8 hours for Philippines timezone (UTC+8)
     const philippinesDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
     return philippinesDate.toISOString().split("T")[0];
   };
 
-  const formatDateToString = (date) => {
-    if (!date) return "";
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
   const isHoliday = (date) => {
     if (!date) return false;
-    const dateStr = formatDateToString(date);
+    const dateStr = formatToPHDateString(date);
     return HOLIDAYS_2025.some((holiday) => holiday.date === dateStr);
   };
 
   const getHolidayName = (date) => {
     if (!date) return null;
-    const dateStr = formatDateToString(date);
+    const dateStr = formatToPHDateString(date);
     const holiday = HOLIDAYS_2025?.find((h) => h.date === dateStr);
     return holiday ? holiday.name : null;
   };
@@ -214,33 +219,6 @@ const DutyScheduleForm = () => {
     return isWeekend(date) || isHoliday(date);
   };
 
-  const handlePrevMonth = () => {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      const today = new Date();
-      const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-      const prevMonth = new Date(
-        newDate.getFullYear(),
-        newDate.getMonth() - 1,
-        1
-      );
-
-      if (prevMonth >= currentMonth) {
-        return prevMonth;
-      } else {
-        return prev;
-      }
-    });
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate((prev) => {
-      const newDate = new Date(prev);
-      newDate.setMonth(newDate.getMonth() + 1);
-      return newDate;
-    });
-  };
-
   const handleDateClick = (date) => {
     if (!date) return;
     setSelectedDate(date);
@@ -252,10 +230,11 @@ const DutyScheduleForm = () => {
 
   const getEmployeesForDate = (date) => {
     if (!date) return [];
-    const dateKey = formatDateToString(date);
+    const dateKey = formatToPHDateString(date);
 
-    const entry = localDutySchedule.entries?.find(
-      (e) => formatDateToString(new Date(e.date)) === dateKey
+    // Use allEntries instead of localDutySchedule.entries
+    const entry = allEntries?.find(
+      (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
     if (!entry) return [];
 
@@ -286,10 +265,10 @@ const DutyScheduleForm = () => {
   const handleEmployeeAdd = () => {
     if (!employeeInput || !selectedShift || !selectedDate) return;
 
-    const dateKey = formatDateToString(selectedDate);
-    let entries = [...localDutySchedule.entries];
+    const dateKey = formatToPHDateString(selectedDate);
+    let entries = [...allEntries]; // Change localDutySchedule.entries to allEntries
     let entryIndex = entries.findIndex(
-      (e) => formatDateToString(new Date(e.date)) === dateKey
+      (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
 
     if (entryIndex === -1) {
@@ -326,17 +305,20 @@ const DutyScheduleForm = () => {
       entries[entryIndex].employeeSchedules = employeeSchedules;
     }
 
-    setLocalDutySchedule({ ...localDutySchedule, entries });
+    // Save the updated entries to allEntries instead of localDutySchedule
+    setAllEntries(entries); // Update the allEntries state
+
+    // Close the modal
     setIsModalOpen(false);
   };
 
   const handleEmployeeRemove = (date, employeeId) => {
     if (!date || !employeeId) return;
 
-    const dateKey = formatDateToString(date);
-    let entries = [...localDutySchedule.entries];
+    const dateKey = formatToPHDateString(date);
+    let entries = [...allEntries]; // Change localDutySchedule.entries to allEntries
     let entryIndex = entries.findIndex(
-      (e) => formatDateToString(new Date(e.date)) === dateKey
+      (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
 
     if (entryIndex === -1) return;
@@ -350,18 +332,21 @@ const DutyScheduleForm = () => {
 
     if (employeeSchedules.length === 0) {
       entries = entries.filter(
-        (e) => formatDateToString(new Date(e.date)) !== dateKey
+        (e) => formatToPHDateString(new Date(e.date)) !== dateKey
       );
     } else {
       entries[entryIndex].employeeSchedules = employeeSchedules;
     }
 
-    setLocalDutySchedule({ ...localDutySchedule, entries });
+    // Save the updated entries to allEntries instead of localDutySchedule
+    setAllEntries(entries); // Update the allEntries state
   };
 
-  const formatDate = (date, includeDay = false) => {
+  // output ex. April 2025
+  const formatPHMonthYear = (date, includeDay = false) => {
     if (!date) return "";
     return new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Manila", // This ensures it uses PH timezone
       month: "long",
       year: "numeric",
       ...(includeDay && { day: "numeric" }),
@@ -383,14 +368,17 @@ const DutyScheduleForm = () => {
     }
   };
 
-  const formatTime = (time24) => {
+  const formatTimePH = (time24) => {
     if (!time24) return "";
-    const [hours, minutes] = time24.split(":")?.map(Number);
-    const date = new Date();
-    date.setHours(hours);
-    date.setMinutes(minutes);
-    const options = { hour: "numeric", minute: "numeric", hour12: true };
-    return date.toLocaleTimeString([], options);
+    const [hours, minutes] = time24.split(":").map(Number);
+    const date = new Date(Date.UTC(1970, 0, 1, hours - 8, minutes)); // UTC time minus 8 to align with PH time
+    const options = {
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+      timeZone: "Asia/Manila",
+    };
+    return new Intl.DateTimeFormat("en-US", options).format(date);
   };
 
   const handleInputChange = (e) => {
@@ -401,13 +389,84 @@ const DutyScheduleForm = () => {
     }));
   };
 
-  const handleSave = () => {
+  // Filter entries by date range
+  const filterEntriesByDateRange = (entries, start, end) => {
+    // Use the formatToPHDateString to format start and end dates in Philippines timezone (YYYY-MM-DD)
+    const startDate = formatToPHDateString(new Date(start));
+    const endDate = formatToPHDateString(new Date(end));
+
+    return entries.filter((entry) => {
+      // Format the entry date using the same function
+      const entryDate = formatToPHDateString(new Date(entry.date));
+
+      // Debugging logs
+      // console.log("Entry date:", entryDate);
+      // console.log("Start date:", startDate);
+      // console.log("End date:", endDate);
+
+      return entryDate >= startDate && entryDate <= endDate;
+    });
+  };
+
+  const handleNextMonth = () => {
+    const nextDate = new Date(currentDate);
+    nextDate.setMonth(nextDate.getMonth() + 1);
+
+    // Update the currentDate to reflect the next month
+    setCurrentDate(nextDate);
+  };
+
+  const handlePrevMonth = () => {
+    const prevDate = new Date(currentDate);
+    prevDate.setMonth(prevDate.getMonth() - 1);
+
+    const today = new Date();
+    const currentMonthStart = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      1
+    );
+
+    // Only update the currentDate if the previous month is not earlier than the current month
+    if (prevDate >= currentMonthStart) {
+      setCurrentDate(prevDate);
+    }
+  };
+
+  const handleSave = async () => {
+    // If in edit mode, update the duty schedule, otherwise create a new one
     if (isEditMode) {
-      console.log(localDutySchedule);
-      dispatch(updateDutySchedule({ _id: id, ...localDutySchedule }));
+      const payload = {
+        ...localDutySchedule,
+        entries: allEntries, // becuase next and prev month button is hidden
+      };
+
+      // console.log("Updating duty schedule:", localDutySchedule);
+      dispatch(updateDutySchedule({ _id: id, ...payload }));
     } else {
-      console.log(localDutySchedule);
-      dispatch(createDutySchedule(localDutySchedule));
+      const { startDate, endDate } = localDutySchedule;
+
+      // Debugging logs
+      // console.log("Start Date:", startDate);
+      // console.log("End Date:", endDate);
+      // console.log("All Entries:", allEntries);
+
+      // Filter entries based on current date rangez
+      const filteredEntries = filterEntriesByDateRange(
+        allEntries,
+        startDate,
+        endDate
+      );
+
+      // Debugging log for filtered entries
+      // console.log("Filtered Entries:", filteredEntries);
+
+      const payload = {
+        ...localDutySchedule,
+        entries: filteredEntries,
+      };
+      // console.log("Creating new duty schedule:", payload);
+      dispatch(createDutySchedule(payload));
     }
   };
 
@@ -429,7 +488,7 @@ const DutyScheduleForm = () => {
               </button>
             )}
             <span className="text-lg font-semibold text-center">
-              {formatDate(currentDate)}
+              {formatPHMonthYear(currentDate)}
             </span>
             <button
               onClick={handleNextMonth}
@@ -580,7 +639,7 @@ const DutyScheduleForm = () => {
               Add Employee Schedule
               <br />
               <span className="text-sm font-normal">
-                {formatDate(selectedDate, true)}
+                {formatPHMonthYear(selectedDate, true)}
               </span>
             </h2>
             <div className="space-y-4">
@@ -588,6 +647,7 @@ const DutyScheduleForm = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   Employee Name
                 </label>
+
                 <select
                   required
                   value={employeeInput}
@@ -627,12 +687,12 @@ const DutyScheduleForm = () => {
                     <option key={schedule._id} value={schedule._id}>
                       {schedule.name}{" "}
                       {schedule.type === "Standard"
-                        ? `(${formatTime(schedule.morningIn)}-${formatTime(
+                        ? `(${formatTimePH(schedule.morningIn)}-${formatTimePH(
                             schedule.morningOut
-                          )}, ${formatTime(schedule.afternoonIn)}-${formatTime(
-                            schedule.afternoonOut
-                          )})`
-                        : `(${formatTime(schedule.startTime)}-${formatTime(
+                          )}, ${formatTimePH(
+                            schedule.afternoonIn
+                          )}-${formatTimePH(schedule.afternoonOut)})`
+                        : `(${formatTimePH(schedule.startTime)}-${formatTimePH(
                             schedule.endTime
                           )})`}
                     </option>
@@ -722,12 +782,21 @@ const DutyScheduleForm = () => {
           >
             Cancel
           </button>
+
           <button
             onClick={handleSave}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            disabled={loading}
+            disabled={loading ? true : false}
+            className={`bg-blue-500  text-white px-4 py-2 rounded ${
+              loading ? "" : " hover:bg-blue-600"
+            } overflow-hidden`}
           >
-            {isEditMode ? "Update Duty Schedule" : "Create Duty Schedule"}
+            {loading ? (
+              <PropagateLoader color="#fff" cssOverride={buttonOverrideStyle} />
+            ) : isEditMode ? (
+              "Update Duty Schedule"
+            ) : (
+              "Create Duty Schedule"
+            )}
           </button>
         </div>
       </div>

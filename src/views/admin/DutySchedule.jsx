@@ -86,7 +86,7 @@ const DutySchedule = () => {
                   </td>
 
                   <td className="p-3 flex justify-center space-x-2">
-                    <button
+                    {/* <button
                       onClick={() =>
                         navigate(
                           `/admin/dashboard/duty-schedule/details/${schedule?._id}`
@@ -96,7 +96,7 @@ const DutySchedule = () => {
                       disabled={loading}
                     >
                       View
-                    </button>
+                    </button> */}
                     <button
                       onClick={() =>
                         navigate(

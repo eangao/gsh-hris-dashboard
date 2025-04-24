@@ -162,10 +162,10 @@ const Position = () => {
               positions?.map((position) => (
                 <tr key={position._id} className="border-t">
                   <td className="p-2 text-lg capitalize">
-                    {position.name.toLowerCase()}
+                    {position?.name?.toLowerCase()}
                   </td>
                   <td className="p-2 text-lg capitalize">
-                    {position.description.toLowerCase()}
+                    {position?.description?.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
                     {!position?.locked && (

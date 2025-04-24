@@ -59,7 +59,7 @@ const EmployeeDetails = () => {
       {/* Header with Print Button */}
       <div className="flex justify-between items-center mb-6 print:hidden">
         <h1 className="text-2xl font-bold text-gray-800">Employee Details</h1>
-        <button
+        {/* <button
           onClick={handlePrint}
           className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
@@ -78,7 +78,7 @@ const EmployeeDetails = () => {
             />
           </svg>
           Print
-        </button>
+        </button> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-4">
