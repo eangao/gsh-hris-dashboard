@@ -405,8 +405,7 @@ const EmployeeForm = () => {
   const isDepartmentVisible = () => {
     return (
       selectedPositionName !== "president" &&
-      selectedPositionName !== "director" &&
-      selectedPositionName !== "physician"
+      selectedPositionName !== "director"
     );
   };
 
