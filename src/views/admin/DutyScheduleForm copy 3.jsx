@@ -15,7 +15,6 @@ import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
 import toast from "react-hot-toast";
 import { PropagateLoader } from "react-spinners";
 import { buttonOverrideStyle } from "./../../utils/utils";
-import { FaTimes } from "react-icons/fa";
 
 // Holiday data for 2025
 const HOLIDAYS_2025 = [
@@ -238,69 +237,49 @@ const DutyScheduleForm = () => {
     );
     if (!entry) return [];
 
-    const employeesForDate = entry.employeeSchedules.map((es) => {
-      const empId =
-        typeof es.employee === "string" ? es.employee : es.employee?._id;
-      const employee = employees.find((emp) => emp._id === empId);
+    return entry.employeeSchedules
+      .map((es) => {
+        const empId =
+          typeof es.employee === "string" ? es.employee : es.employee?._id;
+        const employee = employees.find((emp) => emp._id === empId);
 
-      const wsId =
-        typeof es.workSchedule === "string"
-          ? es.workSchedule
-          : es.workSchedule?._id;
-      const workSchedule = workSchedules.find((ws) => ws._id === wsId);
+        const wsId =
+          typeof es.workSchedule === "string"
+            ? es.workSchedule
+            : es.workSchedule?._id;
+        const workSchedule = workSchedules.find((ws) => ws._id === wsId);
 
-      const shiftName = workSchedule?.name?.toLowerCase() || "unknown";
+        const shiftName = workSchedule?.name?.toLowerCase() || "unknown";
 
-      const shiftTime = workSchedule
-        ? workSchedule.type === "Standard"
-          ? `${formatTimePH(workSchedule.morningIn)}-${formatTimePH(
-              workSchedule.morningOut
-            )}, ${formatTimePH(workSchedule.afternoonIn)}-${formatTimePH(
-              workSchedule.afternoonOut
-            )}`
-          : `${formatTimePH(workSchedule.startTime)}-${formatTimePH(
-              workSchedule.endTime
-            )}`
-        : "Unknown";
+        const shiftTime = workSchedule
+          ? workSchedule.type === "Standard"
+            ? `(${formatTimePH(workSchedule.morningIn)}-${formatTimePH(
+                workSchedule.morningOut
+              )}, ${formatTimePH(workSchedule.afternoonIn)}-${formatTimePH(
+                workSchedule.afternoonOut
+              )})`
+            : `(${formatTimePH(workSchedule.startTime)}-${formatTimePH(
+                workSchedule.endTime
+              )})`
+          : "";
 
-      return {
-        id: empId,
-        name: employee
-          ? `${
-              employee.personalInformation.lastName
-            }, ${employee.personalInformation.firstName
-              .charAt(0)
-              .toUpperCase()}`
-          : "Unknown",
-        lastName: employee?.personalInformation?.lastName || "",
-        shiftName,
-        shift: shiftTime,
-        description: es.remarks || "",
-      };
-    });
-
-    // Group by shift
-    const grouped = employeesForDate.reduce((acc, emp) => {
-      if (!acc[emp.shift]) {
-        acc[emp.shift] = {
-          shift: emp.shift,
-          shiftName: emp.shiftName,
-          employees: [],
+        return {
+          id: empId,
+          name: employee
+            ? `${
+                employee.personalInformation.lastName
+              }, ${employee.personalInformation.firstName
+                .charAt(0)
+                .toUpperCase()}`
+            : "Unknown",
+          lastName: employee?.personalInformation?.lastName || "",
+          shiftName,
+          shiftTime,
+          shift: `${shiftTime}`,
+          description: es.remarks || "",
         };
-      }
-      acc[emp.shift].employees.push(emp);
-      return acc;
-    }, {});
-
-    // Convert to array, sort groups by shift label, and sort each group by lastName
-    return Object.values(grouped)
-      .map((group) => ({
-        ...group,
-        employees: group.employees.sort((a, b) =>
-          a.lastName.localeCompare(b.lastName)
-        ),
-      }))
-      .sort((a, b) => a.shift.localeCompare(b.shift));
+      })
+      .sort((a, b) => a.lastName.localeCompare(b.lastName)); // <-- Sorting by lastName
   };
 
   const handleEmployeeAdd = () => {
@@ -308,10 +287,9 @@ const DutyScheduleForm = () => {
 
     const dateKey = formatToPHDateString(selectedDate);
 
-    // Deep clone to avoid state mutation
+    // Create a deep copy of allEntries to avoid mutation errors
     let entries = JSON.parse(JSON.stringify(allEntries));
 
-    // Check if there's already an entry for the selected date
     let entryIndex = entries.findIndex(
       (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
@@ -323,7 +301,7 @@ const DutyScheduleForm = () => {
     };
 
     if (entryIndex === -1) {
-      // No entry for the date → create a new one
+      // No entry found for the selected date, create new and sort immediately
       entries.push({
         date: selectedDate,
         employeeSchedules: [newSchedule],
@@ -335,14 +313,12 @@ const DutyScheduleForm = () => {
       );
 
       if (existingIndex === -1) {
-        // Not yet scheduled → add
         employeeSchedules.push(newSchedule);
       } else {
-        // Already scheduled → update
         employeeSchedules[existingIndex] = newSchedule;
       }
 
-      // Optional: sort by last name (optional but good for consistency in data)
+      // ✅ Sort by employee last name
       employeeSchedules.sort((a, b) => {
         const empA = employees.find(
           (e) =>
@@ -364,11 +340,6 @@ const DutyScheduleForm = () => {
 
     setAllEntries(entries);
     setIsModalOpen(false);
-
-    // Optional: reset form values if needed
-    setEmployeeInput(null);
-    setSelectedShift(null);
-    setDescription("");
   };
 
   const handleEmployeeRemove = (date, employeeId) => {
@@ -643,42 +614,32 @@ const DutyScheduleForm = () => {
                           </div>
                         )}
                         <div className="space-y-1">
-                          {getEmployeesForDate(day).map((group) => (
+                          {getEmployeesForDate(day).map((emp) => (
                             <div
-                              key={group.shift}
-                              className={`rounded p-1 ${getShiftColor(
-                                group.shiftName
+                              key={emp.id}
+                              className={`text-sm p-2 rounded ${getShiftColor(
+                                emp.shiftName
                               )}`}
                             >
-                              <div className="text-xs font-bold mb-1 uppercase text-gray-700">
-                                {group.shift}
-                              </div>
-
-                              {group.employees.map((emp) => (
-                                <div
-                                  key={emp.id}
-                                  className="text-sm mb-1 p-1 rounded bg-white/50"
+                              <div className="flex justify-between items-center">
+                                <span>
+                                  {emp.name} - {emp.shift}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleEmployeeRemove(day, emp.id);
+                                  }}
+                                  className="text-red-500 hover:text-red-700 ml-1"
                                 >
-                                  <div className="flex justify-between items-center">
-                                    <span>{emp.name}</span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEmployeeRemove(day, emp.id);
-                                      }}
-                                      // className="text-white bg-red-500 hover:bg-red-700 rounded-full w-4 h-4 flex items-center justify-center"
-                                      className="text-red-500 hover:text-red-700 flex items-center justify-center"
-                                    >
-                                      <FaTimes />
-                                    </button>
-                                  </div>
-                                  {emp.description && (
-                                    <div className="text-gray-600 mt-1 text-xs italic">
-                                      {emp.description}
-                                    </div>
-                                  )}
+                                  ×
+                                </button>
+                              </div>
+                              {emp.description && (
+                                <div className="text-gray-600 mt-1 text-xs italic">
+                                  {emp.description}
                                 </div>
-                              ))}
+                              )}
                             </div>
                           ))}
                         </div>
@@ -813,7 +774,7 @@ const DutyScheduleForm = () => {
               </div>
             </div>
 
-            {/* {getEmployeesForDate(selectedDate)?.length > 0 && (
+            {getEmployeesForDate(selectedDate)?.length > 0 && (
               <div className="mt-4">
                 <h3 className="font-medium mb-2">Current Assignments</h3>
                 <div className="space-y-1">
@@ -846,7 +807,7 @@ const DutyScheduleForm = () => {
                   ))}
                 </div>
               </div>
-            )} */}
+            )}
           </div>
         </div>
       )}

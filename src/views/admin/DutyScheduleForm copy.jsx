@@ -232,7 +232,6 @@ const DutyScheduleForm = () => {
     if (!date) return [];
     const dateKey = formatToPHDateString(date);
 
-    // Use allEntries instead of localDutySchedule.entries
     const entry = allEntries?.find(
       (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
@@ -251,12 +250,28 @@ const DutyScheduleForm = () => {
           : es.workSchedule?._id;
       const workSchedule = workSchedules.find((ws) => ws._id === wsId);
 
+      const shiftName = workSchedule?.name?.toLowerCase() || "unknown";
+
+      const shiftTime = workSchedule
+        ? workSchedule.type === "Standard"
+          ? `(${formatTimePH(workSchedule.morningIn)}-${formatTimePH(
+              workSchedule.morningOut
+            )}, ${formatTimePH(workSchedule.afternoonIn)}-${formatTimePH(
+              workSchedule.afternoonOut
+            )})`
+          : `(${formatTimePH(workSchedule.startTime)}-${formatTimePH(
+              workSchedule.endTime
+            )})`
+        : "";
+
       return {
         id: empId,
         name: employee
           ? `${employee.personalInformation.lastName}, ${employee.personalInformation.firstName}`
           : "Unknown",
-        shift: workSchedule ? workSchedule.name.toLowerCase() : "unknown",
+        shiftName,
+        shiftTime,
+        shift: `${shiftName} ${shiftTime}`,
         description: es.remarks || "",
       };
     });
@@ -266,12 +281,16 @@ const DutyScheduleForm = () => {
     if (!employeeInput || !selectedShift || !selectedDate) return;
 
     const dateKey = formatToPHDateString(selectedDate);
-    let entries = [...allEntries]; // Change localDutySchedule.entries to allEntries
+
+    // Create a deep copy of allEntries to avoid mutation errors
+    let entries = JSON.parse(JSON.stringify(allEntries));
+
     let entryIndex = entries.findIndex(
       (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
 
     if (entryIndex === -1) {
+      // If no entry found for the selected date, create a new one
       entries.push({
         date: selectedDate,
         employeeSchedules: [
@@ -289,12 +308,14 @@ const DutyScheduleForm = () => {
       );
 
       if (existingIndex === -1) {
+        // If employee not already scheduled, add new schedule
         employeeSchedules.push({
           employee: employeeInput,
           workSchedule: selectedShift,
           remarks: description,
         });
       } else {
+        // If employee is already scheduled, update their schedule
         employeeSchedules[existingIndex] = {
           employee: employeeInput,
           workSchedule: selectedShift,
@@ -305,8 +326,8 @@ const DutyScheduleForm = () => {
       entries[entryIndex].employeeSchedules = employeeSchedules;
     }
 
-    // Save the updated entries to allEntries instead of localDutySchedule
-    setAllEntries(entries); // Update the allEntries state
+    // Update the allEntries state with the modified entries
+    setAllEntries(entries);
 
     // Close the modal
     setIsModalOpen(false);
@@ -353,19 +374,12 @@ const DutyScheduleForm = () => {
     }).format(date);
   };
 
-  const getShiftColor = (shiftType) => {
-    switch (shiftType) {
-      case "morning":
-        return "bg-yellow-100";
-      case "afternoon":
-        return "bg-blue-100";
-      case "night":
-        return "bg-purple-100";
-      case "off":
-        return "bg-gray-100";
-      default:
-        return "bg-white";
-    }
+  const getShiftColor = (shiftName) => {
+    const schedule = workSchedules.find(
+      (ws) => ws.name.toLowerCase() === shiftName.toLowerCase()
+    );
+
+    return schedule?.shiftColor || "bg-white"; // fallback to white if not found or no color set
   };
 
   const formatTimePH = (time24) => {
@@ -594,15 +608,13 @@ const DutyScheduleForm = () => {
                           {getEmployeesForDate(day).map((emp) => (
                             <div
                               key={emp.id}
-                              className={`text-xs p-1 rounded flex flex-col ${getShiftColor(
-                                emp.shift
+                              className={`text-sm p-2 rounded ${getShiftColor(
+                                emp.shiftName
                               )}`}
                             >
                               <div className="flex justify-between items-center">
                                 <span>
-                                  {emp.name} -{" "}
-                                  {emp.shift.charAt(0).toUpperCase() +
-                                    emp.shift.slice(1)}
+                                  {emp.name} - {emp.shift}
                                 </span>
                                 <button
                                   onClick={(e) => {
@@ -648,29 +660,51 @@ const DutyScheduleForm = () => {
                   Employee Name
                 </label>
 
-                <select
-                  required
-                  value={employeeInput}
-                  onChange={(e) => setEmployeeInput(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  autoFocus
-                >
-                  <option value="">-- Select Employee --</option>
-                  {employees?.map((employee) => (
-                    <option
-                      key={employee._id}
-                      value={employee._id}
-                      className="capitalize"
+                {(() => {
+                  const dateKey = formatToPHDateString(selectedDate);
+                  const scheduledEmployeeIds =
+                    allEntries
+                      ?.find(
+                        (entry) =>
+                          formatToPHDateString(new Date(entry.date)) === dateKey
+                      )
+                      ?.employeeSchedules.map((es) =>
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id
+                      ) || [];
+
+                  const availableEmployees = employees?.filter(
+                    (employee) => !scheduledEmployeeIds.includes(employee._id)
+                  );
+
+                  return (
+                    <select
+                      required
+                      value={employeeInput}
+                      onChange={(e) => setEmployeeInput(e.target.value)}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      autoFocus
                     >
-                      {employee.personalInformation.lastName},{" "}
-                      {employee.personalInformation.firstName}{" "}
-                      {employee.personalInformation.middleName
-                        ? employee.personalInformation.middleName.charAt(0) +
-                          "."
-                        : ""}
-                    </option>
-                  ))}
-                </select>
+                      <option value="">-- Select Employee --</option>
+                      {availableEmployees?.map((employee) => (
+                        <option
+                          key={employee._id}
+                          value={employee._id}
+                          className="capitalize"
+                        >
+                          {employee.personalInformation.lastName},{" "}
+                          {employee.personalInformation.firstName}{" "}
+                          {employee.personalInformation.middleName
+                            ? employee.personalInformation.middleName.charAt(
+                                0
+                              ) + "."
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
               </div>
 
               <div>
@@ -739,14 +773,12 @@ const DutyScheduleForm = () => {
                     <div
                       key={emp.id}
                       className={`text-sm p-2 rounded ${getShiftColor(
-                        emp.shift
+                        emp.shiftName
                       )}`}
                     >
                       <div className="flex justify-between items-center">
                         <span>
-                          {emp.name} -{" "}
-                          {emp.shift.charAt(0).toUpperCase() +
-                            emp.shift.slice(1)}
+                          {emp.name} - {emp.shift}
                         </span>
                         <button
                           onClick={() =>
