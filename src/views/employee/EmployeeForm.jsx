@@ -711,6 +711,8 @@ const EmployeeForm = () => {
           <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
             Employment Information
           </h2>
+
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -903,91 +905,87 @@ const EmployeeForm = () => {
                 required
               />
             </div>
+          </div>
 
-            {/* Status History Table */}
-            <div className="col-span-2 mt-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">
-                  Employment Status History
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetEmploymentStatusHistoryForm();
-                    setIsEmploymentStatusHistoryModalOpen(true);
-                  }}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Add Status
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Date Effective
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Remarks
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {formData.employmentInformation.statusHistory.map(
-                      (status, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {employmentStatuses.find(
-                              (s) => s._id === status.statusId
-                            )?.name || "Unknown"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {new Date(
-                              status.dateEffective
-                            ).toLocaleDateString()}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {status.remarks}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedEmploymentStatusHistoryIndex(index);
-                                setEmploymentStatusHistoryFormData(status);
-                                setIsEditingEmploymentStatusHistory(true);
-                                setIsEmploymentStatusHistoryModalOpen(true);
-                              }}
-                              className="text-indigo-600 hover:text-indigo-900 mr-3"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedEmploymentStatusHistoryIndex(index);
-                                setIsDeleteEmploymentStatusHistoryModalOpen(
-                                  true
-                                );
-                              }}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
+          {/* Status History Table */}
+          <div className="col-span-2 mt-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                Employment Status History
+              </h3>
+              <button
+                type="button"
+                onClick={() => {
+                  resetEmploymentStatusHistoryForm();
+                  setIsEmploymentStatusHistoryModalOpen(true);
+                }}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Add Status
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date Effective
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Remarks
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {formData.employmentInformation.statusHistory.map(
+                    (status, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {employmentStatuses.find(
+                            (s) => s._id === status.statusId
+                          )?.name || "Unknown"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {new Date(status.dateEffective).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {status.remarks}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEmploymentStatusHistoryIndex(index);
+                              setEmploymentStatusHistoryFormData(status);
+                              setIsEditingEmploymentStatusHistory(true);
+                              setIsEmploymentStatusHistoryModalOpen(true);
+                            }}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEmploymentStatusHistoryIndex(index);
+                              setIsDeleteEmploymentStatusHistoryModalOpen(true);
+                            }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1039,96 +1037,95 @@ const EmployeeForm = () => {
                 className="w-full p-2 border rounded mt-1"
               />
             </div>
-
-            {/* Schools Attended Table */}
-            <div className="col-span-2 mt-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Schools Attended</h3>
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetSchoolForm();
-                    setIsSchoolModalOpen(true);
-                    setIsEditingSchool(false);
-                  }}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Add School
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        School Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Education Level
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Degree
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Major
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Year Graduated
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {formData.educationInformation.schoolsAttended.map(
-                      (school, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.schoolName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.educationLevel}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.degree || "-"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.major || "-"}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {school.yearGraduated}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedSchoolIndex(index);
-                                setSchoolFormData(school);
-                                setIsEditingSchool(true);
-                                setIsSchoolModalOpen(true);
-                              }}
-                              className="text-indigo-600 hover:text-indigo-900 mr-3"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedSchoolIndex(index);
-                                setIsDeleteSchoolModalOpen(true);
-                              }}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
+          </div>
+          {/* Schools Attended Table */}
+          <div className="col-span-2 mt-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Schools Attended</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  resetSchoolForm();
+                  setIsSchoolModalOpen(true);
+                  setIsEditingSchool(false);
+                }}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Add School
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      School Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Education Level
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Degree
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Major
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Year Graduated
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {formData.educationInformation.schoolsAttended.map(
+                    (school, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {school.schoolName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {school.educationLevel}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {school.degree || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {school.major || "-"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {school.yearGraduated}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSchoolIndex(index);
+                              setSchoolFormData(school);
+                              setIsEditingSchool(true);
+                              setIsSchoolModalOpen(true);
+                            }}
+                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSchoolIndex(index);
+                              setIsDeleteSchoolModalOpen(true);
+                            }}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
