@@ -49,6 +49,7 @@ const Sidebar = ({ showSidebar, setShowSidebar }) => {
               <li key={i}>
                 <Link
                   to={n.path}
+                  onClick={() => setShowSidebar(false)} //
                   className={`${
                     pathname === n.path
                       ? "bg-blue-600 shadow-indigo-500/50 text-white duration-500"
