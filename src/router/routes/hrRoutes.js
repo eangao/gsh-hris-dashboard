@@ -26,24 +26,9 @@ const EmploymentStatus = lazy(() =>
 );
 
 export const hrRoutes = [
-  {
-    path: "hr/dashboard",
-    element: <HRDashboard />,
-    role: "hr",
-  },
-
-  {
-    path: "hr/dashboard/employee",
-    element: <Employee />,
-    role: "hr",
-  },
-
-  {
-    path: "hr/dashboard/employee/add",
-    element: <EmployeeForm />,
-    role: "hr",
-  },
-
+  { path: "hr/dashboard", element: <HRDashboard />, role: "hr" },
+  { path: "hr/dashboard/employee", element: <Employee />, role: "hr" },
+  { path: "hr/dashboard/employee/add", element: <EmployeeForm />, role: "hr" },
   {
     path: "hr/dashboard/employee/edit/:id",
     element: <EmployeeForm />,
@@ -54,81 +39,28 @@ export const hrRoutes = [
     element: <EmployeeDetails />,
     role: "hr",
   },
-  {
-    path: "hr/dashboard/holiday",
-    element: <Holiday />,
-    role: "hr",
-  },
+  { path: "hr/dashboard/holiday", element: <Holiday />, role: "hr" },
   {
     path: "hr/dashboard/daily-attendance",
     element: <DailyAttendance />,
     role: "hr",
   },
-  {
-    path: "hr/dashboard/employee",
-    element: <Employee />,
-    role: "hr",
-  },
-  {
-    path: "hr/dashboard/employee/add",
-    element: <EmployeeForm />,
-    role: "hr",
-  },
-
-  {
-    path: "hr/dashboard/employee/edit/:id",
-    element: <EmployeeForm />,
-    role: "hr",
-  },
-  {
-    path: "hr/dashboard/employee/details/:id",
-    element: <EmployeeDetails />,
-    role: "hr",
-  },
-
-  {
-    path: "hr/dashboard/position",
-    element: <Position />,
-    role: "hr",
-  },
-  {
-    path: "hr/dashboard/cluster",
-    element: <Cluster />,
-    role: "hr",
-  },
-  {
-    path: "hr/dashboard/department",
-    element: <Department />,
-    role: "hr",
-  },
-  {
-    path: "hr/dashboard/work-schedule",
-    element: <WorkSchedule />,
-    role: "hr",
-  },
-  {
-    path: "hr/dashboard/duty-schedule",
-    element: <DutySchedule />,
-    role: "hr",
-  },
-
+  { path: "hr/dashboard/position", element: <Position />, role: "hr" },
+  { path: "hr/dashboard/cluster", element: <Cluster />, role: "hr" },
+  { path: "hr/dashboard/department", element: <Department />, role: "hr" },
+  { path: "hr/dashboard/work-schedule", element: <WorkSchedule />, role: "hr" },
+  { path: "hr/dashboard/duty-schedule", element: <DutySchedule />, role: "hr" },
   {
     path: "hr/dashboard/duty-schedule/add",
     element: <DutyScheduleForm />,
     role: "hr",
   },
-
   {
     path: "hr/dashboard/duty-schedule/edit/:id",
     element: <DutyScheduleForm />,
     role: "hr",
   },
-
-  {
-    path: "hr/dashboard/religion",
-    element: <Religion />,
-    role: "hr",
-  },
+  { path: "hr/dashboard/religion", element: <Religion />, role: "hr" },
   {
     path: "hr/dashboard/employment-status",
     element: <EmploymentStatus />,

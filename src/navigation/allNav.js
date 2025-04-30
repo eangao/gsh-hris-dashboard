@@ -6,16 +6,73 @@ import { FiFileText } from "react-icons/fi";
 import { MdOutlinePersonPin, MdHolidayVillage } from "react-icons/md";
 
 export const allNav = [
+  //====================================
   // Admin Dashboard Navigation
   {
-    id: 1,
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
     role: "admin",
     path: "/admin/dashboard",
   },
   {
-    id: 12,
+    title: "Employee",
+    icon: <FaPeopleGroup />,
+    role: "admin",
+    path: "/admin/dashboard/employee",
+  },
+  {
+    title: "Cluster",
+    icon: <AiOutlineCluster />,
+    role: "admin",
+    path: "/admin/dashboard/cluster",
+  },
+  {
+    title: "Department",
+    icon: <FaLayerGroup />,
+    role: "admin",
+    path: "/admin/dashboard/department",
+  },
+  {
+    title: "Position",
+    icon: <FiFileText />,
+    role: "admin",
+    path: "/admin/dashboard/position",
+  },
+  {
+    title: "Religion",
+    icon: <FiFileText />,
+    role: "admin",
+    path: "/admin/dashboard/religion",
+  },
+  {
+    title: "Employment Status",
+    icon: <FiFileText />,
+    role: "admin",
+    path: "/admin/dashboard/employment-status",
+  },
+  {
+    title: "Work Schedule",
+    icon: <RiTimeFill />,
+    role: "admin",
+    path: "/admin/dashboard/work-schedule",
+  },
+  {
+    title: "Role",
+    icon: <FaUserCog />,
+    role: "admin",
+    path: "/admin/dashboard/role",
+  },
+
+  {
+    title: "User",
+    icon: <FaUserCog />,
+    role: "admin",
+    path: "/admin/dashboard/user",
+  },
+
+  //====================================
+  // HR Dashboard Navigation
+  {
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
     role: "hr",
@@ -23,14 +80,6 @@ export const allNav = [
   },
 
   {
-    id: 3,
-    title: "User",
-    icon: <FaUserCog />,
-    role: "admin",
-    path: "/admin/dashboard/user",
-  },
-  {
-    id: 4,
     title: "Employee",
     icon: <FaPeopleGroup />,
     role: "hr",
@@ -38,42 +87,31 @@ export const allNav = [
   },
 
   {
-    id: 5,
-    title: "Department",
-    icon: <FaLayerGroup />,
-    role: "hr",
-    path: "/hr/dashboard/department",
-  },
-  {
-    id: 6,
     title: "Cluster",
     icon: <AiOutlineCluster />,
     role: "hr",
     path: "/hr/dashboard/cluster",
   },
   {
-    id: 7,
-    title: "Role",
-    icon: <FaUserCog />,
-    role: "admin",
-    path: "/admin/dashboard/role",
+    title: "Department",
+    icon: <FaLayerGroup />,
+    role: "hr",
+    path: "/hr/dashboard/department",
   },
+
   {
-    id: 8,
     title: "Position",
     icon: <FiFileText />,
     role: "hr",
     path: "/hr/dashboard/position",
   },
   {
-    id: 15,
     title: "Religion",
     icon: <FiFileText />,
     role: "hr",
     path: "/hr/dashboard/religion",
   },
   {
-    id: 16,
     title: "Employment Status",
     icon: <FiFileText />,
     role: "hr",
@@ -81,48 +119,42 @@ export const allNav = [
   },
 
   {
-    id: 9,
     title: "Work Schedule",
     icon: <RiTimeFill />,
     role: "hr",
     path: "/hr/dashboard/work-schedule",
   },
   {
-    id: 10,
     title: "Duty Schedule",
     icon: <RiCalendarScheduleLine />,
     role: "hr",
     path: "/hr/dashboard/duty-schedule",
   },
   {
-    id: 2,
     title: "Daily Attendance",
     icon: <MdOutlinePersonPin />,
     role: "hr",
     path: "/hr/dashboard/daily-attendance",
   },
   {
-    id: 11,
     title: "Holiday",
     icon: <MdHolidayVillage />,
-    role: "admin",
-    path: "/admin/dashboard/holiday",
+    role: "hr",
+    path: "/hr/dashboard/holiday",
   },
 
-  // HR Dashboard Navigation
-
+  //====================================
   // Manager Dashboard Navigation
   {
-    id: 13,
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
     role: "manager",
     path: "/manager/dashboard",
   },
+  //====================================
 
   // Employee Dashboard Navigation
   {
-    id: 14,
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
     role: "employee",

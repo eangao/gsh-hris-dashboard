@@ -15,6 +15,8 @@ const Employee = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const { role } = useSelector((state) => state.auth);
+
   const { employees, totalEmployee, loading, successMessage, errorMessage } =
     useSelector((state) => state.employee);
 
@@ -63,12 +65,43 @@ const Employee = () => {
     setDeleteName(name);
   };
 
+  const handleAddEmployee = () => {
+    if (role === "admin") {
+      navigate("/admin/dashboard/employee/add");
+    } else if (role === "hr") {
+      navigate("/hr/dashboard/employee/add");
+    } else {
+      // Optional: fallback if unauthorized role
+      alert("You are not authorized to add employees.");
+    }
+  };
+
+  const handleEditEmployee = (employeeId) => {
+    if (role === "admin") {
+      navigate(`/admin/dashboard/employee/edit/${employeeId}`);
+    } else if (role === "hr") {
+      navigate(`/hr/dashboard/employee/edit/${employeeId}`);
+    } else {
+      alert("You are not authorized to edit employees.");
+    }
+  };
+
+  const handleViewEmployee = (employeeId) => {
+    if (role === "admin") {
+      navigate(`/admin/dashboard/employee/details/${employeeId}`);
+    } else if (role === "hr") {
+      navigate(`/hr/dashboard/employee/details/${employeeId}`);
+    } else {
+      alert("You are not authorized to view this employee.");
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold text-center">Employee Management</h1>
         <button
-          onClick={() => navigate("/admin/dashboard/employee/add")}
+          onClick={handleAddEmployee}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Add Employee
@@ -140,22 +173,14 @@ const Employee = () => {
                   </td>
                   <td className="p-3 flex justify-center space-x-2">
                     <button
-                      onClick={() =>
-                        navigate(
-                          `/admin/dashboard/employee/details/${employee?._id}`
-                        )
-                      }
+                      onClick={() => handleViewEmployee(employee?._id)}
                       className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                       disabled={loading}
                     >
                       View
                     </button>
                     <button
-                      onClick={() =>
-                        navigate(
-                          `/admin/dashboard/employee/edit/${employee?._id}`
-                        )
-                      }
+                      onClick={() => handleEditEmployee(employee?._id)}
                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >

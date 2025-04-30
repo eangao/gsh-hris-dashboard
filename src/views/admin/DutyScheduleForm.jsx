@@ -34,6 +34,8 @@ const DutyScheduleForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const { role } = useSelector((state) => state.auth);
+
   const { id } = useParams();
   const isEditMode = !!id;
 
@@ -157,6 +159,12 @@ const DutyScheduleForm = () => {
       toast.success(successMessage);
       dispatch(messageClear());
       navigate("/admin/dashboard/duty-schedule");
+
+      if (role === "admin") {
+        navigate("/admin/dashboard/duty-schedule");
+      } else if (role === "hr") {
+        navigate("/hr/dashboard/duty-schedule");
+      }
 
       if (!isEditMode) {
         setLocalDutySchedule({
@@ -501,7 +509,7 @@ const DutyScheduleForm = () => {
       // Debugging logs
       // console.log("Start Date:", startDate);
       // console.log("End Date:", endDate);
-      // console.log("All Entries:", allEntries);
+      console.log("All Entries:", allEntries);
 
       // Filter entries based on current date rangez
       const filteredEntries = filterEntriesByDateRange(
@@ -519,6 +527,16 @@ const DutyScheduleForm = () => {
       };
       // console.log("Creating new duty schedule:", payload);
       dispatch(createDutySchedule(payload));
+    }
+  };
+
+  const handleCancel = () => {
+    if (role === "admin") {
+      navigate("/admin/dashboard/duty-schedule");
+    } else if (role === "hr") {
+      navigate("/hr/dashboard/duty-schedule");
+    } else {
+      alert("You are not authorized to access the schedule list.");
     }
   };
 
@@ -666,7 +684,6 @@ const DutyScheduleForm = () => {
                                         e.stopPropagation();
                                         handleEmployeeRemove(day, emp.id);
                                       }}
-                                      // className="text-white bg-red-500 hover:bg-red-700 rounded-full w-4 h-4 flex items-center justify-center"
                                       className="text-red-500 hover:text-red-700 flex items-center justify-center"
                                     >
                                       <FaTimes />
@@ -856,28 +873,33 @@ const DutyScheduleForm = () => {
         <div className="flex space-x-2">
           <button
             type="button"
-            onClick={() => navigate("/admin/dashboard/duty-schedule")}
+            onClick={handleCancel}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
             disabled={loading}
           >
             Cancel
           </button>
 
-          <button
-            onClick={handleSave}
-            disabled={loading ? true : false}
-            className={`bg-blue-500  text-white px-4 py-2 rounded ${
-              loading ? "" : " hover:bg-blue-600"
-            } overflow-hidden`}
-          >
-            {loading ? (
-              <PropagateLoader color="#fff" cssOverride={buttonOverrideStyle} />
-            ) : isEditMode ? (
-              "Update Duty Schedule"
-            ) : (
-              "Create Duty Schedule"
-            )}
-          </button>
+          {allEntries.length !== 0 && (
+            <button
+              onClick={handleSave}
+              disabled={loading ? true : false}
+              className={`bg-blue-500  text-white px-4 py-2 rounded ${
+                loading ? "" : " hover:bg-blue-600"
+              } overflow-hidden`}
+            >
+              {loading ? (
+                <PropagateLoader
+                  color="#fff"
+                  cssOverride={buttonOverrideStyle}
+                />
+              ) : isEditMode ? (
+                "Update Duty Schedule"
+              ) : (
+                "Create Duty Schedule"
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

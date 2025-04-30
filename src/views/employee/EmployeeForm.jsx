@@ -12,14 +12,18 @@ import { fetchAllReligions } from "../../store/Reducers/religionReducer";
 import { fetchAllPositions } from "../../store/Reducers/positionReducer";
 import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
 import { fetchAllClusters } from "../../store/Reducers/clusterReducer";
+
 import toast from "react-hot-toast";
+import Select from "react-select";
 
 const EmployeeForm = () => {
   const { id } = useParams(); // This will be undefined for add
   const isEditMode = !!id;
 
   const navigate = useNavigate();
+  const { role } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+
   const { employee, loading, errorMessage, successMessage } = useSelector(
     (state) => state.employee
   );
@@ -113,14 +117,20 @@ const EmployeeForm = () => {
   }, [employee, isEditMode]);
 
   useEffect(() => {
-    if (successMessage) {
-      toast.success(successMessage);
-      dispatch(messageClear());
-      navigate("/admin/dashboard/employee");
-    }
+    if (successMessage || errorMessage) {
+      if (successMessage) {
+        toast.success(successMessage);
+        if (role === "admin") {
+          navigate("/admin/dashboard/employee");
+        } else if (role === "hr") {
+          navigate("/hr/dashboard/employee");
+        }
+      }
 
-    if (errorMessage) {
-      toast.error(errorMessage);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      }
+
       dispatch(messageClear());
     }
   }, [successMessage, errorMessage]);
@@ -422,6 +432,21 @@ const EmployeeForm = () => {
   }, [formData?.employmentInformation?.position, positions]);
 
   //===============Handle position end====================
+
+  // const departmentOptions = departments.map((dept) => ({
+  //   value: dept._id,
+  //   label: dept.name,
+  // }));
+
+  const handleCancel = () => {
+    if (role === "admin") {
+      navigate("/admin/dashboard/employee");
+    } else if (role === "hr") {
+      navigate("/hr/dashboard/employee");
+    } else {
+      alert("You are not authorized to access the employee list.");
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto overflow-y-auto">
@@ -778,6 +803,22 @@ const EmployeeForm = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   Department
                 </label>
+                {/* <Select
+                  options={departmentOptions}
+                  value={departmentOptions.find(
+                    (option) =>
+                      option.value === formData.employmentInformation.department
+                  )}
+                  onChange={(selected) =>
+                    handleChange(
+                      "employmentInformation",
+                      "department",
+                      selected ? selected.value : null
+                    )
+                  }
+                  placeholder="Select Department"
+                  isClearable
+                /> */}
                 <select
                   value={formData.employmentInformation.department}
                   onChange={(e) =>
@@ -1210,7 +1251,7 @@ const EmployeeForm = () => {
           <div className="flex space-x-2">
             <button
               type="button"
-              onClick={() => navigate("/admin/dashboard/employee")}
+              onClick={handleCancel}
               className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               disabled={loading}
             >

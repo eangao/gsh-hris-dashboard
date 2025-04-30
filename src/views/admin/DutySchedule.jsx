@@ -9,6 +9,8 @@ const DutySchedule = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const { role } = useSelector((state) => state.auth);
+
   const { dutySchedules, totalDutySchedule, loading } = useSelector(
     (state) => state.dutySchedule
   );
@@ -32,12 +34,33 @@ const DutySchedule = () => {
     dispatch(fetchDutySchedules(obj));
   }, [searchValue, currentPage, perPage, dispatch]);
 
+  const handleAddDutySchedule = () => {
+    if (role === "admin") {
+      navigate("/admin/dashboard/duty-schedule/add");
+    } else if (role === "hr") {
+      navigate("/hr/dashboard/duty-schedule/add");
+    } else {
+      // Optional: fallback if unauthorized role
+      alert("You are not authorized to add duty schedule.");
+    }
+  };
+
+  const handleEditDutySchedule = (scheduleId) => {
+    if (role === "admin") {
+      navigate(`/admin/dashboard/duty-schedule/edit/${scheduleId}`);
+    } else if (role === "hr") {
+      navigate(`/hr/dashboard/duty-schedule/edit/${scheduleId}`);
+    } else {
+      alert("You are not authorized to edit employees.");
+    }
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold text-center">Duty Schedule</h1>
         <button
-          onClick={() => navigate("/admin/dashboard/duty-schedule/add")}
+          onClick={handleAddDutySchedule}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Create Duty Schedule
@@ -98,11 +121,7 @@ const DutySchedule = () => {
                       View
                     </button> */}
                     <button
-                      onClick={() =>
-                        navigate(
-                          `/admin/dashboard/duty-schedule/edit/${schedule?._id}`
-                        )
-                      }
+                      onClick={() => handleEditDutySchedule(schedule?._id)}
                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
