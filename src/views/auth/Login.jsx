@@ -10,7 +10,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { loader, errorMessage, successMessage, role } = useSelector(
+  const { loading, user, errorMessage, successMessage, role } = useSelector(
     (state) => state.auth
   );
 
@@ -39,10 +39,15 @@ const Login = () => {
 
     if (successMessage) {
       toast.success(successMessage);
+
+      if (user?.mustChangePassword) {
+        navigate("/change-password");
+      } else {
+        navigate("/");
+      }
       dispatch(messageClear());
-      navigate("/");
     }
-  }, [errorMessage, successMessage]);
+  }, [errorMessage, successMessage, dispatch, navigate, user]);
 
   // redirect to dashboard if access that is not yet logout
   if (role) return <Navigate to="/" replace />;
@@ -95,9 +100,9 @@ const Login = () => {
           <button
             type="submit"
             className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 transition-colors"
-            disabled={loader ? true : false}
+            disabled={loading ? true : false}
           >
-            {loader ? (
+            {loading ? (
               <PropagateLoader color="#fff" cssOverride={buttonOverrideStyle} />
             ) : (
               "Login"

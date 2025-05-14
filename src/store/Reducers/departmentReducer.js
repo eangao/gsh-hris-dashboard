@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
-import { user_register } from "./authReducer";
 
 // Async Thunks
 export const fetchDepartments = createAsyncThunk(

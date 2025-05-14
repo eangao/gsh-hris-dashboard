@@ -14,7 +14,7 @@ import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
 import { fetchAllClusters } from "../../store/Reducers/clusterReducer";
 
 import toast from "react-hot-toast";
-import Select from "react-select";
+// import Select from "react-select";
 
 const EmployeeForm = () => {
   const { id } = useParams(); // This will be undefined for add
@@ -43,19 +43,17 @@ const EmployeeForm = () => {
       birthdate: "",
       gender: "",
       religion: "",
-      photoUrl: "",
-    },
-    contactInformation: {
       temporaryAddress: "",
       permanentAddress: "",
       phoneNumber: "",
-      personalEmail: "",
-      campanyEmail: "",
+      photoUrl: "",
     },
+
     educationInformation: {
       highestAttainment: "",
+      isLicensedProfessional: false,
+      prcNumber: "",
       schoolsAttended: [],
-      licenseNumber: "",
     },
     employmentInformation: {
       hospitalEmployeeId: "",
@@ -149,16 +147,6 @@ const EmployeeForm = () => {
     e.preventDefault();
 
     if (isEditMode) {
-      //hande in select query find by id
-      // Remove the createdAt and isDeleted properties from employeeData
-      // const {
-      // createdAt,
-      // isDeleted,
-      // updatedAt,
-      // __v,
-      //   ...employeeDataWithoutUnwantedFields
-      // } = formData;
-
       dispatch(updateEmployee({ id, employeeData: formData }));
     } else {
       dispatch(createEmployee(formData));
@@ -181,7 +169,6 @@ const EmployeeForm = () => {
     schoolName: "",
     educationLevel: "",
     degree: "",
-    major: "",
     yearGraduated: "",
   });
 
@@ -191,7 +178,6 @@ const EmployeeForm = () => {
       schoolName: "",
       educationLevel: "",
       degree: "",
-      major: "",
       yearGraduated: "",
     });
   };
@@ -632,25 +618,32 @@ const EmployeeForm = () => {
                 ))}
               </select>
             </div>
-          </div>
-        </div>
-
-        {/* ============================================================== */}
-        {/* Contact Information Section */}
-        <div className="bg-white shadow rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 border-b pb-2">
-            Contact Information
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={formData.personalInformation.phoneNumber}
+                onChange={(e) =>
+                  handleChange(
+                    "personalInformation",
+                    "phoneNumber",
+                    e.target.value
+                  )
+                }
+                className="w-full p-2 border rounded mt-1"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Temporary Address
               </label>
               <textarea
-                value={formData.contactInformation.temporaryAddress}
+                value={formData.personalInformation.temporaryAddress}
                 onChange={(e) =>
                   handleChange(
-                    "contactInformation",
+                    "personalInformation",
                     "temporaryAddress",
                     e.target.value
                   )
@@ -664,67 +657,16 @@ const EmployeeForm = () => {
                 Permanent Address
               </label>
               <textarea
-                value={formData.contactInformation.permanentAddress}
+                value={formData.personalInformation.permanentAddress}
                 onChange={(e) =>
                   handleChange(
-                    "contactInformation",
+                    "personalInformation",
                     "permanentAddress",
                     e.target.value
                   )
                 }
                 className="w-full p-2 border rounded mt-1"
                 rows="3"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={formData.contactInformation.phoneNumber}
-                onChange={(e) =>
-                  handleChange(
-                    "contactInformation",
-                    "phoneNumber",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Personal Email
-              </label>
-              <input
-                type="email"
-                value={formData.contactInformation.personalEmail}
-                onChange={(e) =>
-                  handleChange(
-                    "contactInformation",
-                    "personalEmail",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Campany Email
-              </label>
-              <input
-                type="email"
-                value={formData.contactInformation.campanyEmail}
-                onChange={(e) =>
-                  handleChange(
-                    "contactInformation",
-                    "campanyEmail",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
               />
             </div>
           </div>
@@ -1044,40 +986,108 @@ const EmployeeForm = () => {
               </label>
               <select
                 value={formData.educationInformation.highestAttainment}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = e.target.value;
                   handleChange(
                     "educationInformation",
                     "highestAttainment",
-                    e.target.value
-                  )
-                }
+                    value
+                  );
+
+                  // Auto-reset license fields if value is NOT PRC-eligible
+                  const prcEligibleLevels = [
+                    "College Graduate",
+                    "Master’s Level",
+                    "Master’s Graduate",
+                    "Doctorate Level",
+                    "Doctorate Graduate",
+                  ];
+
+                  if (!prcEligibleLevels.includes(value)) {
+                    handleChange(
+                      "educationInformation",
+                      "isLicensedProfessional",
+                      false
+                    );
+                    handleChange("educationInformation", "prcNumber", "");
+                  }
+                }}
                 className="w-full p-2 border rounded mt-1"
                 required
               >
                 <option value="">Select Highest Attainment</option>
-                <option value="Elementary">Elementary</option>
-                <option value="High School">High School</option>
-                <option value="Undergraduate">Undergraduate</option>
-                <option value="Graduate">Graduate</option>
+                <option value="High School Graduate">
+                  High School Graduate
+                </option>
+                <option value="Senior High School Graduate">
+                  Senior High School Graduate
+                </option>
+                <option value="Technical/Vocational Graduate">
+                  Technical/Vocational Graduate
+                </option>
+                <option value="College Level">College Level</option>
+                <option value="College Graduate">College Graduate</option>
+                <option value="Master’s Level">Master’s Level</option>
+                <option value="Master’s Graduate">Master’s Graduate</option>
+                <option value="Doctorate Level">Doctorate Level</option>
+                <option value="Doctorate Graduate">Doctorate Graduate</option>
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                License Number
-              </label>
-              <input
-                type="text"
-                value={formData.educationInformation.licenseNumber}
-                onChange={(e) =>
-                  handleChange(
-                    "educationInformation",
-                    "licenseNumber",
-                    e.target.value
-                  )
-                }
-                className="w-full p-2 border rounded mt-1"
-              />
-            </div>
+
+            {[
+              "College Graduate",
+              "Master’s Level",
+              "Master’s Graduate",
+              "Doctorate Level",
+              "Doctorate Graduate",
+            ].includes(formData.educationInformation.highestAttainment) && (
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isLicensedProfessional"
+                  checked={formData.educationInformation.isLicensedProfessional}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    handleChange(
+                      "educationInformation",
+                      "isLicensedProfessional",
+                      checked
+                    );
+                    if (!checked) {
+                      handleChange("educationInformation", "prcNumber", "");
+                    }
+                  }}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="isLicensedProfessional"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Licensed Professional
+                </label>
+              </div>
+            )}
+
+            {formData.educationInformation.isLicensedProfessional && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  PRC Number
+                </label>
+                <input
+                  type="text"
+                  name="prcNumber"
+                  value={formData.educationInformation.prcNumber}
+                  onChange={(e) =>
+                    handleChange(
+                      "educationInformation",
+                      "prcNumber",
+                      e.target.value
+                    )
+                  }
+                  className="w-full p-2 border rounded mt-1"
+                />
+              </div>
+            )}
           </div>
           {/* Schools Attended Table */}
           <div className="col-span-2 mt-6">
@@ -1106,11 +1116,9 @@ const EmployeeForm = () => {
                       Education Level
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Degree
+                      Program / Degree
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Major
-                    </th>
+
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Year Graduated
                     </th>
@@ -1132,9 +1140,7 @@ const EmployeeForm = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {school.degree || "-"}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {school.major || "-"}
-                        </td>
+
                         <td className="px-6 py-4 whitespace-nowrap">
                           {school.yearGraduated}
                         </td>
@@ -1309,45 +1315,59 @@ const EmployeeForm = () => {
                   }
                   className="w-full p-2 border rounded mt-1"
                 >
-                  <option value="">Select Education Level</option>
-                  <option value="Elementary">Elementary</option>
+                  <option value="">Select education level</option>
                   <option value="High School">High School</option>
-                  <option value="Undergraduate">Undergraduate</option>
-                  <option value="Graduate">Graduate</option>
+                  <option value="Senior High School">Senior High School</option>
+                  <option value="Vocational/Technical">
+                    Vocational/Technical
+                  </option>
+                  <option value="College">College</option>
+                  <option value="Graduate School">Graduate School</option>
+                  <option value="Doctorate">Doctorate</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Degree
-                </label>
-                <input
-                  type="text"
-                  value={schoolFormData.degree}
-                  onChange={(e) =>
-                    setSchoolFormData({
-                      ...schoolFormData,
-                      degree: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Major
-                </label>
-                <input
-                  type="text"
-                  value={schoolFormData.major}
-                  onChange={(e) =>
-                    setSchoolFormData({
-                      ...schoolFormData,
-                      major: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                />
-              </div>
+              {schoolFormData.educationLevel === "Vocational/Technical" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Course / Program
+                  </label>
+                  <input
+                    type="text"
+                    value={schoolFormData.degree}
+                    onChange={(e) =>
+                      setSchoolFormData({
+                        ...schoolFormData,
+                        degree: e.target.value,
+                      })
+                    }
+                    placeholder="e.g., Automotive Technology, Electrical Installation"
+                    className="w-full p-2 border rounded mt-1"
+                  />
+                </div>
+              )}
+
+              {(schoolFormData.educationLevel === "College" ||
+                schoolFormData.educationLevel === "Graduate School" ||
+                schoolFormData.educationLevel === "Doctorate") && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Degree
+                  </label>
+                  <input
+                    type="text"
+                    value={schoolFormData.degree}
+                    onChange={(e) =>
+                      setSchoolFormData({
+                        ...schoolFormData,
+                        degree: e.target.value,
+                      })
+                    }
+                    placeholder="e.g., BS in Nursing, MS in Nursing, Doctor of Medicine (MD)"
+                    className="w-full p-2 border rounded mt-1"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Year Graduated <span className="text-red-700">*</span>

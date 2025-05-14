@@ -169,10 +169,10 @@ const EmploymentStatus = () => {
               employmentStatuses?.map((employmentStatus) => (
                 <tr key={employmentStatus._id} className="border-t">
                   <td className="p-2 text-lg capitalize">
-                    {employmentStatus.name.toLowerCase()}
+                    {employmentStatus.name?.toLowerCase()}
                   </td>
                   <td className="p-2 text-lg capitalize">
-                    {employmentStatus.description.toLowerCase()}
+                    {employmentStatus.description?.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button

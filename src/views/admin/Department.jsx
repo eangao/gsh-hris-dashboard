@@ -101,7 +101,6 @@ const Department = () => {
   };
   useEffect(() => {
     if (department && department._id === selectedId) {
-      console.log(department);
       setFormData(department);
       setIsModalOpen(true);
     }

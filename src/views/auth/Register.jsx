@@ -5,10 +5,7 @@ import { FaFacebook } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { PropagateLoader } from "react-spinners";
 import { overrideStyle } from "../../utils/utils";
-import {
-  seller_register,
-  messageClear,
-} from "../../store/Reducers/authReducer";
+import { createUser, messageClear } from "../../store/Reducers/authReducer";
 import toast from "react-hot-toast";
 
 const Register = () => {
@@ -35,7 +32,7 @@ const Register = () => {
 
   const submit = (e) => {
     e.preventDefault();
-    dispatch(seller_register(state));
+    dispatch(createUser(state));
   };
 
   useEffect(() => {

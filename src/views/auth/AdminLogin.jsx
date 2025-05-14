@@ -10,7 +10,7 @@ const AdminLogin = () => {
 
   const dispatch = useDispatch();
 
-  const { role, loader, errorMessage, successMessage } = useSelector(
+  const { role, user, loading, errorMessage, successMessage } = useSelector(
     (state) => state.auth
   );
 
@@ -45,8 +45,14 @@ const AdminLogin = () => {
 
     if (successMessage) {
       toast.success(successMessage);
+
+      if (user?.mustChangePassword) {
+        navigate("/change-password");
+      } else {
+        navigate("/");
+      }
+
       dispatch(messageClear());
-      navigate("/");
     }
   }, [errorMessage, successMessage]);
 
@@ -96,10 +102,10 @@ const AdminLogin = () => {
             </div>
 
             <button
-              disabled={loader ? true : false}
+              disabled={loading ? true : false}
               className="bg-slate-800 w-full hover:shadow-blue-300 hover:shadow-lg text-white rounded-md px-7 py-2 mb-3"
             >
-              {loader ? (
+              {loading ? (
                 <PropagateLoader color="#fff" cssOverride={overrideStyle} />
               ) : (
                 "Login"

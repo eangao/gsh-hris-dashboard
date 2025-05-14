@@ -1,141 +1,233 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchUsers,
   createUser,
   updateUser,
-  deleteUser,
+  fetchUsers,
+  getUnregisteredUsers,
+  fetchUserById,
   messageClear,
-} from "../../store/Reducers/userReducer";
-import api from "../../api/api";
+  clearUnRegisteredUsers,
+} from "../../store/Reducers/authReducer";
+import toast from "react-hot-toast";
+import Search from "../components/Search";
+import { FaCheck, FaEdit, FaSearch, FaTimes } from "react-icons/fa";
+import { PropagateLoader } from "react-spinners";
+import { buttonOverrideStyle } from "../../utils/utils";
+import Pagination from "../components/Pagination";
+
+import { Formik, Field, Form, ErrorMessage } from "formik";
+import * as Yup from "yup";
 
 const UserManagement = () => {
   const dispatch = useDispatch();
+
   const {
-    users = [],
+    users,
+    user,
+    totalUser,
+    unRegisteredUsers,
     loading,
-    error,
-    success,
-    message,
-  } = useSelector((state) => state.user);
-  const [employees, setEmployees] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
+    errorMessage,
+    successMessage,
+  } = useSelector((state) => state.auth);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchValue, setSearchValue] = useState("");
+  const [perPage, setPerpage] = useState(5);
+
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  useEffect(() => {
+    // Reset to page 1 if searchValue is not empty
+    if (searchValue && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+
+    getUsers();
+  }, [searchValue, currentPage]);
+
+  useEffect(() => {
+    if (successMessage || errorMessage) {
+      successMessage && toast.success(successMessage);
+      errorMessage && toast.error(errorMessage);
+
+      if (successMessage) {
+        getUsers();
+        handleCloseUserModal();
+      }
+
+      dispatch(messageClear());
+    }
+  }, [successMessage, errorMessage]);
 
   const [formData, setFormData] = useState({
     id: null,
-    username: "",
     email: "",
-    password: "",
     role: "",
-    employeeId: "",
+    employee: null,
   });
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState(null);
 
-  // Fetch employees when component mounts
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        const { data } = await api.get("/admin/employees");
-        setEmployees(Array.isArray(data) ? data : data.employees || []);
-      } catch (error) {
-        console.error("Error fetching employees:", error);
-      }
+  const getUsers = () => {
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
     };
-    fetchEmployees();
-  }, []);
 
-  useEffect(() => {
-    dispatch(fetchUsers());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (success) {
-      setIsModalOpen(false);
-      setDeleteId(null);
-      setFormData({
-        id: null,
-        username: "",
-        email: "",
-        password: "",
-        role: "",
-        employeeId: "",
-      });
-      setTimeout(() => {
-        dispatch(messageClear());
-      }, 3000);
-    }
-  }, [success, dispatch]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    dispatch(fetchUsers(obj));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (formData.id) {
-      dispatch(updateUser({ id: formData.id, userData: formData }));
-    } else {
-      dispatch(createUser(formData));
-    }
+  const handleCloseUserModal = () => {
+    setIsUserModalOpen(false);
+    setSelectedUnregisteredUser(null);
   };
 
-  const handleEdit = (user) => {
+  //====edit============
+  const handleEdit = (userId) => {
+    setSelectedUserId(userId);
+    dispatch(fetchUserById(userId));
+  };
+
+  useEffect(() => {
+    if (user && user._id === selectedUserId) {
+      setFormData(user);
+      setIsUserModalOpen(true);
+    }
+  }, [user, selectedUserId]);
+  //====edit============
+
+  const resetForm = () => {
     setFormData({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      password: "",
-      role: user.role,
-      employeeId: user.employeeId || "",
+      _id: null,
+      email: "",
+      role: "",
+      employee: null,
     });
-    setIsModalOpen(true);
   };
 
-  const handleDeleteConfirm = (id) => setDeleteId(id);
+  //=======================================
+  // Formik Yup Validation
+  const userValidationSchema = Yup.object({
+    email: Yup.string()
+      .email("Invalid email")
+      .matches(
+        /^[a-zA-Z0-9._%+-]+@adventisthealth-gng\.com$/,
+        "Email must be @adventisthealth-gng.com"
+      )
+      .required("Required"),
+    role: Yup.string().required("Required"),
+  });
 
-  const handleDelete = () => {
-    dispatch(deleteUser(deleteId));
+  const handleUserFormSubmit =
+    (formData) =>
+    async (values, { setSubmitting }) => {
+      const payload = {
+        ...formData,
+        email: values.email,
+        role: values.role,
+        employee: selectedUnregisteredUser._id,
+      };
+
+      if (payload._id) {
+        // dispatch(updateUser(payload));
+      } else {
+        dispatch(createUser(payload));
+      }
+
+      setSubmitting(false); // ← tells Formik the submit is done
+    };
+
+  //==============================================
+  //search Unregistered Users start
+  const [
+    isSearchUnregisteredUserModalOpen,
+    setIsSearchUnregisteredUserModalOpen,
+  ] = useState(false);
+  const [selectedUnregisteredUser, setSelectedUnregisteredUser] =
+    useState(null);
+
+  const [inputValue, setInputValue] = useState(""); // Local input state
+  const [showClear, setShowClear] = useState(false); // Controls when to show "X"
+  const [searchEmployeeButtonClick, setSearchEmployeeButtonClick] =
+    useState(false);
+
+  const handleRowClick = (selectedUnregisteredUser) => {
+    setSelectedUnregisteredUser(selectedUnregisteredUser);
   };
 
-  const filteredUsers = users?.filter(
-    (user) =>
-      user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user?.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employees
-        .find((emp) => emp.id === user.employeeId)
-        ?.name?.toLowerCase()
-        .includes(searchTerm.toLowerCase())
-  );
+  const searchUnregisteredUsers = (searchUnregisteredUser) => {
+    dispatch(getUnregisteredUsers({ searchUnregisteredUser }));
+
+    setTimeout(() => {
+      setSearchEmployeeButtonClick(true);
+    }, 1000); // delay in milliseconds (500ms = 0.5s)
+  };
+
+  // Function to trigger search
+  const triggerSearch = (value) => {
+    searchUnregisteredUsers(value);
+    setShowClear(!!value); // Show "X" only if input exists after searching
+  };
+
+  // Handle Enter key press
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      triggerSearch(inputValue);
+    }
+  };
+
+  // Handle search button click
+  const handleSearchButtonClick = () => {
+    triggerSearch(inputValue);
+  };
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInputValue(value);
+
+    if (value === "") {
+      setShowClear(false); // Hide "X" when input is empty
+    } else {
+      setShowClear(false); // Hide "X" while typing
+    }
+  };
+
+  // Handle clear search
+  const handleClearSearch = () => {
+    setInputValue(""); // Clear input field
+    setShowClear(false); // Hide "X"
+    dispatch(clearUnRegisteredUsers());
+    setSearchEmployeeButtonClick(false);
+  };
+
+  const handleCancelSearchUnregisteredUser = () => {
+    setIsSearchUnregisteredUserModalOpen(false);
+    handleClearSearch();
+    setSelectedUnregisteredUser(null);
+  };
+
+  const handleSelectedUnregisteredUser = () => {
+    setIsSearchUnregisteredUserModalOpen(false);
+    handleClearSearch();
+
+    setIsUserModalOpen(true);
+  };
+
+  //==============================================
+  //search Unregistered Users end
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">User Management</h1>
-
-      {/* Success Message */}
-      {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
-          {message}
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>
-      )}
-
-      {/* Search and Add User */}
       <div className="flex justify-between mb-4">
-        <input
-          type="text"
-          placeholder="Search users..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 border rounded w-64"
-        />
+        <h1 className="text-2xl font-bold text-center">User Management</h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            resetForm();
+            setIsSearchUnregisteredUserModalOpen(true);
+          }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
         >
@@ -143,65 +235,70 @@ const UserManagement = () => {
         </button>
       </div>
 
-      {/* Users Table */}
+      <div className="mb-4">
+        <Search
+          setPerpage={setPerpage}
+          setSearchValue={setSearchValue}
+          searchValue={searchValue}
+          inputPlaceholder="Search User..."
+        />
+      </div>
+
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Username</th>
+              <th className="p-3">User</th>
               <th className="p-3">Email</th>
               <th className="p-3">Role</th>
-              <th className="p-3">Linked Employee</th>
-              <th className="p-3 text-center">Actions</th>
+              <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" className="p-3 text-center">
-                  Loading...
+                <td colSpan="3" className="p-3 text-center">
+                  loading...
                 </td>
               </tr>
-            ) : filteredUsers?.length === 0 ? (
+            ) : users?.length === 0 ? (
               <tr>
-                <td colSpan="5" className="p-3 text-center text-gray-500">
+                <td colSpan="3" className="p-3 text-center text-gray-500">
                   No users found.
                 </td>
               </tr>
             ) : (
-              filteredUsers?.map((user) => (
-                <tr key={user.id} className="border-t">
-                  <td className="p-3">{user.username}</td>
-                  <td className="p-3">{user.email}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded ${
-                        user.role === "admin"
-                          ? "bg-purple-100 text-purple-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {user.role}
-                    </span>
+              users?.map((user) => (
+                <tr key={user._id} className="border-t">
+                  <td className="p-2  ">
+                    <span className="capitalize">
+                      {user.employee.personalInformation?.lastName},
+                    </span>{" "}
+                    <span className="capitalize">
+                      {user.employee.personalInformation?.firstName}
+                    </span>{" "}
+                    {user.employee.personalInformation?.middleName && (
+                      <span className="capitalize">
+                        {user.employee.personalInformation?.middleName
+                          .charAt(0)
+                          .toUpperCase()}
+                        .
+                      </span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    {employees.find((emp) => emp.id === user.employeeId)
-                      ?.name || "-"}
+                  <td className="p-2 lowercase">
+                    {user?.email?.toLowerCase()}
                   </td>
-                  <td className="p-3 flex justify-center space-x-2">
+                  <td className="p-2 lowercase">{user?.role?.toLowerCase()}</td>
+                  <td className="p-2 flex justify-end space-x-2">
                     <button
-                      onClick={() => handleEdit(user)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                      onClick={() => {
+                        handleEdit(user._id);
+                      }}
+                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteConfirm(user.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      disabled={loading}
-                    >
-                      Delete
+                      <FaEdit />
                     </button>
                   </td>
                 </tr>
@@ -211,142 +308,218 @@ const UserManagement = () => {
         </table>
       </div>
 
-      {/* Create/Edit Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+      {totalUser > perPage && (
+        <div className="w-full flex justify-end mt-4">
+          <Pagination
+            pageNumber={currentPage}
+            setPageNumber={setCurrentPage}
+            totalItem={totalUser}
+            perPage={perPage}
+            showItem={Math.min(5, Math.ceil(totalUser / perPage))}
+          />
+        </div>
+      )}
+
+      {/* User Form Modal */}
+      {isUserModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData.id ? "Edit User" : "Add User"}
+              {formData._id ? "Edit User" : "Add User"}
             </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded mt-1"
-                  required
-                  disabled={loading}
-                />
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded mt-1"
-                  required
-                  disabled={loading}
-                />
-              </div>
+            <Formik
+              initialValues={{
+                email: formData.email || "",
+                role: formData.role || "",
+              }}
+              enableReinitialize
+              validationSchema={userValidationSchema}
+              onSubmit={handleUserFormSubmit(formData)}
+            >
+              {({ isSubmitting }) => (
+                <Form className="space-y-4">
+                  <div>
+                    <label className="block font-medium">Email</label>
+                    <Field
+                      name="email"
+                      type="email"
+                      className="w-full border px-3 py-2 rounded"
+                    />
+                    <ErrorMessage
+                      name="email"
+                      component="div"
+                      className="text-red-500 text-sm"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Password {formData.id && "(leave blank to keep current)"}
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded mt-1"
-                  {...(!formData.id && { required: true })}
-                  disabled={loading}
-                />
-              </div>
+                  <div>
+                    <label className="block font-medium">Role</label>
+                    <Field
+                      as="select"
+                      name="role"
+                      className="w-full border px-3 py-2 rounded"
+                    >
+                      <option value="">Select a role</option>
+                      <option value="admin">Admin</option>
+                      <option value="employee">Employee</option>
+                      <option value="user">User</option>
+                    </Field>
+                    <ErrorMessage
+                      name="role"
+                      component="div"
+                      className="text-red-500 text-sm"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Role
-                </label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded mt-1"
-                  required
-                  disabled={loading}
-                >
-                  <option value="">Select Role</option>
-                  <option value="admin">Admin</option>
-                  <option value="employee">Employee</option>
-                  <option value="manager">Manager</option>
-                  <option value="hr">HR</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Link to Employee
-                </label>
-                <select
-                  name="employeeId"
-                  value={formData.employeeId}
-                  onChange={handleChange}
-                  className="w-full p-2 border rounded mt-1"
-                  disabled={loading}
-                >
-                  <option value="">Select Employee</option>
-                  {employees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  disabled={loading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  disabled={loading}
-                >
-                  {loading ? "Loading..." : formData.id ? "Update" : "Add"}
-                </button>
-              </div>
-            </form>
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={handleCloseUserModal}
+                      className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                      disabled={isSubmitting}
+                    >
+                      {formData._id ? "Update" : "Create User"}
+                    </button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteId !== null && (
+      {isSearchUnregisteredUserModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>Are you sure you want to delete this user?</p>
-            <div className="flex justify-end space-x-2 mt-4">
+            <h2 className="text-xl font-bold mb-4">Search employee to add</h2>
+
+            <div className="relative flex items-center mb-5">
+              <input
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                value={inputValue}
+                className="w-full px-4 py-2 pr-12 focus:border-slate-800 outline-none border border-slate-400 rounded text-slate-900"
+                type="text"
+                placeholder="Search employee firstname or lastname..."
+              />
+
+              {showClear ? (
+                // "X" button appears and disappears when clicked or when the input is empty
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute right-2 text-red-600 rounded p-2 hover:text-red-700"
+                >
+                  <FaTimes />
+                </button>
+              ) : (
+                // Search button appears when "X" is hidden
+                inputValue && (
+                  <button
+                    onClick={handleSearchButtonClick}
+                    className="absolute right-2 text-blue-600 rounded p-2 hover:text-blue-700"
+                  >
+                    <FaSearch />
+                  </button>
+                )
+              )}
+            </div>
+
+            {loading ? (
+              <span className="p-3 text-center ">loading...</span>
+            ) : unRegisteredUsers?.length === 0 ? (
+              <span className="p-3 text-center text-gray-500 ">
+                {searchEmployeeButtonClick &&
+                  inputValue &&
+                  "No employee found."}
+              </span>
+            ) : (
+              <div className="max-h-[440px] overflow-y-auto">
+                <table className="w-full border-collapse ">
+                  <thead>
+                    <tr className="bg-blue-200">
+                      <th className="text-left p-2">Employee</th>
+                      <th className="text-left  p-2">Position</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unRegisteredUsers?.map((userToRegistered) => {
+                      const isSelected =
+                        selectedUnregisteredUser === userToRegistered;
+
+                      return (
+                        <tr
+                          key={userToRegistered._id}
+                          onClick={() => handleRowClick(userToRegistered)}
+                          className={`cursor-pointer ${
+                            isSelected ? "bg-blue-50" : ""
+                          }`}
+                        >
+                          <td className="text-left border-y p-2 flex items-center justify-start ">
+                            <span className={`${isSelected ? "mr-2" : ""} `}>
+                              {isSelected && (
+                                <FaCheck className="text-blue-600 " />
+                              )}
+                            </span>
+                            <div>
+                              <span className="capitalize">
+                                {userToRegistered.personalInformation?.lastName}
+                                ,
+                              </span>{" "}
+                              <span className="capitalize">
+                                {
+                                  userToRegistered.personalInformation
+                                    ?.firstName
+                                }
+                              </span>{" "}
+                              {userToRegistered.personalInformation
+                                ?.middleName && (
+                                <span className="capitalize">
+                                  {userToRegistered.personalInformation?.middleName
+                                    .charAt(0)
+                                    .toUpperCase()}
+                                  .
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="text-left border-y p-2">
+                            {userToRegistered.employmentInformation?.position
+                              ?.name || "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>{" "}
+              </div>
+            )}
+            <div className="flex justify-end space-x-2 mt-5">
               <button
-                onClick={() => setDeleteId(null)}
+                type="button"
+                onClick={handleCancelSearchUnregisteredUser}
                 className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                 disabled={loading}
               >
                 Cancel
               </button>
-              <button
-                onClick={handleDelete}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                disabled={loading}
-              >
-                {loading ? "Loading..." : "Delete"}
-              </button>
+              {selectedUnregisteredUser && (
+                <button
+                  type="button"
+                  onClick={handleSelectedUnregisteredUser}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={loading}
+                >
+                  Select
+                </button>
+              )}
             </div>
           </div>
         </div>

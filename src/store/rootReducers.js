@@ -6,7 +6,6 @@ import positionReducer from "./Reducers/positionReducer";
 import clusterReducer from "./Reducers/clusterReducer";
 import departmentReducer from "./Reducers/departmentReducer";
 import attendanceReducer from "./Reducers/attendanceReducer";
-import userReducer from "./Reducers/userReducer";
 import holidayReducer from "./Reducers/holidayReducer";
 import roleReducer from "./Reducers/roleReducer";
 import dutyScheduleReducer from "./Reducers/dutyScheduleReducer";
@@ -18,7 +17,6 @@ const rootReducer = {
   employmentStatus: employmentStatusReducer,
   religion: religionReducer,
   attendance: attendanceReducer,
-  user: userReducer,
   holidays: holidayReducer,
   role: roleReducer,
   dutySchedule: dutyScheduleReducer,
