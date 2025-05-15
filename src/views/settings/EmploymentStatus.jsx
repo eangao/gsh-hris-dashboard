@@ -1,25 +1,32 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchPositions,
-  createPosition,
-  updatePosition,
-  deletePosition,
+  fetchEmploymentStatus,
+  createEmploymentStatus,
+  updateEmploymentStatus,
+  deleteEmploymentStatus,
   messageClear,
-} from "../../store/Reducers/positionReducer";
-import Pagination from "../components/Pagination";
+} from "../../store/Reducers/employmentStatusReducer";
+
+import Pagination from "../../components/Pagination";
+import Search from "../../components/Search";
+
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
 import { buttonOverrideStyle } from "../../utils/utils";
 import { PropagateLoader } from "react-spinners";
-import Search from "../components/Search";
 
-const Position = () => {
+const EmploymentStatus = () => {
   const dispatch = useDispatch();
 
-  const { positions, totalPosition, loading, successMessage, errorMessage } =
-    useSelector((state) => state.position);
+  const {
+    employmentStatuses,
+    totalEmploymentStatus,
+    loading,
+    successMessage,
+    errorMessage,
+  } = useSelector((state) => state.employmentStatus);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -31,23 +38,22 @@ const Position = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
-    getPositions();
+    getEmploymentStatus();
   }, [searchValue, currentPage, perPage, dispatch]);
 
-  const getPositions = () => {
+  const getEmploymentStatus = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
       searchValue,
     };
 
-    dispatch(fetchPositions(obj));
+    dispatch(fetchEmploymentStatus(obj));
   };
 
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
-    level: "",
     description: "",
   });
 
@@ -59,7 +65,7 @@ const Position = () => {
     if (successMessage) {
       toast.success(successMessage);
 
-      getPositions();
+      getEmploymentStatus();
 
       setIsModalOpen(false);
       setDeleteId(null);
@@ -80,14 +86,14 @@ const Position = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData._id) {
-      dispatch(updatePosition(formData));
+      dispatch(updateEmploymentStatus(formData));
     } else {
-      dispatch(createPosition(formData));
+      dispatch(createEmploymentStatus(formData));
     }
   };
 
-  const handleEdit = (position) => {
-    setFormData(position);
+  const handleEdit = (employmentStatus) => {
+    setFormData(employmentStatus);
     setIsModalOpen(true);
   };
 
@@ -97,23 +103,24 @@ const Position = () => {
   };
 
   const handleDelete = () => {
-    dispatch(deletePosition(deleteId));
+    dispatch(deleteEmploymentStatus(deleteId));
   };
 
   const resetForm = () => {
     setFormData({
       _id: null,
       name: "",
-      level: "",
       description: "",
     });
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/*  Header and Add Position */}
+      {/*  Header and Add EmploymentStatus */}
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold  text-center">Position Management</h1>
+        <h1 className="text-2xl font-bold  text-center">
+          Employment Status Management
+        </h1>
         <button
           onClick={() => {
             resetForm();
@@ -122,28 +129,27 @@ const Position = () => {
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
         >
-          Add Position
+          Add Employment Status
         </button>
       </div>
 
-      {/* Search and Add Position */}
+      {/* Search and Add EmploymentStatus */}
 
       <div className=" mb-4">
         <Search
           setPerpage={setPerpage}
           setSearchValue={setSearchValue}
           searchValue={searchValue}
-          inputPlaceholder={"Search Position..."}
+          inputPlaceholder={"Search Employment Status..."}
         />
       </div>
 
-      {/* Positions Table */}
+      {/* employmentStatus Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Position Name</th>
-              <th className="p-3">Level</th>
+              <th className="p-3">Employment Status Name</th>
               <th className="p-3">Description</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
@@ -155,45 +161,41 @@ const Position = () => {
                   loading...
                 </td>
               </tr>
-            ) : positions?.length === 0 ? (
+            ) : employmentStatuses?.length === 0 ? (
               <tr>
                 <td colSpan="3" className="p-3 text-center text-gray-500">
-                  No positions found.
+                  No employment status found.
                 </td>
               </tr>
             ) : (
-              positions?.map((position) => (
-                <tr key={position._id} className="border-t">
+              employmentStatuses?.map((employmentStatus) => (
+                <tr key={employmentStatus._id} className="border-t">
                   <td className="p-2 text-lg capitalize">
-                    {position?.name?.toLowerCase()}
+                    {employmentStatus.name?.toLowerCase()}
                   </td>
                   <td className="p-2 text-lg capitalize">
-                    {position?.level?.toLowerCase()}
-                  </td>
-                  <td className="p-2 text-lg capitalize">
-                    {position?.description?.toLowerCase()}
+                    {employmentStatus.description?.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
-                    {position?.isDefault && (
-                      <>
-                        <button
-                          onClick={() => handleEdit(position)}
-                          className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
-                          disabled={loading}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleDeleteConfirm(position._id, position.name)
-                          }
-                          className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                          disabled={loading}
-                        >
-                          <FaTrashAlt />
-                        </button>
-                      </>
-                    )}
+                    <button
+                      onClick={() => handleEdit(employmentStatus)}
+                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                      disabled={loading}
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleDeleteConfirm(
+                          employmentStatus._id,
+                          employmentStatus.name
+                        )
+                      }
+                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                      disabled={loading}
+                    >
+                      <FaTrashAlt />
+                    </button>
                   </td>
                 </tr>
               ))
@@ -203,16 +205,16 @@ const Position = () => {
       </div>
 
       {/* Pagination  */}
-      {totalPosition <= perPage ? (
+      {totalEmploymentStatus <= perPage ? (
         ""
       ) : (
         <div className="w-full flex justify-end mt-4 bottom-4 right-4">
           <Pagination
             pageNumber={currentPage}
             setPageNumber={setCurrentPage}
-            totalItem={totalPosition}
+            totalItem={totalEmploymentStatus}
             perPage={perPage}
-            showItem={Math.min(5, Math.ceil(totalPosition / perPage))}
+            showItem={Math.min(5, Math.ceil(totalEmploymentStatus / perPage))}
           />
         </div>
       )}
@@ -222,37 +224,21 @@ const Position = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData._id ? "Edit Position" : "Add Position"}
+              {formData._id
+                ? "Edit Employment Status"
+                : "Add Employment Status"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
                 name="name"
-                placeholder="Position Name"
+                placeholder="Employment Status"
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full p-2 border rounded capitalize"
                 required
                 disabled={loading}
               />
-
-              <select
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                className="w-full p-2 border rounded capitalize"
-                required
-                disabled={loading}
-              >
-                <option value="">Select Level</option>
-                <option value="staff">Staff</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="manager">Manager</option>
-                <option value="physician">Physician</option>
-                <option value="hr">HR</option>
-                <option value="director">Director</option>
-                <option value="executive">Executive</option>
-              </select>
 
               <input
                 type="text"
@@ -305,7 +291,7 @@ const Position = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>{`Are you sure you want to delete ${deleteName} position?`}</p>
+            <p>{`Are you sure you want to delete ${deleteName} employment status?`}</p>
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 onClick={() => setDeleteId(null)}
@@ -329,4 +315,4 @@ const Position = () => {
   );
 };
 
-export default Position;
+export default EmploymentStatus;

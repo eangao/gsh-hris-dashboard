@@ -14,7 +14,8 @@ import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
 
 import toast from "react-hot-toast";
 import { PropagateLoader } from "react-spinners";
-import { buttonOverrideStyle } from "./../../utils/utils";
+import { buttonOverrideStyle } from "../../utils/utils";
+import { FaTimes } from "react-icons/fa";
 
 // Holiday data for 2025
 const HOLIDAYS_2025 = [
@@ -32,6 +33,8 @@ const HOLIDAYS_2025 = [
 const DutyScheduleForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const { role } = useSelector((state) => state.auth);
 
   const { id } = useParams();
   const isEditMode = !!id;
@@ -157,6 +160,12 @@ const DutyScheduleForm = () => {
       dispatch(messageClear());
       navigate("/admin/dashboard/duty-schedule");
 
+      if (role === "admin") {
+        navigate("/admin/dashboard/duty-schedule");
+      } else if (role === "hr") {
+        navigate("/hr/dashboard/duty-schedule");
+      }
+
       if (!isEditMode) {
         setLocalDutySchedule({
           name: "",
@@ -237,13 +246,11 @@ const DutyScheduleForm = () => {
     );
     if (!entry) return [];
 
-    return entry.employeeSchedules.map((es) => {
-      // Normalize employee
+    const employeesForDate = entry.employeeSchedules.map((es) => {
       const empId =
         typeof es.employee === "string" ? es.employee : es.employee?._id;
       const employee = employees.find((emp) => emp._id === empId);
 
-      // Normalize workSchedule
       const wsId =
         typeof es.workSchedule === "string"
           ? es.workSchedule
@@ -254,27 +261,54 @@ const DutyScheduleForm = () => {
 
       const shiftTime = workSchedule
         ? workSchedule.type === "Standard"
-          ? `(${formatTimePH(workSchedule.morningIn)}-${formatTimePH(
+          ? `${formatTimePH(workSchedule.morningIn)}-${formatTimePH(
               workSchedule.morningOut
             )}, ${formatTimePH(workSchedule.afternoonIn)}-${formatTimePH(
               workSchedule.afternoonOut
-            )})`
-          : `(${formatTimePH(workSchedule.startTime)}-${formatTimePH(
+            )}`
+          : `${formatTimePH(workSchedule.startTime)}-${formatTimePH(
               workSchedule.endTime
-            )})`
-        : "";
+            )}`
+        : "Unknown";
 
       return {
         id: empId,
         name: employee
-          ? `${employee.personalInformation.lastName}, ${employee.personalInformation.firstName}`
+          ? `${
+              employee.personalInformation.lastName
+            }, ${employee.personalInformation.firstName
+              .charAt(0)
+              .toUpperCase()}`
           : "Unknown",
+        lastName: employee?.personalInformation?.lastName || "",
         shiftName,
-        shiftTime,
-        shift: `${shiftName} ${shiftTime}`,
+        shift: shiftTime,
         description: es.remarks || "",
       };
     });
+
+    // Group by shift
+    const grouped = employeesForDate.reduce((acc, emp) => {
+      if (!acc[emp.shift]) {
+        acc[emp.shift] = {
+          shift: emp.shift,
+          shiftName: emp.shiftName,
+          employees: [],
+        };
+      }
+      acc[emp.shift].employees.push(emp);
+      return acc;
+    }, {});
+
+    // Convert to array, sort groups by shift label, and sort each group by lastName
+    return Object.values(grouped)
+      .map((group) => ({
+        ...group,
+        employees: group.employees.sort((a, b) =>
+          a.lastName.localeCompare(b.lastName)
+        ),
+      }))
+      .sort((a, b) => a.shift.localeCompare(b.shift));
   };
 
   const handleEmployeeAdd = () => {
@@ -282,24 +316,25 @@ const DutyScheduleForm = () => {
 
     const dateKey = formatToPHDateString(selectedDate);
 
-    // Create a deep copy of allEntries to avoid mutation errors
+    // Deep clone to avoid state mutation
     let entries = JSON.parse(JSON.stringify(allEntries));
 
+    // Check if there's already an entry for the selected date
     let entryIndex = entries.findIndex(
       (e) => formatToPHDateString(new Date(e.date)) === dateKey
     );
 
+    const newSchedule = {
+      employee: employeeInput,
+      workSchedule: selectedShift,
+      remarks: description,
+    };
+
     if (entryIndex === -1) {
-      // If no entry found for the selected date, create a new one
+      // No entry for the date → create a new one
       entries.push({
         date: selectedDate,
-        employeeSchedules: [
-          {
-            employee: employeeInput,
-            workSchedule: selectedShift,
-            remarks: description,
-          },
-        ],
+        employeeSchedules: [newSchedule],
       });
     } else {
       const employeeSchedules = entries[entryIndex].employeeSchedules;
@@ -308,29 +343,40 @@ const DutyScheduleForm = () => {
       );
 
       if (existingIndex === -1) {
-        // If employee not already scheduled, add new schedule
-        employeeSchedules.push({
-          employee: employeeInput,
-          workSchedule: selectedShift,
-          remarks: description,
-        });
+        // Not yet scheduled → add
+        employeeSchedules.push(newSchedule);
       } else {
-        // If employee is already scheduled, update their schedule
-        employeeSchedules[existingIndex] = {
-          employee: employeeInput,
-          workSchedule: selectedShift,
-          remarks: description,
-        };
+        // Already scheduled → update
+        employeeSchedules[existingIndex] = newSchedule;
       }
+
+      // Optional: sort by last name (optional but good for consistency in data)
+      employeeSchedules.sort((a, b) => {
+        const empA = employees.find(
+          (e) =>
+            e._id ===
+            (typeof a.employee === "string" ? a.employee : a.employee?._id)
+        );
+        const empB = employees.find(
+          (e) =>
+            e._id ===
+            (typeof b.employee === "string" ? b.employee : b.employee?._id)
+        );
+        const lastA = empA?.personalInformation?.lastName?.toLowerCase() || "";
+        const lastB = empB?.personalInformation?.lastName?.toLowerCase() || "";
+        return lastA.localeCompare(lastB);
+      });
 
       entries[entryIndex].employeeSchedules = employeeSchedules;
     }
 
-    // Update the allEntries state with the modified entries
     setAllEntries(entries);
-
-    // Close the modal
     setIsModalOpen(false);
+
+    // Optional: reset form values if needed
+    setEmployeeInput(null);
+    setSelectedShift(null);
+    setDescription("");
   };
 
   const handleEmployeeRemove = (date, employeeId) => {
@@ -463,7 +509,7 @@ const DutyScheduleForm = () => {
       // Debugging logs
       // console.log("Start Date:", startDate);
       // console.log("End Date:", endDate);
-      // console.log("All Entries:", allEntries);
+      console.log("All Entries:", allEntries);
 
       // Filter entries based on current date rangez
       const filteredEntries = filterEntriesByDateRange(
@@ -481,6 +527,16 @@ const DutyScheduleForm = () => {
       };
       // console.log("Creating new duty schedule:", payload);
       dispatch(createDutySchedule(payload));
+    }
+  };
+
+  const handleCancel = () => {
+    if (role === "admin") {
+      navigate("/admin/dashboard/duty-schedule");
+    } else if (role === "hr") {
+      navigate("/hr/dashboard/duty-schedule");
+    } else {
+      alert("You are not authorized to access the schedule list.");
     }
   };
 
@@ -605,32 +661,41 @@ const DutyScheduleForm = () => {
                           </div>
                         )}
                         <div className="space-y-1">
-                          {getEmployeesForDate(day).map((emp) => (
+                          {getEmployeesForDate(day).map((group) => (
                             <div
-                              key={emp.id}
-                              className={`text-sm p-2 rounded ${getShiftColor(
-                                emp.shiftName
+                              key={group.shift}
+                              className={`rounded p-1 ${getShiftColor(
+                                group.shiftName
                               )}`}
                             >
-                              <div className="flex justify-between items-center">
-                                <span>
-                                  {emp.name} - {emp.shift}
-                                </span>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEmployeeRemove(day, emp.id);
-                                  }}
-                                  className="text-red-500 hover:text-red-700 ml-1"
-                                >
-                                  ×
-                                </button>
+                              <div className="text-xs font-bold mb-1 uppercase text-gray-700">
+                                {group.shift}
                               </div>
-                              {emp.description && (
-                                <div className="text-gray-600 mt-1 text-xs italic">
-                                  {emp.description}
+
+                              {group.employees.map((emp) => (
+                                <div
+                                  key={emp.id}
+                                  className="text-sm mb-1 p-1 rounded bg-white/50"
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <span>{emp.name}</span>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEmployeeRemove(day, emp.id);
+                                      }}
+                                      className="text-red-500 hover:text-red-700 flex items-center justify-center"
+                                    >
+                                      <FaTimes />
+                                    </button>
+                                  </div>
+                                  {emp.description && (
+                                    <div className="text-gray-600 mt-1 text-xs italic">
+                                      {emp.description}
+                                    </div>
+                                  )}
                                 </div>
-                              )}
+                              ))}
                             </div>
                           ))}
                         </div>
@@ -765,7 +830,7 @@ const DutyScheduleForm = () => {
               </div>
             </div>
 
-            {getEmployeesForDate(selectedDate)?.length > 0 && (
+            {/* {getEmployeesForDate(selectedDate)?.length > 0 && (
               <div className="mt-4">
                 <h3 className="font-medium mb-2">Current Assignments</h3>
                 <div className="space-y-1">
@@ -798,7 +863,7 @@ const DutyScheduleForm = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       )}
@@ -808,28 +873,33 @@ const DutyScheduleForm = () => {
         <div className="flex space-x-2">
           <button
             type="button"
-            onClick={() => navigate("/admin/dashboard/duty-schedule")}
+            onClick={handleCancel}
             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
             disabled={loading}
           >
             Cancel
           </button>
 
-          <button
-            onClick={handleSave}
-            disabled={loading ? true : false}
-            className={`bg-blue-500  text-white px-4 py-2 rounded ${
-              loading ? "" : " hover:bg-blue-600"
-            } overflow-hidden`}
-          >
-            {loading ? (
-              <PropagateLoader color="#fff" cssOverride={buttonOverrideStyle} />
-            ) : isEditMode ? (
-              "Update Duty Schedule"
-            ) : (
-              "Create Duty Schedule"
-            )}
-          </button>
+          {allEntries.length !== 0 && (
+            <button
+              onClick={handleSave}
+              disabled={loading ? true : false}
+              className={`bg-blue-500  text-white px-4 py-2 rounded ${
+                loading ? "" : " hover:bg-blue-600"
+              } overflow-hidden`}
+            >
+              {loading ? (
+                <PropagateLoader
+                  color="#fff"
+                  cssOverride={buttonOverrideStyle}
+                />
+              ) : isEditMode ? (
+                "Update Duty Schedule"
+              ) : (
+                "Create Duty Schedule"
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

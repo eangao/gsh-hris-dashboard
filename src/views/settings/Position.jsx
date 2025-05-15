@@ -1,25 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchRoles,
-  createRole,
-  updateRole,
-  deleteRole,
+  fetchPositions,
+  createPosition,
+  updatePosition,
+  deletePosition,
   messageClear,
-} from "../../store/Reducers/roleReducer";
-import Pagination from "../components/Pagination";
+} from "../../store/Reducers/positionReducer";
+
+import Pagination from "../../components/Pagination";
+import Search from "../../components/Search";
+
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
 import { buttonOverrideStyle } from "../../utils/utils";
 import { PropagateLoader } from "react-spinners";
-import Search from "../components/Search";
 
-const Role = () => {
+const Position = () => {
   const dispatch = useDispatch();
 
-  const { roles, totalRole, loading, successMessage, errorMessage } =
-    useSelector((state) => state.role);
+  const { positions, totalPosition, loading, successMessage, errorMessage } =
+    useSelector((state) => state.position);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -31,22 +33,24 @@ const Role = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
-    getRoles();
+    getPositions();
   }, [searchValue, currentPage, perPage, dispatch]);
 
-  const getRoles = () => {
+  const getPositions = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
       searchValue,
     };
 
-    dispatch(fetchRoles(obj));
+    dispatch(fetchPositions(obj));
   };
 
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
+    level: "",
+    description: "",
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -57,7 +61,7 @@ const Role = () => {
     if (successMessage) {
       toast.success(successMessage);
 
-      getRoles();
+      getPositions();
 
       setIsModalOpen(false);
       setDeleteId(null);
@@ -78,14 +82,14 @@ const Role = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData._id) {
-      dispatch(updateRole(formData));
+      dispatch(updatePosition(formData));
     } else {
-      dispatch(createRole(formData));
+      dispatch(createPosition(formData));
     }
   };
 
-  const handleEdit = (role) => {
-    setFormData(role);
+  const handleEdit = (position) => {
+    setFormData(position);
     setIsModalOpen(true);
   };
 
@@ -95,21 +99,23 @@ const Role = () => {
   };
 
   const handleDelete = () => {
-    dispatch(deleteRole(deleteId));
+    dispatch(deletePosition(deleteId));
   };
 
   const resetForm = () => {
     setFormData({
       _id: null,
       name: "",
+      level: "",
+      description: "",
     });
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/*  Header and Add Role */}
+      {/*  Header and Add Position */}
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold  text-center">Role Management</h1>
+        <h1 className="text-2xl font-bold  text-center">Position Management</h1>
         <button
           onClick={() => {
             resetForm();
@@ -118,62 +124,78 @@ const Role = () => {
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
         >
-          Add Role
+          Add Position
         </button>
       </div>
 
-      {/* Search and Add Role */}
+      {/* Search and Add Position */}
 
       <div className=" mb-4">
         <Search
           setPerpage={setPerpage}
           setSearchValue={setSearchValue}
           searchValue={searchValue}
-          inputPlaceholder={"Search Role..."}
+          inputPlaceholder={"Search Position..."}
         />
       </div>
 
-      {/* Roles Table */}
+      {/* Positions Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Role Name</th>
+              <th className="p-3">Position Name</th>
+              <th className="p-3">Level</th>
+              <th className="p-3">Description</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="2" className="p-3 text-center">
+                <td colSpan="3" className="p-3 text-center">
                   loading...
                 </td>
               </tr>
-            ) : roles?.length === 0 ? (
+            ) : positions?.length === 0 ? (
               <tr>
-                <td colSpan="2" className="p-3 text-center text-gray-500">
-                  No roles found.
+                <td colSpan="3" className="p-3 text-center text-gray-500">
+                  No positions found.
                 </td>
               </tr>
             ) : (
-              roles?.map((role) => (
-                <tr key={role._id} className="border-t">
-                  <td className="p-2 text-lg capitalize">{role.name}</td>
+              positions?.map((position) => (
+                <tr key={position._id} className="border-t">
+                  <td className="p-2 text-lg capitalize">
+                    {position?.name?.toLowerCase()}
+                  </td>
+                  <td className="p-2 text-lg capitalize">
+                    {position?.level?.toLowerCase()}
+                  </td>
+                  <td className="p-2 text-lg capitalize">
+                    {position?.description?.toLowerCase()}
+                  </td>
                   <td className="p-2 flex justify-end space-x-2">
-                    <button
-                      onClick={() => handleEdit(role)}
-                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
-                      disabled={loading}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteConfirm(role._id, role.name)}
-                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                      disabled={loading}
-                    >
-                      <FaTrashAlt />
-                    </button>
+                    {position?.isDefault && (
+                      <>
+                        <button
+                          onClick={() => handleEdit(position)}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                          disabled={loading}
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDeleteConfirm(position._id, position.name)
+                          }
+                          className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                          disabled={loading}
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
@@ -183,16 +205,16 @@ const Role = () => {
       </div>
 
       {/* Pagination  */}
-      {totalRole <= perPage ? (
+      {totalPosition <= perPage ? (
         ""
       ) : (
         <div className="w-full flex justify-end mt-4 bottom-4 right-4">
           <Pagination
             pageNumber={currentPage}
             setPageNumber={setCurrentPage}
-            totalItem={totalRole}
+            totalItem={totalPosition}
             perPage={perPage}
-            showItem={Math.min(5, Math.ceil(totalRole / perPage))}
+            showItem={Math.min(5, Math.ceil(totalPosition / perPage))}
           />
         </div>
       )}
@@ -202,19 +224,48 @@ const Role = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData._id ? "Edit Role" : "Add Role"}
+              {formData._id ? "Edit Position" : "Add Position"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
                 name="name"
-                placeholder="Role Name"
+                placeholder="Position Name"
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full p-2 border rounded capitalize"
                 required
                 disabled={loading}
               />
+
+              <select
+                name="level"
+                value={formData.level}
+                onChange={handleChange}
+                className="w-full p-2 border rounded capitalize"
+                required
+                disabled={loading}
+              >
+                <option value="">Select Level</option>
+                <option value="staff">Staff</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="manager">Manager</option>
+                <option value="physician">Physician</option>
+                <option value="hr">HR</option>
+                <option value="director">Director</option>
+                <option value="executive">Executive</option>
+              </select>
+
+              <input
+                type="text"
+                name="description"
+                placeholder="Description"
+                value={formData.description}
+                onChange={handleChange}
+                className="w-full p-2 border rounded capitalize"
+                disabled={loading}
+              />
+
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
@@ -256,7 +307,7 @@ const Role = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>{`Are you sure you want to delete ${deleteName} role?`}</p>
+            <p>{`Are you sure you want to delete ${deleteName} position?`}</p>
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 onClick={() => setDeleteId(null)}
@@ -280,4 +331,4 @@ const Role = () => {
   );
 };
 
-export default Role;
+export default Position;

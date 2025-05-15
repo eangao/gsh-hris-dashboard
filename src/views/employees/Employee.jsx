@@ -6,8 +6,8 @@ import {
   deleteEmployee,
   messageClear,
 } from "../../store/Reducers/employeeReducer";
-import Search from "../components/Search";
-import Pagination from "../components/Pagination";
+import Search from "../../components/Search";
+import Pagination from "../../components/Pagination";
 import { FaTrashAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 

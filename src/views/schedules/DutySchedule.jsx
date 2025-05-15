@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fetchDutySchedules } from "../../store/Reducers/dutyScheduleReducer";
-import Search from "../components/Search";
-import Pagination from "../components/Pagination";
+import Search from "../../components/Search";
+import Pagination from "../../components/Pagination";
 
 const DutySchedule = () => {
   const navigate = useNavigate();

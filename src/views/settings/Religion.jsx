@@ -1,30 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchEmploymentStatus,
-  createEmploymentStatus,
-  updateEmploymentStatus,
-  deleteEmploymentStatus,
+  fetchReligions,
+  createReligion,
+  updateReligion,
+  deleteReligion,
   messageClear,
-} from "../../store/Reducers/employmentStatusReducer";
-import Pagination from "../components/Pagination";
+} from "../../store/Reducers/religionReducer";
+
+import Pagination from "../../components/Pagination";
+import Search from "../../components/Search";
+
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
 import { buttonOverrideStyle } from "../../utils/utils";
 import { PropagateLoader } from "react-spinners";
-import Search from "../components/Search";
 
-const EmploymentStatus = () => {
+const Religion = () => {
   const dispatch = useDispatch();
 
-  const {
-    employmentStatuses,
-    totalEmploymentStatus,
-    loading,
-    successMessage,
-    errorMessage,
-  } = useSelector((state) => state.employmentStatus);
+  const { religions, totalReligion, loading, successMessage, errorMessage } =
+    useSelector((state) => state.religion);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -36,23 +33,22 @@ const EmploymentStatus = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
-    getEmploymentStatus();
+    getReligions();
   }, [searchValue, currentPage, perPage, dispatch]);
 
-  const getEmploymentStatus = () => {
+  const getReligions = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
       searchValue,
     };
 
-    dispatch(fetchEmploymentStatus(obj));
+    dispatch(fetchReligions(obj));
   };
 
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
-    description: "",
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +59,7 @@ const EmploymentStatus = () => {
     if (successMessage) {
       toast.success(successMessage);
 
-      getEmploymentStatus();
+      getReligions();
 
       setIsModalOpen(false);
       setDeleteId(null);
@@ -84,14 +80,14 @@ const EmploymentStatus = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData._id) {
-      dispatch(updateEmploymentStatus(formData));
+      dispatch(updateReligion(formData));
     } else {
-      dispatch(createEmploymentStatus(formData));
+      dispatch(createReligion(formData));
     }
   };
 
-  const handleEdit = (employmentStatus) => {
-    setFormData(employmentStatus);
+  const handleEdit = (religion) => {
+    setFormData(religion);
     setIsModalOpen(true);
   };
 
@@ -101,24 +97,21 @@ const EmploymentStatus = () => {
   };
 
   const handleDelete = () => {
-    dispatch(deleteEmploymentStatus(deleteId));
+    dispatch(deleteReligion(deleteId));
   };
 
   const resetForm = () => {
     setFormData({
       _id: null,
       name: "",
-      description: "",
     });
   };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/*  Header and Add EmploymentStatus */}
+      {/*  Header and Add Religion */}
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold  text-center">
-          Employment Status Management
-        </h1>
+        <h1 className="text-2xl font-bold  text-center">Religion Management</h1>
         <button
           onClick={() => {
             resetForm();
@@ -127,56 +120,53 @@ const EmploymentStatus = () => {
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
         >
-          Add Employment Status
+          Add Religion
         </button>
       </div>
 
-      {/* Search and Add EmploymentStatus */}
+      {/* Search  */}
 
       <div className=" mb-4">
         <Search
           setPerpage={setPerpage}
           setSearchValue={setSearchValue}
           searchValue={searchValue}
-          inputPlaceholder={"Search Employment Status..."}
+          inputPlaceholder={"Search Religion..."}
         />
       </div>
 
-      {/* employmentStatus Table */}
+      {/* Religions Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Employment Status Name</th>
-              <th className="p-3">Description</th>
+              <th className="p-3">Religion Name</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="3" className="p-3 text-center">
+                <td colSpan="2" className="p-3 text-center">
                   loading...
                 </td>
               </tr>
-            ) : employmentStatuses?.length === 0 ? (
+            ) : religions?.length === 0 ? (
               <tr>
-                <td colSpan="3" className="p-3 text-center text-gray-500">
-                  No employment status found.
+                <td colSpan="2" className="p-3 text-center text-gray-500">
+                  No religions found.
                 </td>
               </tr>
             ) : (
-              employmentStatuses?.map((employmentStatus) => (
-                <tr key={employmentStatus._id} className="border-t">
-                  <td className="p-2 text-lg capitalize">
-                    {employmentStatus.name?.toLowerCase()}
+              religions?.map((religion) => (
+                <tr key={religion._id} className="border-t">
+                  <td className="p-2 capitalize">
+                    {religion.name.toLowerCase()}
                   </td>
-                  <td className="p-2 text-lg capitalize">
-                    {employmentStatus.description?.toLowerCase()}
-                  </td>
+
                   <td className="p-2 flex justify-end space-x-2">
                     <button
-                      onClick={() => handleEdit(employmentStatus)}
+                      onClick={() => handleEdit(religion)}
                       className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
@@ -184,10 +174,7 @@ const EmploymentStatus = () => {
                     </button>
                     <button
                       onClick={() =>
-                        handleDeleteConfirm(
-                          employmentStatus._id,
-                          employmentStatus.name
-                        )
+                        handleDeleteConfirm(religion._id, religion.name)
                       }
                       className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                       disabled={loading}
@@ -203,16 +190,16 @@ const EmploymentStatus = () => {
       </div>
 
       {/* Pagination  */}
-      {totalEmploymentStatus <= perPage ? (
+      {totalReligion <= perPage ? (
         ""
       ) : (
         <div className="w-full flex justify-end mt-4 bottom-4 right-4">
           <Pagination
             pageNumber={currentPage}
             setPageNumber={setCurrentPage}
-            totalItem={totalEmploymentStatus}
+            totalItem={totalReligion}
             perPage={perPage}
-            showItem={Math.min(5, Math.ceil(totalEmploymentStatus / perPage))}
+            showItem={Math.min(5, Math.ceil(totalReligion / perPage))}
           />
         </div>
       )}
@@ -222,29 +209,17 @@ const EmploymentStatus = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData._id
-                ? "Edit Employment Status"
-                : "Add Employment Status"}
+              {formData._id ? "Edit Religion" : "Add Religion"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
                 name="name"
-                placeholder="Employment Status"
+                placeholder="Religion Name"
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full p-2 border rounded capitalize"
                 required
-                disabled={loading}
-              />
-
-              <input
-                type="text"
-                name="description"
-                placeholder="Description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full p-2 border rounded capitalize"
                 disabled={loading}
               />
 
@@ -289,7 +264,7 @@ const EmploymentStatus = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>{`Are you sure you want to delete ${deleteName} employment status?`}</p>
+            <p>{`Are you sure you want to delete ${deleteName} religion?`}</p>
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 onClick={() => setDeleteId(null)}
@@ -313,4 +288,4 @@ const EmploymentStatus = () => {
   );
 };
 
-export default EmploymentStatus;
+export default Religion;

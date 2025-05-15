@@ -1,10 +1,10 @@
 import { lazy } from "react";
 
 const EmployeeDashboard = lazy(() =>
-  import("../../views/employee/EmployeeDashboard")
+  import("../../views/dashboard/EmployeeDashboard")
 );
 const EmployeeDetails = lazy(() =>
-  import("../../views/employee/EmployeeDetails")
+  import("../../views/employees/EmployeeDetails")
 );
 
 export const employeeRoutes = [

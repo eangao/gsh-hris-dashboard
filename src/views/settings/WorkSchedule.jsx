@@ -7,9 +7,9 @@ import {
   deleteWorkSchedule,
   messageClear,
 } from "../../store/Reducers/workScheduleReducer";
-import Search from "../components/Search";
 import toast from "react-hot-toast";
-import Pagination from "../components/Pagination";
+import Search from "../../components/Search";
+import Pagination from "../../components/Pagination";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { PropagateLoader } from "react-spinners";
 import { buttonOverrideStyle } from "../../utils/utils";

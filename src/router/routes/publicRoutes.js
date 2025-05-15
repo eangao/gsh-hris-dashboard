@@ -5,8 +5,8 @@ const AdminLogin = lazy(() => import("../../views/auth/AdminLogin"));
 const ChangePassword = lazy(() => import("../../views/auth/ChangePassword"));
 
 const Home = lazy(() => import("../../views/Home"));
-const UnAuthorized = lazy(() => import("../../views/UnAuthorized"));
-const PageNotFound = lazy(() => import("../../views/PageNotFound"));
+const UnAuthorized = lazy(() => import("../../views/errors/UnAuthorized"));
+const PageNotFound = lazy(() => import("../../views/errors/PageNotFound"));
 
 const publicRoutes = [
   {

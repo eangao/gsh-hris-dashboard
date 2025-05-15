@@ -10,11 +10,11 @@ import {
   clearUnRegisteredUsers,
 } from "../../store/Reducers/authReducer";
 import toast from "react-hot-toast";
-import Search from "../components/Search";
+import Search from "../../components/Search";
 import { FaCheck, FaEdit, FaSearch, FaTimes } from "react-icons/fa";
 import { PropagateLoader } from "react-spinners";
 import { buttonOverrideStyle } from "../../utils/utils";
-import Pagination from "../components/Pagination";
+import Pagination from "../../components/Pagination";
 
 import { Formik, Field, Form, ErrorMessage } from "formik";
 import * as Yup from "yup";
@@ -339,6 +339,33 @@ const UserManagement = () => {
             >
               {({ isSubmitting }) => (
                 <Form className="space-y-4">
+                  <div>
+                    <label className="block font-medium">Name</label>
+                    <input
+                      name="name"
+                      type="text"
+                      disabled
+                      className="w-full border px-3 py-2 rounded capitalize"
+                      value={
+                        `${
+                          selectedUnregisteredUser.personalInformation
+                            ?.lastName || ""
+                        }, ` +
+                        `${
+                          selectedUnregisteredUser.personalInformation
+                            ?.firstName || ""
+                        } ` +
+                        `${
+                          selectedUnregisteredUser.personalInformation
+                            ?.middleName
+                            ? selectedUnregisteredUser.personalInformation.middleName
+                                .charAt(0)
+                                .toUpperCase() + "."
+                            : ""
+                        }`
+                      }
+                    />
+                  </div>
                   <div>
                     <label className="block font-medium">Email</label>
                     <Field

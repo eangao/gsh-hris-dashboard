@@ -1,11 +1,11 @@
 import { lazy } from "react";
 
 const ManagerDashboard = lazy(() =>
-  import("../../views/manager/ManagerDashboard")
+  import("../../views/dashboard/ManagerDashboard")
 );
-const Employee = lazy(() => import("../../views/employee/Employee"));
+const Employee = lazy(() => import("../../views/employees/Employee"));
 const EmployeeDetails = lazy(() =>
-  import("../../views/employee/EmployeeDetails")
+  import("../../views/employees/EmployeeDetails")
 );
 
 export const managerRoutes = [

@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchReligions,
-  createReligion,
-  updateReligion,
-  deleteReligion,
+  fetchRoles,
+  createRole,
+  updateRole,
+  deleteRole,
   messageClear,
-} from "../../store/Reducers/religionReducer";
-import Pagination from "../components/Pagination";
+} from "../../store/Reducers/roleReducer";
+import Pagination from "../../components/Pagination";
+import Search from "../../components/Search";
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 
 import { buttonOverrideStyle } from "../../utils/utils";
 import { PropagateLoader } from "react-spinners";
-import Search from "../components/Search";
 
-const Religion = () => {
+const Role = () => {
   const dispatch = useDispatch();
 
-  const { religions, totalReligion, loading, successMessage, errorMessage } =
-    useSelector((state) => state.religion);
+  const { roles, totalRole, loading, successMessage, errorMessage } =
+    useSelector((state) => state.role);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -31,17 +31,17 @@ const Religion = () => {
       setCurrentPage(1); // Reset page to 1 when a search is triggered
     }
 
-    getReligions();
+    getRoles();
   }, [searchValue, currentPage, perPage, dispatch]);
 
-  const getReligions = () => {
+  const getRoles = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
       searchValue,
     };
 
-    dispatch(fetchReligions(obj));
+    dispatch(fetchRoles(obj));
   };
 
   const [formData, setFormData] = useState({
@@ -57,7 +57,7 @@ const Religion = () => {
     if (successMessage) {
       toast.success(successMessage);
 
-      getReligions();
+      getRoles();
 
       setIsModalOpen(false);
       setDeleteId(null);
@@ -78,14 +78,14 @@ const Religion = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData._id) {
-      dispatch(updateReligion(formData));
+      dispatch(updateRole(formData));
     } else {
-      dispatch(createReligion(formData));
+      dispatch(createRole(formData));
     }
   };
 
-  const handleEdit = (religion) => {
-    setFormData(religion);
+  const handleEdit = (role) => {
+    setFormData(role);
     setIsModalOpen(true);
   };
 
@@ -95,7 +95,7 @@ const Religion = () => {
   };
 
   const handleDelete = () => {
-    dispatch(deleteReligion(deleteId));
+    dispatch(deleteRole(deleteId));
   };
 
   const resetForm = () => {
@@ -107,9 +107,9 @@ const Religion = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/*  Header and Add Religion */}
+      {/*  Header and Add Role */}
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold  text-center">Religion Management</h1>
+        <h1 className="text-2xl font-bold  text-center">Role Management</h1>
         <button
           onClick={() => {
             resetForm();
@@ -118,27 +118,27 @@ const Religion = () => {
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
         >
-          Add Religion
+          Add Role
         </button>
       </div>
 
-      {/* Search  */}
+      {/* Search and Add Role */}
 
       <div className=" mb-4">
         <Search
           setPerpage={setPerpage}
           setSearchValue={setSearchValue}
           searchValue={searchValue}
-          inputPlaceholder={"Search Religion..."}
+          inputPlaceholder={"Search Role..."}
         />
       </div>
 
-      {/* Religions Table */}
+      {/* Roles Table */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Religion Name</th>
+              <th className="p-3">Role Name</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -149,31 +149,26 @@ const Religion = () => {
                   loading...
                 </td>
               </tr>
-            ) : religions?.length === 0 ? (
+            ) : roles?.length === 0 ? (
               <tr>
                 <td colSpan="2" className="p-3 text-center text-gray-500">
-                  No religions found.
+                  No roles found.
                 </td>
               </tr>
             ) : (
-              religions?.map((religion) => (
-                <tr key={religion._id} className="border-t">
-                  <td className="p-2 capitalize">
-                    {religion.name.toLowerCase()}
-                  </td>
-
+              roles?.map((role) => (
+                <tr key={role._id} className="border-t">
+                  <td className="p-2 text-lg capitalize">{role.name}</td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button
-                      onClick={() => handleEdit(religion)}
+                      onClick={() => handleEdit(role)}
                       className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
                       <FaEdit />
                     </button>
                     <button
-                      onClick={() =>
-                        handleDeleteConfirm(religion._id, religion.name)
-                      }
+                      onClick={() => handleDeleteConfirm(role._id, role.name)}
                       className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
                       disabled={loading}
                     >
@@ -188,16 +183,16 @@ const Religion = () => {
       </div>
 
       {/* Pagination  */}
-      {totalReligion <= perPage ? (
+      {totalRole <= perPage ? (
         ""
       ) : (
         <div className="w-full flex justify-end mt-4 bottom-4 right-4">
           <Pagination
             pageNumber={currentPage}
             setPageNumber={setCurrentPage}
-            totalItem={totalReligion}
+            totalItem={totalRole}
             perPage={perPage}
-            showItem={Math.min(5, Math.ceil(totalReligion / perPage))}
+            showItem={Math.min(5, Math.ceil(totalRole / perPage))}
           />
         </div>
       )}
@@ -207,20 +202,19 @@ const Religion = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData._id ? "Edit Religion" : "Add Religion"}
+              {formData._id ? "Edit Role" : "Add Role"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 type="text"
                 name="name"
-                placeholder="Religion Name"
+                placeholder="Role Name"
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full p-2 border rounded capitalize"
                 required
                 disabled={loading}
               />
-
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
@@ -262,7 +256,7 @@ const Religion = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>{`Are you sure you want to delete ${deleteName} religion?`}</p>
+            <p>{`Are you sure you want to delete ${deleteName} role?`}</p>
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 onClick={() => setDeleteId(null)}
@@ -286,4 +280,4 @@ const Religion = () => {
   );
 };
 
-export default Religion;
+export default Role;
