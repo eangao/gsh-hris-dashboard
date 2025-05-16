@@ -176,7 +176,7 @@ const Position = () => {
                     {position?.description?.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
-                    {position?.isDefault && (
+                    {!position?.isDefault && (
                       <>
                         <button
                           onClick={() => handleEdit(position)}

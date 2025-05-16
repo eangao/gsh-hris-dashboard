@@ -10,7 +10,7 @@ export const fetchReligions = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-religions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/religion/fetch-religions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -29,9 +29,12 @@ export const fetchAllReligions = createAsyncThunk(
   "religion/fetchAllReligions",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/fetch-all-religions", {
-        withCredentials: true,
-      });
+      const { data } = await api.get(
+        "/hris/reference-data/religion/fetch-all-religions",
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
 
@@ -45,9 +48,13 @@ export const createReligion = createAsyncThunk(
   "religion/createReligion",
   async (religionData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-religion", religionData, {
-        withCredentials: true,
-      });
+      const { data } = await api.post(
+        "/hris/reference-data/religion/create-religion",
+        religionData,
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -61,9 +68,13 @@ export const updateReligion = createAsyncThunk(
   "religion/updateReligion",
   async ({ _id, ...religionData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/update-religion/${_id}`, religionData, {
-        withCredentials: true,
-      });
+      const { data } = await api.put(
+        `/hris/reference-data/religion/update-religion/${_id}`,
+        religionData,
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -76,9 +87,12 @@ export const deleteReligion = createAsyncThunk(
   "religion/deleteReligion",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-religion/${id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.delete(
+        `/hris/reference-data/religion/delete-religion/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
       return fulfillWithValue(data);

@@ -10,7 +10,7 @@ export const fetchEmploymentStatus = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-employment-status?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/employment-status/fetch-employment-status?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -29,9 +29,12 @@ export const fetchAllEmploymentStatus = createAsyncThunk(
   "employmentStatus/fetchAllEmploymentStatus",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/fetch-all-employment-status", {
-        withCredentials: true,
-      });
+      const { data } = await api.get(
+        "/hris/reference-data/employment-status/fetch-all-employment-status",
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
 
@@ -46,7 +49,7 @@ export const createEmploymentStatus = createAsyncThunk(
   async (employmentStatusData, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/create-employment-status",
+        "/hris/reference-data/employment-status/create-employment-status",
         employmentStatusData,
         {
           withCredentials: true,
@@ -69,7 +72,7 @@ export const updateEmploymentStatus = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.put(
-        `/update-employment-status/${_id}`,
+        `/hris/reference-data/employment-status/update-employment-status/${_id}`,
         employmentStatusData,
         {
           withCredentials: true,
@@ -87,9 +90,12 @@ export const deleteEmploymentStatus = createAsyncThunk(
   "employmentStatus/deleteEmploymentStatus",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-employment-status/${id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.delete(
+        `/hris/reference-data/employment-status/delete-employment-status/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
       return fulfillWithValue(data);

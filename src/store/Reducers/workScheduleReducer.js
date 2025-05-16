@@ -10,7 +10,7 @@ export const fetchWorkSchedules = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-work-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/work-schedule/fetch-work-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -27,9 +27,12 @@ export const fetchAllWorkSchedules = createAsyncThunk(
   "workSchedule/fetchAllWorkSchedules",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/fetch-all-work-schedules", {
-        withCredentials: true,
-      });
+      const { data } = await api.get(
+        "/hris/reference-data/work-schedule/fetch-all-work-schedules",
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -42,9 +45,13 @@ export const createWorkSchedule = createAsyncThunk(
   "workSchedule/createWorkSchedule",
   async (scheduleData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-work-schedule", scheduleData, {
-        withCredentials: true,
-      });
+      const { data } = await api.post(
+        "/hris/reference-data/work-schedule/create-work-schedule",
+        scheduleData,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -57,7 +64,7 @@ export const updateWorkSchedule = createAsyncThunk(
   async ({ _id, ...scheduleData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/update-work-schedule/${_id}`,
+        `/hris/reference-data/work-schedule/update-work-schedule/${_id}`,
         scheduleData,
         {
           withCredentials: true,
@@ -74,9 +81,12 @@ export const deleteWorkSchedule = createAsyncThunk(
   "workSchedule/deleteWorkSchedule",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-work-schedule/${id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.delete(
+        `/hris/reference-data/work-schedule/delete-work-schedule/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);

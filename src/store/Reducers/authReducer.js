@@ -6,7 +6,7 @@ export const admin_login = createAsyncThunk(
   "auth/admin_login",
   async (info, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/admin-login", info, {
+      const { data } = await api.post("/auth/admin-login", info, {
         withCredentials: true,
       });
 
@@ -24,7 +24,7 @@ export const user_login = createAsyncThunk(
   "auth/user_login",
   async (info, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/user-login", info, {
+      const { data } = await api.post("/auth/user-login", info, {
         withCredentials: true,
       });
 
@@ -45,7 +45,7 @@ export const fetchUsers = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-users?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/users/fetch-users?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         { withCredentials: true }
       );
 
@@ -61,7 +61,7 @@ export const getUnregisteredUsers = createAsyncThunk(
   async ({ searchUnregisteredUser }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.get(
-        `/get-unregistered-users?searchUnregisteredUser=${searchUnregisteredUser}`,
+        `/users/get-unregistered-users?searchUnregisteredUser=${searchUnregisteredUser}`,
         { withCredentials: true }
       );
 
@@ -77,7 +77,7 @@ export const fetchUserById = createAsyncThunk(
   "auth/fetchUserById",
   async (_id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(`/fetch-user/${_id}`, {
+      const { data } = await api.get(`/users/fetch-user/${_id}`, {
         withCredentials: true,
       });
 
@@ -92,7 +92,7 @@ export const createUser = createAsyncThunk(
   "auth/createUser",
   async (userData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-user", userData, {
+      const { data } = await api.post("/users/create-user", userData, {
         withCredentials: true,
       });
 
@@ -109,7 +109,7 @@ export const changePassword = createAsyncThunk(
   "auth/changePassword",
   async (newPassword, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/change-password", newPassword, {
+      const { data } = await api.post("/auth/change-password", newPassword, {
         withCredentials: true,
       });
 
@@ -124,7 +124,7 @@ export const updateUser = createAsyncThunk(
   "auth/updateUser",
   async ({ _id, ...userData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/update-user/${_id}`, userData, {
+      const { data } = await api.put(`/users/update-user/${_id}`, userData, {
         withCredentials: true,
       });
 
@@ -140,7 +140,7 @@ export const logout = createAsyncThunk(
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/user-logout",
+        "/auth/user-logout",
         {},
         {
           withCredentials: true,
@@ -161,7 +161,9 @@ export const get_user_info = createAsyncThunk(
   "auth/get_user_info",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/get-user", { withCredentials: true });
+      const { data } = await api.get("/users/get-user", {
+        withCredentials: true,
+      });
       // console.log(data)
       return fulfillWithValue(data);
     } catch (error) {

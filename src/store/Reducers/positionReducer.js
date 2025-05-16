@@ -10,7 +10,7 @@ export const fetchPositions = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-positions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/position/fetch-positions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -29,9 +29,12 @@ export const fetchAllPositions = createAsyncThunk(
   "position/fetchAllPositions",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/fetch-all-positions", {
-        withCredentials: true,
-      });
+      const { data } = await api.get(
+        "/hris/reference-data/position/fetch-all-positions",
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
 
@@ -45,9 +48,13 @@ export const createPosition = createAsyncThunk(
   "position/createPosition",
   async (positionData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-position", positionData, {
-        withCredentials: true,
-      });
+      const { data } = await api.post(
+        "/hris/reference-data/position/create-position",
+        positionData,
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -61,9 +68,13 @@ export const updatePosition = createAsyncThunk(
   "position/updatePosition",
   async ({ _id, ...positionData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/update-position/${_id}`, positionData, {
-        withCredentials: true,
-      });
+      const { data } = await api.put(
+        `/hris/reference-data/position/update-position/${_id}`,
+        positionData,
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -76,9 +87,12 @@ export const deletePosition = createAsyncThunk(
   "position/deletePosition",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-position/${id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.delete(
+        `/hris/reference-data/position/delete-position/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
       return fulfillWithValue(data);

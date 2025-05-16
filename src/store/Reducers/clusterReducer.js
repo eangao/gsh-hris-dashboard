@@ -10,7 +10,7 @@ export const fetchClusters = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-clusters?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/cluster/fetch-clusters?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -29,9 +29,12 @@ export const fetchAllClusters = createAsyncThunk(
   "cluster/fetchAllClusters",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/fetch-all-clusters", {
-        withCredentials: true,
-      });
+      const { data } = await api.get(
+        "/hris/reference-data/cluster/fetch-all-clusters",
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
 
@@ -46,9 +49,13 @@ export const createCluster = createAsyncThunk(
   "cluster/createCluster",
   async (clusterData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-cluster", clusterData, {
-        withCredentials: true,
-      });
+      const { data } = await api.post(
+        "/hris/reference-data/cluster/create-cluster",
+        clusterData,
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -61,9 +68,13 @@ export const updateCluster = createAsyncThunk(
   "cluster/updateCluster",
   async ({ _id, ...clusterData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/update-cluster/${_id}`, clusterData, {
-        withCredentials: true,
-      });
+      const { data } = await api.put(
+        `/hris/reference-data/cluster/update-cluster/${_id}`,
+        clusterData,
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -76,9 +87,12 @@ export const deleteCluster = createAsyncThunk(
   "cluster/deleteCluster",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-cluster/${id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.delete(
+        `/hris/reference-data/cluster/delete-cluster/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
       return fulfillWithValue(data);

@@ -10,7 +10,7 @@ export const fetchDepartments = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-departments?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/departments/fetch-departments?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         { withCredentials: true }
       );
 
@@ -25,9 +25,12 @@ export const fetchAllDepartments = createAsyncThunk(
   "department/fetchAllDepartments",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/fetch-all-departments", {
-        withCredentials: true,
-      });
+      const { data } = await api.get(
+        "/hris/departments/fetch-all-departments",
+        {
+          withCredentials: true,
+        }
+      );
 
       // console.log(data);
 
@@ -43,9 +46,12 @@ export const fetchDepartmentById = createAsyncThunk(
   "department/fetchDepartmentById",
   async (_id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(`/fetch-department/${_id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.get(
+        `/hris/departments/fetch-department/${_id}`,
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -58,9 +64,13 @@ export const createDepartment = createAsyncThunk(
   "department/createDepartment",
   async (departmentData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-department", departmentData, {
-        withCredentials: true,
-      });
+      const { data } = await api.post(
+        "/hris/departments/create-department",
+        departmentData,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -73,7 +83,7 @@ export const updateDepartment = createAsyncThunk(
   async ({ _id, ...departmentData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/update-department/${_id}`,
+        `/hris/departments/update-department/${_id}`,
         departmentData,
         {
           withCredentials: true,
@@ -91,9 +101,12 @@ export const deleteDepartment = createAsyncThunk(
   "department/deleteDepartment",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-department/${id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.delete(
+        `/hris/departments/delete-department/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);

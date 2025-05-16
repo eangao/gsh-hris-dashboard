@@ -10,7 +10,7 @@ export const fetchEmployees = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-employees?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/employees/fetch-employees?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         { withCredentials: true }
       );
 
@@ -27,7 +27,7 @@ export const fetchEmployeeById = createAsyncThunk(
   "employee/fetchEmployeeById",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(`/fetch-employee/${id}`, {
+      const { data } = await api.get(`/hris/employees/fetch-employee/${id}`, {
         withCredentials: true,
       });
 
@@ -42,7 +42,7 @@ export const fetchEmployeeDetailsById = createAsyncThunk(
   "employee/fetchEmployeeDetailsById",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(`/employee-details/${id}`, {
+      const { data } = await api.get(`/hris/employees/employee-details/${id}`, {
         withCredentials: true,
       });
 
@@ -57,7 +57,7 @@ export const fetchAllEmployees = createAsyncThunk(
   "employee/fetchAllEmployees",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/fetch-all-employees", {
+      const { data } = await api.get("/hris/employees/fetch-all-employees", {
         withCredentials: true,
       });
 
@@ -74,9 +74,13 @@ export const createEmployee = createAsyncThunk(
   "employee/createEmployee",
   async (employeeData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-employee", employeeData, {
-        withCredentials: true,
-      });
+      const { data } = await api.post(
+        "/hris/employees/create-employee",
+        employeeData,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -88,9 +92,13 @@ export const updateEmployee = createAsyncThunk(
   "employee/updateEmployee",
   async ({ id, employeeData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/update-employee/${id}`, employeeData, {
-        withCredentials: true,
-      });
+      const { data } = await api.put(
+        `/hris/employees/update-employee/${id}`,
+        employeeData,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -102,9 +110,12 @@ export const deleteEmployee = createAsyncThunk(
   "employee/deleteEmployee",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-employee/${id}`, {
-        withCredentials: true,
-      });
+      const { data } = await api.delete(
+        `/hris/employees/delete-employee/${id}`,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
