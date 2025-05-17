@@ -10,7 +10,7 @@ export const fetchReligions = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/reference-data/religion/fetch-religions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/religions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -29,12 +29,9 @@ export const fetchAllReligions = createAsyncThunk(
   "religion/fetchAllReligions",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(
-        "/hris/reference-data/religion/fetch-all-religions",
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.get("/hris/reference-data/religions/options", {
+        withCredentials: true,
+      });
 
       // console.log(data);
 
@@ -49,7 +46,7 @@ export const createReligion = createAsyncThunk(
   async (religionData, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/hris/reference-data/religion/create-religion",
+        "/hris/reference-data/religions",
         religionData,
         {
           withCredentials: true,
@@ -69,7 +66,7 @@ export const updateReligion = createAsyncThunk(
   async ({ _id, ...religionData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/hris/reference-data/religion/update-religion/${_id}`,
+        `/hris/reference-data/religions/${_id}`,
         religionData,
         {
           withCredentials: true,
@@ -88,7 +85,7 @@ export const deleteReligion = createAsyncThunk(
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.delete(
-        `/hris/reference-data/religion/delete-religion/${id}`,
+        `/hris/reference-data/religions/${id}`,
         {
           withCredentials: true,
         }

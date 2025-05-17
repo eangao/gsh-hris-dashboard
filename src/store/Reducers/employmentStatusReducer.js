@@ -10,7 +10,7 @@ export const fetchEmploymentStatus = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/reference-data/employment-status/fetch-employment-status?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/employment-statuses?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -30,7 +30,7 @@ export const fetchAllEmploymentStatus = createAsyncThunk(
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.get(
-        "/hris/reference-data/employment-status/fetch-all-employment-status",
+        "/hris/reference-data/employment-statuses/options",
         {
           withCredentials: true,
         }
@@ -49,7 +49,7 @@ export const createEmploymentStatus = createAsyncThunk(
   async (employmentStatusData, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/hris/reference-data/employment-status/create-employment-status",
+        "/hris/reference-data/employment-statuses",
         employmentStatusData,
         {
           withCredentials: true,
@@ -72,7 +72,7 @@ export const updateEmploymentStatus = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.put(
-        `/hris/reference-data/employment-status/update-employment-status/${_id}`,
+        `/hris/reference-data/employment-statuses/${_id}`,
         employmentStatusData,
         {
           withCredentials: true,
@@ -91,7 +91,7 @@ export const deleteEmploymentStatus = createAsyncThunk(
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.delete(
-        `/hris/reference-data/employment-status/delete-employment-status/${id}`,
+        `/hris/reference-data/employment-statuses/${id}`,
         {
           withCredentials: true,
         }

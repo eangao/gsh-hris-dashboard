@@ -10,7 +10,7 @@ export const fetchWorkSchedules = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/reference-data/work-schedule/fetch-work-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/work-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -28,7 +28,7 @@ export const fetchAllWorkSchedules = createAsyncThunk(
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.get(
-        "/hris/reference-data/work-schedule/fetch-all-work-schedules",
+        "/hris/reference-data/work-schedules/options",
         {
           withCredentials: true,
         }
@@ -46,7 +46,7 @@ export const createWorkSchedule = createAsyncThunk(
   async (scheduleData, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/hris/reference-data/work-schedule/create-work-schedule",
+        "/hris/reference-data/work-schedules",
         scheduleData,
         {
           withCredentials: true,
@@ -64,7 +64,7 @@ export const updateWorkSchedule = createAsyncThunk(
   async ({ _id, ...scheduleData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/hris/reference-data/work-schedule/update-work-schedule/${_id}`,
+        `/hris/reference-data/work-schedules/${_id}`,
         scheduleData,
         {
           withCredentials: true,
@@ -82,7 +82,7 @@ export const deleteWorkSchedule = createAsyncThunk(
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.delete(
-        `/hris/reference-data/work-schedule/delete-work-schedule/${id}`,
+        `/hris/reference-data/work-schedules/${id}`,
         {
           withCredentials: true,
         }

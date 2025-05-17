@@ -10,7 +10,7 @@ export const fetchDutySchedules = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/fetch-duty-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/duty-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -28,7 +28,7 @@ export const fetchDutyScheduleById = createAsyncThunk(
   "dutySchedule/fetchDutyScheduleById",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(`/fetch-duty-schedule/${id}`, {
+      const { data } = await api.get(`/hris/duty-schedules/${id}`, {
         withCredentials: true,
       });
 
@@ -43,7 +43,7 @@ export const createDutySchedule = createAsyncThunk(
   "dutySchedule/createDutySchedule",
   async (scheduleData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/create-duty-schedule", scheduleData, {
+      const { data } = await api.post("/hris/duty-schedules", scheduleData, {
         withCredentials: true,
       });
       return fulfillWithValue(data);
@@ -58,7 +58,7 @@ export const updateDutySchedule = createAsyncThunk(
   async ({ _id, ...scheduleData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/update-duty-schedule/${_id}`,
+        `/hris/duty-schedules/${_id}`,
         scheduleData,
         {
           withCredentials: true,
@@ -75,7 +75,7 @@ export const deleteDutySchedule = createAsyncThunk(
   "dutySchedule/deleteDutySchedule",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(`/delete-duty-schedule/${id}`, {
+      const { data } = await api.delete(`/hris/duty-schedules/${id}`, {
         withCredentials: true,
       });
       return fulfillWithValue(data);

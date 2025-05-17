@@ -6,7 +6,7 @@ export const fetchAttendance = createAsyncThunk(
   "attendance/fetchAttendance",
   async (date) => {
     try {
-      const response = await api.get(`/attendance?date=${date}`);
+      const response = await api.get(`/attendances?date=${date}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -15,10 +15,10 @@ export const fetchAttendance = createAsyncThunk(
 );
 
 export const markAttendance = createAsyncThunk(
-  "attendance/markAttendance",
+  "attendances/markAttendance",
   async (attendanceData) => {
     try {
-      const response = await api.post("/attendance", attendanceData);
+      const response = await api.post("/attendances", attendanceData);
       return response.data;
     } catch (error) {
       throw error;

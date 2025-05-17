@@ -10,7 +10,7 @@ export const fetchPositions = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/reference-data/position/fetch-positions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/positions?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -29,12 +29,9 @@ export const fetchAllPositions = createAsyncThunk(
   "position/fetchAllPositions",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(
-        "/hris/reference-data/position/fetch-all-positions",
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.get("/hris/reference-data/positions/options", {
+        withCredentials: true,
+      });
 
       // console.log(data);
 
@@ -49,7 +46,7 @@ export const createPosition = createAsyncThunk(
   async (positionData, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/hris/reference-data/position/create-position",
+        "/hris/reference-data/positions",
         positionData,
         {
           withCredentials: true,
@@ -69,7 +66,7 @@ export const updatePosition = createAsyncThunk(
   async ({ _id, ...positionData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/hris/reference-data/position/update-position/${_id}`,
+        `/hris/reference-data/positions/${_id}`,
         positionData,
         {
           withCredentials: true,
@@ -88,7 +85,7 @@ export const deletePosition = createAsyncThunk(
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.delete(
-        `/hris/reference-data/position/delete-position/${id}`,
+        `/hris/reference-data/positions/${id}`,
         {
           withCredentials: true,
         }

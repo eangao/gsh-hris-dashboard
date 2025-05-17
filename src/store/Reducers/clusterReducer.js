@@ -10,7 +10,7 @@ export const fetchClusters = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/reference-data/cluster/fetch-clusters?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/clusters?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -29,12 +29,9 @@ export const fetchAllClusters = createAsyncThunk(
   "cluster/fetchAllClusters",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(
-        "/hris/reference-data/cluster/fetch-all-clusters",
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.get("/hris/reference-data/clusters/options", {
+        withCredentials: true,
+      });
 
       // console.log(data);
 
@@ -50,7 +47,7 @@ export const createCluster = createAsyncThunk(
   async (clusterData, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/hris/reference-data/cluster/create-cluster",
+        "/hris/reference-data/clusters",
         clusterData,
         {
           withCredentials: true,
@@ -69,7 +66,7 @@ export const updateCluster = createAsyncThunk(
   async ({ _id, ...clusterData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/hris/reference-data/cluster/update-cluster/${_id}`,
+        `/hris/reference-data/clusters/${_id}`,
         clusterData,
         {
           withCredentials: true,
@@ -87,12 +84,9 @@ export const deleteCluster = createAsyncThunk(
   "cluster/deleteCluster",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.delete(
-        `/hris/reference-data/cluster/delete-cluster/${id}`,
-        {
-          withCredentials: true,
-        }
-      );
+      const { data } = await api.delete(`/hris/reference-data/clusters/${id}`, {
+        withCredentials: true,
+      });
 
       // console.log(data);
       return fulfillWithValue(data);

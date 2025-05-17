@@ -2,11 +2,12 @@ import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import api from "../../api/api";
 import { jwtDecode } from "jwt-decode";
 
+//auth
 export const admin_login = createAsyncThunk(
   "auth/admin_login",
   async (info, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/auth/admin-login", info, {
+      const { data } = await api.post("/auth/admin/login", info, {
         withCredentials: true,
       });
 
@@ -24,7 +25,7 @@ export const user_login = createAsyncThunk(
   "auth/user_login",
   async (info, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/auth/user-login", info, {
+      const { data } = await api.post("/auth/login", info, {
         withCredentials: true,
       });
 
@@ -37,6 +38,44 @@ export const user_login = createAsyncThunk(
   }
 );
 
+export const logout = createAsyncThunk(
+  "auth/logout",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post(
+        "/auth/logout",
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+
+      localStorage.removeItem("accessToken");
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      // console.log(error.response.data);
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (newPassword, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post("/auth/change-password", newPassword, {
+        withCredentials: true,
+      });
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// user management
 export const fetchUsers = createAsyncThunk(
   "auth/fetchUsers",
   async (
@@ -45,7 +84,7 @@ export const fetchUsers = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/users/fetch-users?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/users?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         { withCredentials: true }
       );
 
@@ -61,7 +100,7 @@ export const getUnregisteredUsers = createAsyncThunk(
   async ({ searchUnregisteredUser }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.get(
-        `/users/get-unregistered-users?searchUnregisteredUser=${searchUnregisteredUser}`,
+        `/users/unregistered?searchUnregisteredUser=${searchUnregisteredUser}`,
         { withCredentials: true }
       );
 
@@ -92,7 +131,7 @@ export const createUser = createAsyncThunk(
   "auth/createUser",
   async (userData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/users/create-user", userData, {
+      const { data } = await api.post("/users", userData, {
         withCredentials: true,
       });
 
@@ -105,53 +144,16 @@ export const createUser = createAsyncThunk(
   }
 );
 
-export const changePassword = createAsyncThunk(
-  "auth/changePassword",
-  async (newPassword, { rejectWithValue, fulfillWithValue }) => {
-    try {
-      const { data } = await api.post("/auth/change-password", newPassword, {
-        withCredentials: true,
-      });
-
-      return fulfillWithValue(data);
-    } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
-
 export const updateUser = createAsyncThunk(
   "auth/updateUser",
   async ({ _id, ...userData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/users/update-user/${_id}`, userData, {
+      const { data } = await api.put(`/users/${_id}`, userData, {
         withCredentials: true,
       });
 
       return fulfillWithValue(data);
     } catch (error) {
-      return rejectWithValue(error.response.data);
-    }
-  }
-);
-
-export const logout = createAsyncThunk(
-  "auth/logout",
-  async (_, { rejectWithValue, fulfillWithValue }) => {
-    try {
-      const { data } = await api.post(
-        "/auth/user-logout",
-        {},
-        {
-          withCredentials: true,
-        }
-      );
-
-      localStorage.removeItem("accessToken");
-
-      return fulfillWithValue(data);
-    } catch (error) {
-      // console.log(error.response.data);
       return rejectWithValue(error.response.data);
     }
   }
@@ -161,7 +163,7 @@ export const get_user_info = createAsyncThunk(
   "auth/get_user_info",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get("/users/get-user", {
+      const { data } = await api.get("/users/me", {
         withCredentials: true,
       });
       // console.log(data)
