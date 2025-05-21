@@ -102,12 +102,23 @@ const WorkSchedule = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
 
+  // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
     if (searchValue && currentPage !== 1) {
       setCurrentPage(1);
     }
-    getWorkSchedules();
-  }, [searchValue, currentPage, perPage]);
+  }, [searchValue]);
+
+  // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
+  useEffect(() => {
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchWorkSchedules(obj));
+  }, [currentPage, perPage, searchValue, dispatch]);
 
   const getWorkSchedules = () => {
     const obj = {

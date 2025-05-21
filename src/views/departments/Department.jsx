@@ -9,6 +9,7 @@ import {
   messageClear,
 } from "../../store/Reducers/departmentReducer";
 import { fetchAllClusters } from "../../store/Reducers/clusterReducer";
+import { fetchEmployeesManagers } from "../../store/Reducers/employeeReducer";
 import Pagination from "../../components/Pagination";
 import Search from "../../components/Search";
 import toast from "react-hot-toast";
@@ -30,20 +31,29 @@ const Department = () => {
   } = useSelector((state) => state.department);
 
   const { clusters } = useSelector((state) => state.cluster);
+  const { managers } = useSelector((state) => state.employee);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
 
+  // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
-    // Reset to page 1 if searchValue is not empty
     if (searchValue && currentPage !== 1) {
       setCurrentPage(1);
     }
+  }, [searchValue]);
 
-    getDepartments();
-    dispatch(fetchAllClusters());
-  }, [searchValue, currentPage, perPage, dispatch]);
+  // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
+  useEffect(() => {
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchDepartments(obj));
+  }, [currentPage, perPage, searchValue, dispatch]);
 
   const getDepartments = () => {
     const obj = {
@@ -59,6 +69,7 @@ const Department = () => {
     _id: null,
     name: "",
     cluster: "",
+    manager: null,
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,11 +132,16 @@ const Department = () => {
       _id: null,
       name: "",
       cluster: "",
+      manager: null,
     });
   };
 
   const getAllClusters = () => {
     dispatch(fetchAllClusters());
+  };
+
+  const getEmployeesManagers = () => {
+    dispatch(fetchEmployeesManagers());
   };
 
   return (
@@ -137,6 +153,7 @@ const Department = () => {
         <button
           onClick={() => {
             getAllClusters();
+            getEmployeesManagers();
             resetForm();
             setIsModalOpen(true);
           }}
@@ -160,8 +177,9 @@ const Department = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Department Name</th>
+              <th className="p-3">Department</th>
               <th className="p-3">Cluster</th>
+              <th className="p-3">Manager</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -187,10 +205,34 @@ const Department = () => {
                   <td className="p-2 capitalize">
                     {dept?.cluster?.name?.toLowerCase()}
                   </td>
+
+                  <td className="p-2  ">
+                    {!dept?.manager ? (
+                      "-"
+                    ) : (
+                      <>
+                        <span className="capitalize">
+                          {dept?.manager.personalInformation?.lastName},
+                        </span>{" "}
+                        <span className="capitalize">
+                          {dept?.manager.personalInformation?.firstName}
+                        </span>{" "}
+                        {dept?.manager.personalInformation?.middleName && (
+                          <span className="capitalize">
+                            {dept?.manager.personalInformation?.middleName
+                              .charAt(0)
+                              .toUpperCase()}
+                            .
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button
                       onClick={() => {
                         getAllClusters();
+                        getEmployeesManagers();
                         handleEdit(dept._id);
                       }}
                       className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
@@ -259,6 +301,36 @@ const Department = () => {
                     {cluster.name}
                   </option>
                 ))}
+              </select>
+
+              <select
+                name="manager"
+                value={formData.manager?._id || formData.manager} // handles both object or id
+                onChange={(e) =>
+                  setFormData({ ...formData, manager: e.target.value })
+                }
+                className="w-full p-2 border rounded capitalize"
+                // required
+                disabled={loading}
+              >
+                <option value="">Assign Manager</option>
+                {managers.map((manager) => {
+                  const { firstName, middleName, lastName } =
+                    manager.personalInformation;
+
+                  // Format: Lastname, Firstname M
+                  const middleInitial = middleName
+                    ? middleName.charAt(0).toUpperCase() + "."
+                    : "";
+                  const displayName =
+                    `${lastName}, ${firstName} ${middleInitial}`.trim();
+
+                  return (
+                    <option key={manager._id} value={manager._id}>
+                      {displayName}
+                    </option>
+                  );
+                })}
               </select>
 
               <div className="flex justify-end space-x-2">

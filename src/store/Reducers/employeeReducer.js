@@ -39,6 +39,40 @@ export const fetchAllEmployees = createAsyncThunk(
   }
 );
 
+export const fetchEmployeesManagers = createAsyncThunk(
+  "employee/fetchEmployeesManagers",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get("/hris/employees/managers", {
+        withCredentials: true,
+      });
+
+      // console.log(data);
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchEmployeesDirectors = createAsyncThunk(
+  "employee/fetchEmployeesDirectors",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get("/hris/employees/directors", {
+        withCredentials: true,
+      });
+
+      // console.log(data);
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 //for edit
 export const fetchEmployeeById = createAsyncThunk(
   "employee/fetchEmployeeById",
@@ -120,6 +154,8 @@ const employeeSlice = createSlice({
     errorMessage: "",
     employees: [],
     employee: "",
+    managers: [],
+    directors: [],
     totalEmployee: 0,
   },
   reducers: {
@@ -132,22 +168,53 @@ const employeeSlice = createSlice({
     builder.addCase(fetchEmployees.fulfilled, (state, { payload }) => {
       state.totalEmployee = payload.totalEmployee;
       state.employees = payload.employees;
+      state.loading = false;
+    });
+
+    builder.addCase(fetchEmployees.pending, (state) => {
+      state.loading = true;
     });
 
     builder.addCase(fetchEmployeeById.fulfilled, (state, { payload }) => {
       state.employee = payload.employee;
+      state.loading = false;
     });
 
     builder.addCase(
       fetchEmployeeDetailsById.fulfilled,
       (state, { payload }) => {
         state.employee = payload.employee;
+        state.loading = false;
       }
     );
 
     //  Fetch All Employees
+    builder.addCase(fetchAllEmployees.pending, (state) => {
+      state.loading = true;
+    });
+
     builder.addCase(fetchAllEmployees.fulfilled, (state, { payload }) => {
       state.employees = payload.employees;
+      state.loading = false;
+    });
+
+    //  Fetch All Managers
+    builder.addCase(fetchEmployeesManagers.fulfilled, (state, { payload }) => {
+      state.managers = payload.managers;
+      state.loading = false;
+    });
+
+    builder.addCase(fetchEmployeesManagers.pending, (state) => {
+      state.loading = true;
+    });
+
+    //  Fetch All Director
+    builder.addCase(fetchEmployeesDirectors.fulfilled, (state, { payload }) => {
+      state.directors = payload.directors;
+    });
+
+    builder.addCase(fetchEmployeesDirectors.pending, (state) => {
+      state.loading = true;
     });
 
     builder

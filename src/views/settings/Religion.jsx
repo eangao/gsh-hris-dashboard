@@ -27,14 +27,23 @@ const Religion = () => {
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
 
+  // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
-    // Reset to page 1 if searchValue is not empty
     if (searchValue && currentPage !== 1) {
-      setCurrentPage(1); // Reset page to 1 when a search is triggered
+      setCurrentPage(1);
     }
+  }, [searchValue]);
 
-    getReligions();
-  }, [searchValue, currentPage, perPage, dispatch]);
+  // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
+  useEffect(() => {
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchReligions(obj));
+  }, [currentPage, perPage, searchValue, dispatch]);
 
   const getReligions = () => {
     const obj = {

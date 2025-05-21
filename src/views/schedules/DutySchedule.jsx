@@ -19,12 +19,15 @@ const DutySchedule = () => {
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
 
+  // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
-    // Reset to page 1 if searchValue is not empty
     if (searchValue && currentPage !== 1) {
       setCurrentPage(1);
     }
+  }, [searchValue]);
 
+  // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
+  useEffect(() => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
@@ -32,7 +35,7 @@ const DutySchedule = () => {
     };
 
     dispatch(fetchDutySchedules(obj));
-  }, [searchValue, currentPage, perPage, dispatch]);
+  }, [currentPage, perPage, searchValue, dispatch]);
 
   const handleAddDutySchedule = () => {
     if (role === "admin") {

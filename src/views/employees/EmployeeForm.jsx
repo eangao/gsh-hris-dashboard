@@ -28,7 +28,6 @@ const EmployeeForm = () => {
     (state) => state.employee
   );
   const { departments } = useSelector((state) => state.department);
-  const { clusters } = useSelector((state) => state.cluster);
   const { positions } = useSelector((state) => state.position);
   const { employmentStatuses } = useSelector((state) => state.employmentStatus);
   const { religions } = useSelector((state) => state.religion);
@@ -60,7 +59,6 @@ const EmployeeForm = () => {
       scheduleType: "",
       position: "",
       department: null,
-      cluster: null,
       employmentStatus: "",
       dateStarted: "",
       dateTransferToGSH: "",
@@ -388,24 +386,26 @@ const EmployeeForm = () => {
     handleChange("employmentInformation", "position", selectedId);
 
     // Clear hidden fields
-    if (name === "president") {
+    if (
+      name === "president" ||
+      name === "director" ||
+      name === "manager" ||
+      name === "supervisor" ||
+      name === "hr"
+    ) {
       handleChange("employmentInformation", "department", null);
-      handleChange("employmentInformation", "cluster", null);
-    } else if (name === "director") {
-      handleChange("employmentInformation", "department", null);
-    } else {
-      handleChange("employmentInformation", "cluster", null);
     }
   };
 
   const isDepartmentVisible = () => {
     return (
       selectedPositionName !== "president" &&
-      selectedPositionName !== "director"
+      selectedPositionName !== "director" &&
+      selectedPositionName !== "manager" &&
+      selectedPositionName !== "supervisor" &&
+      selectedPositionName !== "hr"
     );
   };
-
-  const isClusterVisible = () => selectedPositionName === "director";
 
   //to handel the edit
   useEffect(() => {
@@ -745,22 +745,7 @@ const EmployeeForm = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   Department
                 </label>
-                {/* <Select
-                  options={departmentOptions}
-                  value={departmentOptions.find(
-                    (option) =>
-                      option.value === formData.employmentInformation.department
-                  )}
-                  onChange={(selected) =>
-                    handleChange(
-                      "employmentInformation",
-                      "department",
-                      selected ? selected.value : null
-                    )
-                  }
-                  placeholder="Select Department"
-                  isClearable
-                /> */}
+
                 <select
                   value={formData.employmentInformation.department}
                   onChange={(e) =>
@@ -771,39 +756,11 @@ const EmployeeForm = () => {
                     )
                   }
                   className="w-full p-2 border rounded mt-1"
-                  required={isDepartmentVisible()} // ✅ required only if visible
                 >
                   <option value="">Select Department</option>
                   {departments.map((dept) => (
                     <option key={dept._id} value={dept._id}>
                       {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {isClusterVisible() && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Cluster
-                </label>
-                <select
-                  value={formData.employmentInformation.cluster}
-                  onChange={(e) =>
-                    handleChange(
-                      "employmentInformation",
-                      "cluster",
-                      e.target.value
-                    )
-                  }
-                  className="w-full p-2 border rounded mt-1"
-                  required={isClusterVisible()} // ✅ required only if visible
-                >
-                  <option value="">Select Cluster</option>
-                  {clusters.map((cluster) => (
-                    <option key={cluster._id} value={cluster._id}>
-                      {cluster.name}
                     </option>
                   ))}
                 </select>

@@ -10,9 +10,11 @@ export const fetchDepartments = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/departments?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/departments?page=${page}&searchValue=${searchValue}&perPage=${perPage}`,
         { withCredentials: true }
       );
+
+      // console.log(data);
 
       return fulfillWithValue(data);
     } catch (error) {

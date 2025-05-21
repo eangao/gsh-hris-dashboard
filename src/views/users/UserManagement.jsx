@@ -38,14 +38,23 @@ const UserManagement = () => {
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
 
+  // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
-    // Reset to page 1 if searchValue is not empty
     if (searchValue && currentPage !== 1) {
       setCurrentPage(1);
     }
+  }, [searchValue]);
 
-    getUsers();
-  }, [searchValue, currentPage]);
+  // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
+  useEffect(() => {
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchUsers(obj));
+  }, [currentPage, perPage, searchValue, dispatch]);
 
   useEffect(() => {
     if (successMessage || errorMessage) {
@@ -250,6 +259,7 @@ const UserManagement = () => {
               <th className="p-3">User</th>
               <th className="p-3">Email</th>
               <th className="p-3">Role</th>
+              <th className="p-3 text-right">Status</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -289,7 +299,17 @@ const UserManagement = () => {
                     {user?.email?.toLowerCase()}
                   </td>
                   <td className="p-2 lowercase">{user?.role?.toLowerCase()}</td>
-                  <td className="p-2 flex justify-end space-x-2">
+                  <td className="p-2 lowercase text-right">
+                    <span
+                      className={`px-3 py-1 text-white rounded-full ${
+                        user?.isActive ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    >
+                      {user?.isActive ? "active" : "inactive"}
+                    </span>
+                  </td>
+
+                  <td className="p-2 flex justify-end ">
                     <button
                       onClick={() => {
                         handleEdit(user._id);

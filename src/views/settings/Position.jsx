@@ -27,14 +27,23 @@ const Position = () => {
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
 
+  // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
-    // Reset to page 1 if searchValue is not empty
     if (searchValue && currentPage !== 1) {
-      setCurrentPage(1); // Reset page to 1 when a search is triggered
+      setCurrentPage(1);
     }
+  }, [searchValue]);
 
-    getPositions();
-  }, [searchValue, currentPage, perPage, dispatch]);
+  // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
+  useEffect(() => {
+    const obj = {
+      perPage: parseInt(perPage),
+      page: parseInt(currentPage),
+      searchValue,
+    };
+
+    dispatch(fetchPositions(obj));
+  }, [currentPage, perPage, searchValue, dispatch]);
 
   const getPositions = () => {
     const obj = {
@@ -49,7 +58,6 @@ const Position = () => {
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
-    level: "",
     description: "",
   });
 
@@ -106,7 +114,6 @@ const Position = () => {
     setFormData({
       _id: null,
       name: "",
-      level: "",
       description: "",
     });
   };
@@ -145,7 +152,6 @@ const Position = () => {
           <thead>
             <tr className="bg-gray-100 text-left">
               <th className="p-3">Position Name</th>
-              <th className="p-3">Level</th>
               <th className="p-3">Description</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
@@ -169,14 +175,12 @@ const Position = () => {
                   <td className="p-2 text-lg capitalize">
                     {position?.name?.toLowerCase()}
                   </td>
-                  <td className="p-2 text-lg capitalize">
-                    {position?.level?.toLowerCase()}
-                  </td>
+
                   <td className="p-2 text-lg capitalize">
                     {position?.description?.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
-                    {!position?.isDefault && (
+                    {position?.isDefault && (
                       <>
                         <button
                           onClick={() => handleEdit(position)}
@@ -237,24 +241,6 @@ const Position = () => {
                 required
                 disabled={loading}
               />
-
-              <select
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                className="w-full p-2 border rounded capitalize"
-                required
-                disabled={loading}
-              >
-                <option value="">Select Level</option>
-                <option value="staff">Staff</option>
-                <option value="supervisor">Supervisor</option>
-                <option value="manager">Manager</option>
-                <option value="physician">Physician</option>
-                <option value="hr">HR</option>
-                <option value="director">Director</option>
-                <option value="executive">Executive</option>
-              </select>
 
               <input
                 type="text"
