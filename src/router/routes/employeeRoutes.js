@@ -11,11 +11,11 @@ export const employeeRoutes = [
   {
     path: "employee/dashboard",
     element: <EmployeeDashboard />,
-    role: "employee",
+    role: "EMPLOYEE",
   },
-  {
-    path: "employee/dashboard/employee-details/:id",
-    element: <EmployeeDetails />,
-    role: "employee",
-  },
+  // {
+  //   path: "employee/dashboard/employee-details/:id",
+  //   element: <EmployeeDetails />,
+  //   role: "employee",
+  // },
 ];

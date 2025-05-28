@@ -12,16 +12,16 @@ export const managerRoutes = [
   {
     path: "manager/dashboard",
     element: <ManagerDashboard />,
-    role: "manager",
+    role: "MANAGER",
   },
-  {
-    path: "manager/dashboard/employee",
-    element: <Employee />,
-    role: "manager",
-  },
-  {
-    path: "manager/dashboard/employee/details/:id",
-    element: <EmployeeDetails />,
-    role: "manager",
-  },
+  // {
+  //   path: "manager/dashboard/employee",
+  //   element: <Employee />,
+  //   role: "manager",
+  // },
+  // {
+  //   path: "manager/dashboard/employee/details/:id",
+  //   element: <EmployeeDetails />,
+  //   role: "manager",
+  // },
 ];
