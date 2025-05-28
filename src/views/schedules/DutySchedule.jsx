@@ -38,9 +38,9 @@ const DutySchedule = () => {
   }, [currentPage, perPage, searchValue, dispatch]);
 
   const handleAddDutySchedule = () => {
-    if (role === "admin") {
+    if (role === "ADMIN") {
       navigate("/admin/dashboard/duty-schedule/add");
-    } else if (role === "hr") {
+    } else if (role === "HR_MANAGER") {
       navigate("/hr/dashboard/duty-schedule/add");
     } else {
       // Optional: fallback if unauthorized role
@@ -49,9 +49,9 @@ const DutySchedule = () => {
   };
 
   const handleEditDutySchedule = (scheduleId) => {
-    if (role === "admin") {
+    if (role === "ADMIN") {
       navigate(`/admin/dashboard/duty-schedule/edit/${scheduleId}`);
-    } else if (role === "hr") {
+    } else if (role === "HR_MANAGER") {
       navigate(`/hr/dashboard/duty-schedule/edit/${scheduleId}`);
     } else {
       alert("You are not authorized to edit employees.");

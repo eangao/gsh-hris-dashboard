@@ -44,13 +44,15 @@ const EmployeeDetails = () => {
   }
 
   //hide position
-  const positionName =
-    employee.employmentInformation?.position?.name?.toLowerCase() || "";
+  const positionLevel =
+    employee.employmentInformation?.position?.level?.toLowerCase() || "";
 
   const isDepartmentVisible = () =>
-    positionName !== "president" && positionName !== "director";
-
-  const isClusterVisible = () => positionName === "director";
+    positionLevel !== "executive" &&
+    positionLevel !== "directorial" &&
+    positionLevel !== "managerial" &&
+    positionLevel !== "supervisory" &&
+    positionLevel !== "physician";
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl print:px-0 print:py-0 print:max-w-none">
@@ -79,10 +81,10 @@ const EmployeeDetails = () => {
         </button> */}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-4">
+      <div className="grid grid-cols-1  gap-6 print:gap-4">
         {/* Personal Information with Photo */}
         <div className="bg-white p-6 rounded-lg shadow-md print:shadow-none print:p-4 print:border print:border-gray-200">
-          <div className="flex flex-col md:flex-col lg:flex-row gap-6 items-start">
+          <div className="w-full flex flex-col md:flex-col lg:flex-row gap-6 items-start">
             {/* Personal Info */}
             <div className="flex-1 order-2 lg:order-1">
               <h2 className="text-xl font-semibold mb-4 text-gray-800">
@@ -124,6 +126,19 @@ const EmployeeDetails = () => {
                     label="Religion"
                     value={employee.personalInformation?.religion?.name}
                   />
+
+                  <InfoItem
+                    label="Temporary Address"
+                    value={employee.personalInformation?.temporaryAddress}
+                  />
+                  <InfoItem
+                    label="Permanent Address"
+                    value={employee.personalInformation?.permanentAddress}
+                  />
+                  <InfoItem
+                    label="Phone Number"
+                    value={employee.personalInformation?.phoneNumber}
+                  />
                 </div>
               </div>
             </div>
@@ -149,35 +164,6 @@ const EmployeeDetails = () => {
           </div>
         </div>
 
-        {/* Contact Information */}
-        <div className="bg-white p-6 rounded-lg shadow-md print:shadow-none print:p-4 print:border print:border-gray-200">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">
-            Contact Information
-          </h2>
-          <div className="space-y-3">
-            <InfoItem
-              label="Temporary Address"
-              value={employee.contactInformation?.temporaryAddress}
-            />
-            <InfoItem
-              label="Permanent Address"
-              value={employee.contactInformation?.permanentAddress}
-            />
-            <InfoItem
-              label="Phone Number"
-              value={employee.contactInformation?.phoneNumber}
-            />
-            <InfoItem
-              label="Personal Email"
-              value={employee.contactInformation?.personalEmail}
-            />
-            <InfoItem
-              label="Company Email"
-              value={employee.contactInformation?.campanyEmail}
-            />
-          </div>
-        </div>
-
         {/* Employment Information */}
         <div className="bg-white p-6 rounded-lg shadow-md print:shadow-none print:p-4 print:border print:border-gray-200 col-span-1 md:col-span-2">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">
@@ -198,14 +184,6 @@ const EmployeeDetails = () => {
               <InfoItem
                 label="Department"
                 value={employee.employmentInformation?.department?.name}
-              />
-            )}
-
-            {/* Conditionally render Cluster */}
-            {isClusterVisible() && (
-              <InfoItem
-                label="Cluster"
-                value={employee.employmentInformation?.cluster?.name}
               />
             )}
 

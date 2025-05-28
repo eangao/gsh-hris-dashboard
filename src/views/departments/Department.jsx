@@ -5,6 +5,7 @@ import {
   fetchDepartmentById,
   createDepartment,
   updateDepartment,
+  assignDepartmentManager,
   deleteDepartment,
   messageClear,
 } from "../../store/Reducers/departmentReducer";
@@ -14,6 +15,7 @@ import Pagination from "../../components/Pagination";
 import Search from "../../components/Search";
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
+import { GrUserAdd } from "react-icons/gr";
 
 import { buttonOverrideStyle } from "../../utils/utils";
 import { PropagateLoader } from "react-spinners";
@@ -73,6 +75,7 @@ const Department = () => {
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [toAssignManager, setToAssignManager] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
@@ -85,6 +88,9 @@ const Department = () => {
 
       setIsModalOpen(false);
       setDeleteId(null);
+
+      setToAssignManager(false);
+
       dispatch(messageClear());
     }
     if (errorMessage) {
@@ -98,18 +104,32 @@ const Department = () => {
   };
 
   const handleSubmit = (e) => {
-    console.log(formData._id);
     e.preventDefault();
-    formData._id
-      ? dispatch(updateDepartment(formData))
-      : dispatch(createDepartment(formData));
+
+    if (formData._id) {
+      // Editing an existing department
+      if (toAssignManager) {
+        const hasPreviousAssignedManger = dispatch(
+          assignDepartmentManager(formData)
+        );
+      } else {
+        dispatch(updateDepartment(formData));
+      }
+    } else {
+      // Creating a new department
+      dispatch(createDepartment(formData));
+    }
   };
 
   //====edit============
   const handleEdit = (departmentId) => {
     setSelectedId(departmentId);
+
+    getAllClusters();
+
     dispatch(fetchDepartmentById(departmentId));
   };
+
   useEffect(() => {
     if (department && department._id === selectedId) {
       setFormData(department);
@@ -117,6 +137,8 @@ const Department = () => {
     }
   }, [department, selectedId]);
   //====edit============
+
+  //====Asign manager============
 
   const handleDeleteConfirm = (id, name) => {
     setDeleteId(id);
@@ -153,7 +175,7 @@ const Department = () => {
         <button
           onClick={() => {
             getAllClusters();
-            getEmployeesManagers();
+
             resetForm();
             setIsModalOpen(true);
           }}
@@ -231,22 +253,40 @@ const Department = () => {
                   <td className="p-2 flex justify-end space-x-2">
                     <button
                       onClick={() => {
-                        getAllClusters();
                         getEmployeesManagers();
+                        setToAssignManager(true);
                         handleEdit(dept._id);
                       }}
-                      className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                      className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
                       disabled={loading}
+                      title="Assign Manager"
                     >
-                      <FaEdit />
+                      <GrUserAdd />
                     </button>
-                    <button
-                      onClick={() => handleDeleteConfirm(dept._id, dept.name)}
-                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                      disabled={loading}
-                    >
-                      <FaTrashAlt />
-                    </button>
+                    {!dept?.isDefault && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setToAssignManager(false);
+                            handleEdit(dept._id);
+                          }}
+                          className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                          disabled={loading}
+                        >
+                          <FaEdit />
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleDeleteConfirm(dept._id, dept.name)
+                          }
+                          className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                          disabled={loading}
+                        >
+                          <FaTrashAlt />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
@@ -271,72 +311,95 @@ const Department = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData._id ? "Edit Department" : "Add Department"}
+              {formData._id
+                ? toAssignManager
+                  ? "Assign Manager"
+                  : "Edit Department"
+                : "Add Department"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Department Name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full p-2 border rounded capitalize"
-                required
-                disabled={loading}
-              />
-
-              <select
-                name="cluster"
-                value={formData.cluster._id}
-                onChange={(e) =>
-                  setFormData({ ...formData, cluster: e.target.value })
-                }
-                className="w-full p-2 border rounded capitalize"
-                required
-                disabled={loading}
-              >
-                <option value="">Select Cluster</option>
-                {clusters.map((cluster) => (
-                  <option key={cluster._id} value={cluster._id}>
-                    {cluster.name}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                name="manager"
-                value={formData.manager?._id || formData.manager} // handles both object or id
-                onChange={(e) =>
-                  setFormData({ ...formData, manager: e.target.value })
-                }
-                className="w-full p-2 border rounded capitalize"
-                // required
-                disabled={loading}
-              >
-                <option value="">Assign Manager</option>
-                {managers.map((manager) => {
-                  const { firstName, middleName, lastName } =
-                    manager.personalInformation;
-
-                  // Format: Lastname, Firstname M
-                  const middleInitial = middleName
-                    ? middleName.charAt(0).toUpperCase() + "."
-                    : "";
-                  const displayName =
-                    `${lastName}, ${firstName} ${middleInitial}`.trim();
-
-                  return (
-                    <option key={manager._id} value={manager._id}>
-                      {displayName}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Department Name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded capitalize mt-1"
+                  required={!toAssignManager}
+                  disabled={toAssignManager}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cluster
+                </label>
+                <select
+                  name="cluster"
+                  value={formData.cluster._id}
+                  onChange={(e) =>
+                    setFormData({ ...formData, cluster: e.target.value })
+                  }
+                  className="w-full p-2 border rounded capitalize mt-1"
+                  required={!toAssignManager}
+                  disabled={toAssignManager}
+                >
+                  <option value="">Select Cluster</option>
+                  {clusters.map((cluster) => (
+                    <option key={cluster._id} value={cluster._id}>
+                      {cluster.name}
                     </option>
-                  );
-                })}
-              </select>
+                  ))}
+                </select>
+              </div>
+
+              {toAssignManager && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Assign Manager
+                  </label>
+                  <select
+                    name="manager"
+                    value={formData.manager?._id || formData.manager} // handles both object or id
+                    onChange={(e) =>
+                      setFormData({ ...formData, manager: e.target.value })
+                    }
+                    className="w-full p-2 border rounded capitalize mt-1"
+                    required={toAssignManager}
+                    disabled={!toAssignManager}
+                  >
+                    <option value="">Assign Manager</option>
+                    {managers.map((manager) => {
+                      const { firstName, middleName, lastName } =
+                        manager.personalInformation;
+
+                      // Format: Lastname, Firstname M
+                      const middleInitial = middleName
+                        ? middleName.charAt(0).toUpperCase() + "."
+                        : "";
+                      const displayName =
+                        `${lastName}, ${firstName} ${middleInitial}`.trim();
+
+                      return (
+                        <option key={manager._id} value={manager._id}>
+                          {displayName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
 
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setToAssignManager(false);
+                  }}
                   className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                   disabled={loading}
                 >
@@ -353,7 +416,11 @@ const Department = () => {
                       cssOverride={buttonOverrideStyle}
                     />
                   ) : formData._id ? (
-                    "Update"
+                    toAssignManager ? (
+                      "Assign Manager"
+                    ) : (
+                      "Update"
+                    )
                   ) : (
                     "Add"
                   )}

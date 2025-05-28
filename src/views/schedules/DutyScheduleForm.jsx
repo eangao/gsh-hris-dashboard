@@ -160,9 +160,9 @@ const DutyScheduleForm = () => {
       dispatch(messageClear());
       navigate("/admin/dashboard/duty-schedule");
 
-      if (role === "admin") {
+      if (role === "ADMIN" || role === "SUPER_ADMIN") {
         navigate("/admin/dashboard/duty-schedule");
-      } else if (role === "hr") {
+      } else if (role === "HR_ADMIN") {
         navigate("/hr/dashboard/duty-schedule");
       }
 
@@ -531,9 +531,9 @@ const DutyScheduleForm = () => {
   };
 
   const handleCancel = () => {
-    if (role === "admin") {
+    if (role === "ADMIN" || role === "SUPER_ADMIN") {
       navigate("/admin/dashboard/duty-schedule");
-    } else if (role === "hr") {
+    } else if (role === "HR_ADMIN") {
       navigate("/hr/dashboard/duty-schedule");
     } else {
       alert("You are not authorized to access the schedule list.");

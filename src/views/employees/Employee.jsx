@@ -69,9 +69,9 @@ const Employee = () => {
   };
 
   const handleAddEmployee = () => {
-    if (role === "admin") {
+    if (role === "SUPER_ADMIN" || role === "ADMIN") {
       navigate("/admin/dashboard/employee/add");
-    } else if (role === "hr") {
+    } else if (role === "HR_MANAGER") {
       navigate("/hr/dashboard/employee/add");
     } else {
       // Optional: fallback if unauthorized role
@@ -80,9 +80,9 @@ const Employee = () => {
   };
 
   const handleEditEmployee = (employeeId) => {
-    if (role === "admin") {
+    if (role === "SUPER_ADMIN" || role === "ADMIN") {
       navigate(`/admin/dashboard/employee/edit/${employeeId}`);
-    } else if (role === "hr") {
+    } else if (role === "HR_MANAGER") {
       navigate(`/hr/dashboard/employee/edit/${employeeId}`);
     } else {
       alert("You are not authorized to edit employees.");
@@ -90,9 +90,9 @@ const Employee = () => {
   };
 
   const handleViewEmployee = (employeeId) => {
-    if (role === "admin") {
+    if (role === "SUPER_ADMIN" || role === "ADMIN") {
       navigate(`/admin/dashboard/employee/details/${employeeId}`);
-    } else if (role === "hr") {
+    } else if (role === "HR_MANAGER") {
       navigate(`/hr/dashboard/employee/details/${employeeId}`);
     } else {
       alert("You are not authorized to view this employee.");
@@ -129,6 +129,7 @@ const Employee = () => {
               <th className="p-3">Position</th>
               <th className="p-3">Employment Status</th>
               <th className="p-3">Employee Id</th>
+              <th className="p-3">Status</th>
               <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
@@ -173,6 +174,15 @@ const Employee = () => {
                   </td>
                   <td className="p-3 capitalize">
                     {employee?.employmentInformation?.hospitalEmployeeId}
+                  </td>
+                  <td className="p-3 ">
+                    <span
+                      className={`flex justify-center items-center px-3 py-1 text-white rounded-full ${
+                        employee?.status ? "bg-green-500" : "bg-red-500"
+                      }`}
+                    >
+                      {employee?.status}
+                    </span>
                   </td>
                   <td className="p-3 flex justify-center space-x-2">
                     <button

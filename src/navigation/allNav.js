@@ -11,62 +11,62 @@ export const allNav = [
   {
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard",
   },
   {
     title: "Employee",
     icon: <FaPeopleGroup />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/employee",
   },
   {
     title: "Cluster",
     icon: <AiOutlineCluster />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/cluster",
   },
   {
     title: "Department",
     icon: <FaLayerGroup />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/department",
   },
   {
     title: "Position",
     icon: <FiFileText />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/position",
   },
   {
     title: "Religion",
     icon: <FiFileText />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/religion",
   },
   {
     title: "Employment Status",
     icon: <FiFileText />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/employment-status",
   },
   {
     title: "Work Schedule",
     icon: <RiTimeFill />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/work-schedule",
   },
   {
-    title: "Role",
+    title: "role",
     icon: <FaUserCog />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/role",
   },
 
   {
     title: "User",
     icon: <FaUserCog />,
-    role: "admin",
+    role: ["ADMIN", "SUPER_ADMIN"],
     path: "/admin/dashboard/user",
   },
 
@@ -75,71 +75,71 @@ export const allNav = [
   {
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard",
   },
 
   {
     title: "Employee",
     icon: <FaPeopleGroup />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/employee",
   },
 
   {
     title: "Cluster",
     icon: <AiOutlineCluster />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/cluster",
   },
   {
     title: "Department",
     icon: <FaLayerGroup />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/department",
   },
 
   {
     title: "Position",
     icon: <FiFileText />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/position",
   },
   {
     title: "Religion",
     icon: <FiFileText />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/religion",
   },
   {
     title: "Employment Status",
     icon: <FiFileText />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/employment-status",
   },
 
   {
     title: "Work Schedule",
     icon: <RiTimeFill />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/work-schedule",
   },
   {
     title: "Duty Schedule",
     icon: <RiCalendarScheduleLine />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/duty-schedule",
   },
   {
     title: "Daily Attendance",
     icon: <MdOutlinePersonPin />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/daily-attendance",
   },
   {
     title: "Holiday",
     icon: <MdHolidayVillage />,
-    role: "hr",
+    role: "HR_ADMIN",
     path: "/hr/dashboard/holiday",
   },
 
@@ -148,7 +148,7 @@ export const allNav = [
   {
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
-    role: "manager",
+    role: "MANAGER",
     path: "/manager/dashboard",
   },
   //====================================
@@ -157,7 +157,7 @@ export const allNav = [
   {
     title: "Dashboard",
     icon: <AiOutlineDashboard />,
-    role: "employee",
+    role: "EMPLOYEE",
     path: "/employee/dashboard",
   },
 ];

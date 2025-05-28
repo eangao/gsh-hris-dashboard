@@ -116,9 +116,9 @@ const EmployeeForm = () => {
     if (successMessage || errorMessage) {
       if (successMessage) {
         toast.success(successMessage);
-        if (role === "admin") {
+        if (role === "SUPER_ADMIN" || role === "ADMIN") {
           navigate("/admin/dashboard/employee");
-        } else if (role === "hr") {
+        } else if (role === "HR_ADMIN") {
           navigate("/hr/dashboard/employee");
         }
       }
@@ -376,35 +376,36 @@ const EmployeeForm = () => {
   //===============Handle Maiden Name end====================
 
   //===============Handle position start====================
-  const [selectedPositionName, setSelectedPositionName] = useState("");
+  const [selectedPositionLevel, setSelectedPositionLevel] = useState("");
 
   const handlePositionChange = (selectedId) => {
     const selectedPos = positions.find((pos) => pos._id === selectedId);
-    const name = selectedPos?.name?.toLowerCase() || "";
+    const level = selectedPos?.level?.toLowerCase() || "";
 
-    setSelectedPositionName(name);
+    setSelectedPositionLevel(level);
     handleChange("employmentInformation", "position", selectedId);
 
     // Clear hidden fields
     if (
-      name === "president" ||
-      name === "director" ||
-      name === "manager" ||
-      name === "supervisor" ||
-      name === "hr"
+      level === "executive" ||
+      level === "directorial" ||
+      level === "managerial" ||
+      level === "supervisory" ||
+      level === "physician"
     ) {
       handleChange("employmentInformation", "department", null);
     }
   };
 
   const isDepartmentVisible = () => {
-    return (
-      selectedPositionName !== "president" &&
-      selectedPositionName !== "director" &&
-      selectedPositionName !== "manager" &&
-      selectedPositionName !== "supervisor" &&
-      selectedPositionName !== "hr"
-    );
+    const hiddenPositionsLevel = [
+      "executive",
+      "directorial",
+      "managerial",
+      "supervisory",
+      "physician",
+    ];
+    return !hiddenPositionsLevel.includes(selectedPositionLevel);
   };
 
   //to handel the edit
@@ -412,8 +413,8 @@ const EmployeeForm = () => {
     const selectedId = formData?.employmentInformation?.position;
     if (selectedId && positions.length > 0) {
       const selectedPos = positions.find((pos) => pos._id === selectedId);
-      const name = selectedPos?.name?.toLowerCase() || "";
-      setSelectedPositionName(name);
+      const level = selectedPos?.level?.toLowerCase() || "";
+      setSelectedPositionLevel(level);
     }
   }, [formData?.employmentInformation?.position, positions]);
 
@@ -425,9 +426,9 @@ const EmployeeForm = () => {
   // }));
 
   const handleCancel = () => {
-    if (role === "admin") {
+    if (role === "SUPER_ADMIN" || role === "ADMIN") {
       navigate("/admin/dashboard/employee");
-    } else if (role === "hr") {
+    } else if (role === "HR_ADMIN") {
       navigate("/hr/dashboard/employee");
     } else {
       alert("You are not authorized to access the employee list.");

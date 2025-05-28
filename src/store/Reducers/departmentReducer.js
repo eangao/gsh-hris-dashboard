@@ -89,6 +89,25 @@ export const updateDepartment = createAsyncThunk(
   }
 );
 
+export const assignDepartmentManager = createAsyncThunk(
+  "department/assignDepartmentManager",
+  async ({ _id, ...departmentData }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.put(
+        `/hris/departments/manager/${_id}`,
+        departmentData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export const deleteDepartment = createAsyncThunk(
   "department/deleteDepartment",
   async (id, { rejectWithValue, fulfillWithValue }) => {
@@ -156,6 +175,19 @@ const departmentSlice = createSlice({
         state.errorMessage = payload.error;
       })
       .addCase(updateDepartment.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      });
+
+    builder
+      .addCase(assignDepartmentManager.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(assignDepartmentManager.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(assignDepartmentManager.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
       });

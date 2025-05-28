@@ -125,7 +125,20 @@ const UserManagement = () => {
         "Email must be @adventisthealth-gng.com"
       )
       .required("Required"),
-    role: Yup.string().required("Required"),
+    role: Yup.string()
+      .oneOf(
+        [
+          "EMPLOYEE",
+          "MANAGER",
+          "DIRECTOR",
+          "EXECUTIVE",
+          "HR_ADMIN",
+          "MARKETING_ADMIN",
+          "ADMIN",
+        ],
+        "Invalid role"
+      )
+      .required("Role is required"),
   });
 
   const handleUserFormSubmit =
@@ -258,6 +271,8 @@ const UserManagement = () => {
             <tr className="bg-gray-100 text-left">
               <th className="p-3">User</th>
               <th className="p-3">Email</th>
+              <th className="p-3">Position</th>
+              <th className="p-3">Position Level</th>
               <th className="p-3">Role</th>
               <th className="p-3 text-right">Status</th>
               <th className="p-3 text-right">Actions</th>
@@ -298,7 +313,9 @@ const UserManagement = () => {
                   <td className="p-2 lowercase">
                     {user?.email?.toLowerCase()}
                   </td>
-                  <td className="p-2 lowercase">{user?.role?.toLowerCase()}</td>
+                  <td className="p-2 uppercase">{user?.position?.name}</td>
+                  <td className="p-2 uppercase">{user?.position?.level}</td>
+                  <td className="p-2 uppercase">{user?.role}</td>
                   <td className="p-2 lowercase text-right">
                     <span
                       className={`px-3 py-1 text-white rounded-full ${
@@ -386,6 +403,32 @@ const UserManagement = () => {
                     />
                   </div>
                   <div>
+                    <label className="block font-medium">Position</label>
+                    <input
+                      name="position"
+                      type="text"
+                      disabled
+                      className="w-full border px-3 py-2 rounded capitalize"
+                      value={`${
+                        selectedUnregisteredUser.employmentInformation?.position
+                          ?.name || ""
+                      }`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-medium">Position Level</label>
+                    <input
+                      name="positionLevel"
+                      type="text"
+                      disabled
+                      className="w-full border px-3 py-2 rounded capitalize"
+                      value={`${
+                        selectedUnregisteredUser.employmentInformation?.position
+                          ?.level || ""
+                      }`}
+                    />
+                  </div>
+                  <div>
                     <label className="block font-medium">Email</label>
                     <Field
                       name="email"
@@ -400,17 +443,28 @@ const UserManagement = () => {
                   </div>
 
                   <div>
-                    <label className="block font-medium">Role</label>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Role
+                    </label>
                     <Field
                       as="select"
                       name="role"
-                      className="w-full border px-3 py-2 rounded"
+                      className="w-full p-2 border rounded mt-1"
                     >
-                      <option value="">Select a role</option>
-                      <option value="admin">Admin</option>
-                      <option value="employee">Employee</option>
-                      <option value="user">User</option>
+                      <option value="">Select Role</option>
+                      <option value="EMPLOYEE">Employee</option>
+                      <option value="MANAGER">Manager</option>
+                      <option value="DIRECTOR">Director</option>
+                      <option value="EXECUTIVE">Executive</option>
+                      <option value="HR_ADMIN">HR Admin</option>
+                      <option value="MARKETING_ADMIN">Marketing Admin</option>
+                      <option value="ADMIN">Admin</option>
                     </Field>
+                    <p className="text-xs text-gray-500 mt-1 mb-1">
+                      Note: Please ensure the selected role aligns with the
+                      user's position level (e.g., choose "Manager" for
+                      positions with a managerial level).
+                    </p>
                     <ErrorMessage
                       name="role"
                       component="div"
@@ -493,6 +547,7 @@ const UserManagement = () => {
                     <tr className="bg-blue-200">
                       <th className="text-left p-2">Employee</th>
                       <th className="text-left  p-2">Position</th>
+                      <th className="text-left  p-2">Level</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -536,9 +591,13 @@ const UserManagement = () => {
                               )}
                             </div>
                           </td>
-                          <td className="text-left border-y p-2">
+                          <td className="text-left border-y p-2 uppercase">
                             {userToRegistered.employmentInformation?.position
                               ?.name || "-"}
+                          </td>
+                          <td className="text-left border-y p-2 uppercase">
+                            {userToRegistered.employmentInformation?.position
+                              ?.level || "-"}
                           </td>
                         </tr>
                       );

@@ -32,97 +32,97 @@ const EmploymentStatus = lazy(() =>
 
 export const adminRoutes = [
   {
-    path: "admin/dashboard/role",
-    element: <Role />,
-    role: "admin",
-  },
-  {
     path: "admin/dashboard",
     element: <AdminDashboard />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/holiday",
     element: <Holiday />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/daily-attendance",
     element: <DailyAttendance />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/employee",
     element: <Employee />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/employee/add",
     element: <EmployeeForm />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
 
   {
     path: "admin/dashboard/employee/edit/:id",
     element: <EmployeeForm />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/employee/details/:id",
     element: <EmployeeDetails />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/user",
     element: <UserManagement />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/position",
     element: <Position />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/cluster",
     element: <Cluster />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/department",
     element: <Department />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/work-schedule",
     element: <WorkSchedule />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/duty-schedule",
     element: <DutySchedule />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
 
   {
     path: "admin/dashboard/duty-schedule/add",
     element: <DutyScheduleForm />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
 
   {
     path: "admin/dashboard/duty-schedule/edit/:id",
     element: <DutyScheduleForm />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
 
   {
     path: "admin/dashboard/religion",
     element: <Religion />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
   },
   {
     path: "admin/dashboard/employment-status",
     element: <EmploymentStatus />,
-    role: "admin",
+    role: ["admin", "SUPER_ADMIN"],
+  },
+  {
+    path: "admin/dashboard/role",
+    element: <Role />,
+    role: ["admin", "SUPER_ADMIN"],
   },
 ];

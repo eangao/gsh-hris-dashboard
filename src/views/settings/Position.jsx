@@ -58,6 +58,7 @@ const Position = () => {
   const [formData, setFormData] = useState({
     _id: null,
     name: "",
+    level: "",
     description: "",
   });
 
@@ -114,6 +115,7 @@ const Position = () => {
     setFormData({
       _id: null,
       name: "",
+      level: "",
       description: "",
     });
   };
@@ -151,7 +153,8 @@ const Position = () => {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-100 text-left">
-              <th className="p-3">Position Name</th>
+              <th className="p-3">Position</th>
+              <th className="p-3">Level</th>
               <th className="p-3">Description</th>
               <th className="p-3 text-right">Actions</th>
             </tr>
@@ -175,12 +178,15 @@ const Position = () => {
                   <td className="p-2 text-lg capitalize">
                     {position?.name?.toLowerCase()}
                   </td>
+                  <td className="p-2 text-lg capitalize">
+                    {position?.level?.toLowerCase()}
+                  </td>
 
                   <td className="p-2 text-lg capitalize">
                     {position?.description?.toLowerCase()}
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
-                    {position?.isDefault && (
+                    {!position?.isDefault && (
                       <>
                         <button
                           onClick={() => handleEdit(position)}
@@ -241,6 +247,27 @@ const Position = () => {
                 required
                 disabled={loading}
               />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Level
+                </label>
+                <select
+                  name="level"
+                  value={formData.level}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded mt-1"
+                  required
+                >
+                  <option value="">Select Level</option>
+                  <option value="staff">Staff</option>
+                  <option value="managerial">Managerial</option>
+                  <option value="supervisory">Supervisory</option>
+                  <option value="directorial">Directorial</option>
+                  <option value="physician">Physician</option>
+                  <option value="executive">Executive</option>
+                </select>
+              </div>
 
               <input
                 type="text"
