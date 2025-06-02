@@ -1,21 +1,22 @@
 import { useEffect, useState } from "react";
 import Router from "./router/Router";
 import publicRoutes from "./router/routes/publicRoutes";
-import { getRoutes } from "./router/routes"; //found in index
+import { getRoutes } from "./router/routes";
 import { useDispatch, useSelector } from "react-redux";
 import { get_user_info } from "./store/Reducers/authReducer";
 
 function App() {
   const dispatch = useDispatch();
-  const { token } = useSelector((state) => state.auth);
+  const { token, role } = useSelector((state) => state.auth);
 
   const [allroutes, setAllRoutes] = useState([...publicRoutes]);
-  // console.log(allroutes);
 
   useEffect(() => {
-    const routes = getRoutes();
-    setAllRoutes([...allroutes, routes]);
-  }, []);
+    if (role) {
+      const routes = getRoutes(role);
+      setAllRoutes([...publicRoutes, routes]);
+    }
+  }, [role]);
 
   useEffect(() => {
     if (token) {

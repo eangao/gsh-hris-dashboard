@@ -1,128 +1,153 @@
 import { lazy } from "react";
 
 const AdminDashboard = lazy(() =>
-  import("../../views/dashboard/AdminDashboard")
+  import("../../pages/dashboard/admin/AdminDashboard")
 );
-const Employee = lazy(() => import("../../views/employees/Employee"));
-const EmployeeForm = lazy(() => import("../../views/employees/EmployeeForm"));
-const EmployeeDetails = lazy(() =>
-  import("../../views/employees/EmployeeDetails")
+const DashboardAnalytics = lazy(() =>
+  import("../../pages/dashboard/admin/DashboardAnalytics")
 );
-
-const UserManagement = lazy(() => import("../../views/users/UserManagement"));
-const Position = lazy(() => import("../../views/settings/Position"));
-const Cluster = lazy(() => import("../../views/settings/Cluster"));
-const Department = lazy(() => import("../../views/departments/Department"));
-const WorkSchedule = lazy(() => import("../../views/settings/WorkSchedule"));
-
-const DutySchedule = lazy(() => import("../../views/schedules/DutySchedule"));
-const DutyScheduleForm = lazy(() =>
-  import("../../views/schedules/DutyScheduleForm")
+const AdminNotifications = lazy(() =>
+  import("../../pages/dashboard/admin/AdminNotifications")
 );
-
-const DailyAttendance = lazy(() =>
-  import("../../views/attendance/DailyAttendance")
+const UserManagement = lazy(() =>
+  import("../../pages/dashboard/admin/UserManagement")
 );
-const Holiday = lazy(() => import("../../views/settings/Holiday"));
-const Role = lazy(() => import("../../views/roles/Role"));
-const Religion = lazy(() => import("../../views/settings/Religion"));
+const LoginActivity = lazy(() =>
+  import("../../pages/dashboard/admin/LoginActivity")
+);
+const AuditLogs = lazy(() => import("../../pages/dashboard/admin/AuditLogs"));
+const SystemSettings = lazy(() =>
+  import("../../pages/dashboard/admin/SystemSettings")
+);
+const IntegrationSettings = lazy(() =>
+  import("../../pages/dashboard/admin/IntegrationSettings")
+);
+const FeatureToggleManager = lazy(() =>
+  import("../../pages/dashboard/admin/FeatureToggleManager")
+);
+const BackupRecovery = lazy(() =>
+  import("../../pages/dashboard/admin/BackupRecovery")
+);
+const SystemLogs = lazy(() => import("../../pages/dashboard/admin/SystemLogs"));
+// setup
+const AdminSetup = lazy(() =>
+  import("../../pages/dashboard/admin/setup/AdminSetup")
+);
+const AccountSettings = lazy(() =>
+  import("../../pages/dashboard/admin/setup/AccountSettings")
+);
+const Cluster = lazy(() => import("../../pages/dashboard/admin/setup/Cluster"));
 const EmploymentStatus = lazy(() =>
-  import("../../views/settings/EmploymentStatus")
+  import("../../pages/dashboard/admin/setup/EmploymentStatus")
+);
+const Holiday = lazy(() => import("../../pages/dashboard/admin/setup/Holiday"));
+const NotificationSettings = lazy(() =>
+  import("../../pages/dashboard/admin/setup/NotificationSettings")
+);
+const Position = lazy(() =>
+  import("../../pages/dashboard/admin/setup/Position")
+);
+const Religion = lazy(() =>
+  import("../../pages/dashboard/admin/setup/Religion")
+);
+const ShiftTemplates = lazy(() =>
+  import("../../pages/dashboard/admin/setup/ShiftTemplates")
 );
 
-export const adminRoutes = [
+const adminRoutes = [
   {
-    path: "admin/dashboard",
+    path: "/admin/dashboard",
     element: <AdminDashboard />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/holiday",
-    element: <Holiday />,
+    path: "/admin/analytics",
+    element: <DashboardAnalytics />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/daily-attendance",
-    element: <DailyAttendance />,
+    path: "/admin/notifications",
+    element: <AdminNotifications />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/employee",
-    element: <Employee />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-  {
-    path: "admin/dashboard/employee/add",
-    element: <EmployeeForm />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-
-  {
-    path: "admin/dashboard/employee/edit/:id",
-    element: <EmployeeForm />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-  {
-    path: "admin/dashboard/employee/details/:id",
-    element: <EmployeeDetails />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-  {
-    path: "admin/dashboard/user",
+    path: "/admin/users",
     element: <UserManagement />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/position",
-    element: <Position />,
+    path: "/admin/login-activity",
+    element: <LoginActivity />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/cluster",
+    path: "/admin/audit-logs",
+    element: <AuditLogs />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/system-settings",
+    element: <SystemSettings />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/integrations",
+    element: <IntegrationSettings />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/feature-toggle",
+    element: <FeatureToggleManager />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/backup-recovery",
+    element: <BackupRecovery />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/system-logs",
+    element: <SystemLogs />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+
+  // System Setup page
+
+  {
+    path: "/admin/setup/cluster",
     element: <Cluster />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/department",
-    element: <Department />,
+    path: "/admin/setup/position",
+    element: <Position />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/work-schedule",
-    element: <WorkSchedule />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-  {
-    path: "admin/dashboard/duty-schedule",
-    element: <DutySchedule />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-
-  {
-    path: "admin/dashboard/duty-schedule/add",
-    element: <DutyScheduleForm />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-
-  {
-    path: "admin/dashboard/duty-schedule/edit/:id",
-    element: <DutyScheduleForm />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-
-  {
-    path: "admin/dashboard/religion",
-    element: <Religion />,
-    role: ["ADMIN", "SUPER_ADMIN"],
-  },
-  {
-    path: "admin/dashboard/employment-status",
+    path: "/admin/setup/employment-status",
     element: <EmploymentStatus />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "admin/dashboard/role",
-    element: <Role />,
+    path: "/admin/setup/religion",
+    element: <Religion />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/setup/shift-templates",
+    element: <ShiftTemplates />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/setup/notification-settings",
+    element: <NotificationSettings />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/setup/holiday",
+    element: <Holiday />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
 ];
+
+export default adminRoutes;

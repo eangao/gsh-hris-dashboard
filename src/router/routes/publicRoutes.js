@@ -1,12 +1,12 @@
 import { lazy } from "react";
 
-const Login = lazy(() => import("../../views/auth/Login"));
-const AdminLogin = lazy(() => import("../../views/auth/AdminLogin"));
-const ChangePassword = lazy(() => import("../../views/auth/ChangePassword"));
+const Login = lazy(() => import("../../pages/auth/Login"));
+const AdminLogin = lazy(() => import("../../pages/auth/AdminLogin"));
+const ChangePassword = lazy(() => import("../../pages/auth/ChangePassword"));
 
-const Home = lazy(() => import("../../views/Home"));
-const UnAuthorized = lazy(() => import("../../views/errors/UnAuthorized"));
-const PageNotFound = lazy(() => import("../../views/errors/PageNotFound"));
+const Home = lazy(() => import("../../pages/Home"));
+const UnAuthorized = lazy(() => import("../../pages/errors/UnAuthorized"));
+const PageNotFound = lazy(() => import("../../pages/errors/PageNotFound"));
 
 const publicRoutes = [
   {
