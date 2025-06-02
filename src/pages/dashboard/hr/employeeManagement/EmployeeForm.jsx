@@ -6,12 +6,12 @@ import {
   fetchEmployeeById,
   messageClear,
   updateEmployee,
-} from "../../store/Reducers/employeeReducer";
-import { fetchAllEmploymentStatus } from "../../store/Reducers/employmentStatusReducer";
-import { fetchAllReligions } from "../../store/Reducers/religionReducer";
-import { fetchAllPositions } from "../../store/Reducers/positionReducer";
-import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
-import { fetchAllClusters } from "../../store/Reducers/clusterReducer";
+} from "../../../../store/Reducers/employeeReducer";
+import { fetchAllEmploymentStatus } from "../../../../store/Reducers/employmentStatusReducer";
+import { fetchAllReligions } from "../../../../store/Reducers/religionReducer";
+import { fetchAllPositions } from "../../../../store/Reducers/positionReducer";
+import { fetchAllDepartments } from "../../../../store/Reducers/departmentReducer";
+import { fetchAllClusters } from "../../../../store/Reducers/clusterReducer";
 
 import toast from "react-hot-toast";
 // import Select from "react-select";
@@ -116,10 +116,8 @@ const EmployeeForm = () => {
     if (successMessage || errorMessage) {
       if (successMessage) {
         toast.success(successMessage);
-        if (role === "SUPER_ADMIN" || role === "ADMIN") {
-          navigate("/admin/dashboard/employee");
-        } else if (role === "HR_ADMIN") {
-          navigate("/hr/dashboard/employee");
+        if (role === "HR_ADMIN") {
+          navigate("/hr/employee");
         }
       }
 
@@ -426,10 +424,8 @@ const EmployeeForm = () => {
   // }));
 
   const handleCancel = () => {
-    if (role === "SUPER_ADMIN" || role === "ADMIN") {
-      navigate("/admin/dashboard/employee");
-    } else if (role === "HR_ADMIN") {
-      navigate("/hr/dashboard/employee");
+    if (role === "HR_ADMIN") {
+      navigate("/hr/employee");
     } else {
       alert("You are not authorized to access the employee list.");
     }

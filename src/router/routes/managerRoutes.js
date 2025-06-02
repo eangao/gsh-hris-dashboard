@@ -6,12 +6,16 @@ const ManagerDashboard = lazy(() =>
 const TeamOverview = lazy(() =>
   import("../../pages/dashboard/manager/TeamOverview")
 );
-const TeamAttendance = lazy(() =>
-  import("../../pages/dashboard/manager/TeamAttendance")
+const DepartmentAttendance = lazy(() =>
+  import("../../pages/dashboard/manager/DepartmentAttendance")
 );
 const ScheduleManagement = lazy(() =>
-  import("../../pages/dashboard/manager/ScheduleManagement")
+  import("../../pages/dashboard/manager/dutySchedule/ScheduleManagement")
 );
+const DutyScheduleForm = lazy(() =>
+  import("../../pages/dashboard/manager/dutySchedule/DutyScheduleForm")
+);
+
 const LeaveApprovals = lazy(() =>
   import("../../pages/dashboard/manager/LeaveApprovals")
 );
@@ -62,12 +66,22 @@ const managerRoutes = [
   },
   {
     path: "/manager/team-attendance",
-    element: <TeamAttendance />,
+    element: <DepartmentAttendance />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
   {
-    path: "/manager/schedule-management",
+    path: "/manager/duty-schedule",
     element: <ScheduleManagement />,
+    role: ["MANAGER", "SUPER_ADMIN"],
+  },
+  {
+    path: "/manager/duty-schedule/add",
+    element: <DutyScheduleForm />,
+    role: ["MANAGER", "SUPER_ADMIN"],
+  },
+  {
+    path: "/manager/duty-schedule/edit/:id",
+    element: <DutyScheduleForm />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
   {

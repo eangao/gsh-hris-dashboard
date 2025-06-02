@@ -8,16 +8,16 @@ import {
   assignDepartmentManager,
   deleteDepartment,
   messageClear,
-} from "../../store/Reducers/departmentReducer";
-import { fetchAllClusters } from "../../store/Reducers/clusterReducer";
-import { fetchEmployeesManagers } from "../../store/Reducers/employeeReducer";
-import Pagination from "../../components/Pagination";
-import Search from "../../components/Search";
+} from "../../../../store/Reducers/departmentReducer";
+import { fetchAllClusters } from "../../../../store/Reducers/clusterReducer";
+import { fetchEmployeesManagers } from "../../../../store/Reducers/employeeReducer";
+import Pagination from "../../../../components/Pagination";
+import Search from "../../../../components/Search";
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { GrUserAdd } from "react-icons/gr";
 
-import { buttonOverrideStyle } from "../../utils/utils";
+import { buttonOverrideStyle } from "../../../../utils/utils";
 import { PropagateLoader } from "react-spinners";
 
 const Department = () => {

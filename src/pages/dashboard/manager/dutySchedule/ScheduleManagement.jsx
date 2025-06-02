@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { fetchDutySchedules } from "../../store/Reducers/dutyScheduleReducer";
-import Search from "../../components/Search";
-import Pagination from "../../components/Pagination";
+import { fetchDutySchedules } from "../../../../store/Reducers/dutyScheduleReducer";
+import Search from "../../../../components/Search";
+import Pagination from "../../../../components/Pagination";
 
-const DutySchedule = () => {
+const ScheduleManagement = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -38,10 +38,8 @@ const DutySchedule = () => {
   }, [currentPage, perPage, searchValue, dispatch]);
 
   const handleAddDutySchedule = () => {
-    if (role === "ADMIN") {
-      navigate("/admin/dashboard/duty-schedule/add");
-    } else if (role === "HR_MANAGER") {
-      navigate("/hr/dashboard/duty-schedule/add");
+    if (role === "MANAGER") {
+      navigate("/manager/duty-schedule/add");
     } else {
       // Optional: fallback if unauthorized role
       alert("You are not authorized to add duty schedule.");
@@ -49,10 +47,8 @@ const DutySchedule = () => {
   };
 
   const handleEditDutySchedule = (scheduleId) => {
-    if (role === "ADMIN") {
-      navigate(`/admin/dashboard/duty-schedule/edit/${scheduleId}`);
-    } else if (role === "HR_MANAGER") {
-      navigate(`/hr/dashboard/duty-schedule/edit/${scheduleId}`);
+    if (role === "MANAGER") {
+      navigate(`/manager/duty-schedule/edit/${scheduleId}`);
     } else {
       alert("You are not authorized to edit employees.");
     }
@@ -156,4 +152,4 @@ const DutySchedule = () => {
   );
 };
 
-export default DutySchedule;
+export default ScheduleManagement;

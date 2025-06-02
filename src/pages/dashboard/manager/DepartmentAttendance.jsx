@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 
-const DailyAttendance = () => {
+const DepartmentAttendance = () => {
   const [viewType, setViewType] = useState("daily"); // daily, range, monthly
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -497,4 +497,4 @@ const DailyAttendance = () => {
   );
 };
 
-export default DailyAttendance;
+export default DepartmentAttendance;

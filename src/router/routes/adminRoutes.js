@@ -29,14 +29,14 @@ const BackupRecovery = lazy(() =>
   import("../../pages/dashboard/admin/BackupRecovery")
 );
 const SystemLogs = lazy(() => import("../../pages/dashboard/admin/SystemLogs"));
+//================================
 // setup
-const AdminSetup = lazy(() =>
-  import("../../pages/dashboard/admin/setup/AdminSetup")
-);
-const AccountSettings = lazy(() =>
-  import("../../pages/dashboard/admin/setup/AccountSettings")
-);
+
 const Cluster = lazy(() => import("../../pages/dashboard/admin/setup/Cluster"));
+const Department = lazy(() =>
+  import("../../pages/dashboard/admin/setup/Department")
+);
+
 const EmploymentStatus = lazy(() =>
   import("../../pages/dashboard/admin/setup/EmploymentStatus")
 );
@@ -116,6 +116,11 @@ const adminRoutes = [
   {
     path: "/admin/setup/cluster",
     element: <Cluster />,
+    role: ["ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/admin/setup/department",
+    element: <Department />,
     role: ["ADMIN", "SUPER_ADMIN"],
   },
   {

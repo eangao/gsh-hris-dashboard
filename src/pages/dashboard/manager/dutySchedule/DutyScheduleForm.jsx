@@ -6,15 +6,15 @@ import {
   createDutySchedule,
   updateDutySchedule,
   messageClear,
-} from "../../store/Reducers/dutyScheduleReducer";
+} from "../../../../store/Reducers/dutyScheduleReducer";
 
-import { fetchAllWorkSchedules } from "../../store/Reducers/workScheduleReducer";
-import { fetchAllEmployees } from "../../store/Reducers/employeeReducer";
-import { fetchAllDepartments } from "../../store/Reducers/departmentReducer";
+import { fetchAllWorkSchedules } from "../../../../store/Reducers/workScheduleReducer";
+import { fetchAllEmployees } from "../../../../store/Reducers/employeeReducer";
+import { fetchAllDepartments } from "../../../../store/Reducers/departmentReducer";
 
 import toast from "react-hot-toast";
 import { PropagateLoader } from "react-spinners";
-import { buttonOverrideStyle } from "../../utils/utils";
+import { buttonOverrideStyle } from "../../../../utils/utils";
 import { FaTimes } from "react-icons/fa";
 
 // Holiday data for 2025
@@ -158,13 +158,7 @@ const DutyScheduleForm = () => {
     if (successMessage) {
       toast.success(successMessage);
       dispatch(messageClear());
-      navigate("/admin/dashboard/duty-schedule");
-
-      if (role === "ADMIN" || role === "SUPER_ADMIN") {
-        navigate("/admin/dashboard/duty-schedule");
-      } else if (role === "HR_ADMIN") {
-        navigate("/hr/dashboard/duty-schedule");
-      }
+      navigate("/manager/duty-schedule");
 
       if (!isEditMode) {
         setLocalDutySchedule({
@@ -531,10 +525,8 @@ const DutyScheduleForm = () => {
   };
 
   const handleCancel = () => {
-    if (role === "ADMIN" || role === "SUPER_ADMIN") {
-      navigate("/admin/dashboard/duty-schedule");
-    } else if (role === "HR_ADMIN") {
-      navigate("/hr/dashboard/duty-schedule");
+    if (role === "MANAGER") {
+      navigate("/manager/duty-schedule");
     } else {
       alert("You are not authorized to access the schedule list.");
     }

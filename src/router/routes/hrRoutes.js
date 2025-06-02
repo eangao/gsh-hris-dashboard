@@ -2,7 +2,10 @@ import { lazy } from "react";
 
 const HrDashboard = lazy(() => import("../../pages/dashboard/hr/HrDashboard"));
 const EmployeeManagement = lazy(() =>
-  import("../../pages/dashboard/hr/EmployeeManagement")
+  import("../../pages/dashboard/hr/employeeManagement/EmployeeManagement")
+);
+const EmployeeForm = lazy(() =>
+  import("../../pages/dashboard/hr/employeeManagement/EmployeeForm")
 );
 const DepartmentAttendance = lazy(() =>
   import("../../pages/dashboard/hr/DepartmentAttendance")
@@ -53,8 +56,23 @@ const hrRoutes = [
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "/hr/employees",
+    path: "/hr/employee",
     element: <EmployeeManagement />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/employee/add",
+    element: <EmployeeForm />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/employee/edit/:id",
+    element: <EmployeeForm />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/employee/details/:id",
+    element: <EmployeeForm />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   {

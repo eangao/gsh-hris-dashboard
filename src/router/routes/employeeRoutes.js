@@ -1,7 +1,7 @@
 import { lazy } from "react";
 
-const DashboardOverview = lazy(() =>
-  import("../../pages/dashboard/employee/DashboardOverview")
+const EmployeeDashboard = lazy(() =>
+  import("../../pages/dashboard/employee/EmployeeDashboard")
 );
 const MyProfile = lazy(() =>
   import("../../pages/dashboard/employee/MyProfile")
@@ -54,7 +54,7 @@ const OrganizationChart = lazy(() =>
 const employeeRoutes = [
   {
     path: "/employee/dashboard",
-    element: <DashboardOverview />,
+    element: <EmployeeDashboard />,
     role: [
       "EMPLOYEE",
       "MANAGER",

@@ -5,13 +5,13 @@ import {
   fetchEmployees,
   deleteEmployee,
   messageClear,
-} from "../../store/Reducers/employeeReducer";
-import Search from "../../components/Search";
-import Pagination from "../../components/Pagination";
+} from "../../../../store/Reducers/employeeReducer";
+import Search from "../../../../components/Search";
+import Pagination from "../../../../components/Pagination";
 import { FaTrashAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-const Employee = () => {
+const EmployeeManagement = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -69,10 +69,8 @@ const Employee = () => {
   };
 
   const handleAddEmployee = () => {
-    if (role === "SUPER_ADMIN" || role === "ADMIN") {
-      navigate("/admin/dashboard/employee/add");
-    } else if (role === "HR_MANAGER") {
-      navigate("/hr/dashboard/employee/add");
+    if (role === "HR_ADMIN") {
+      navigate("/hr/employee/add");
     } else {
       // Optional: fallback if unauthorized role
       alert("You are not authorized to add employees.");
@@ -80,20 +78,16 @@ const Employee = () => {
   };
 
   const handleEditEmployee = (employeeId) => {
-    if (role === "SUPER_ADMIN" || role === "ADMIN") {
-      navigate(`/admin/dashboard/employee/edit/${employeeId}`);
-    } else if (role === "HR_MANAGER") {
-      navigate(`/hr/dashboard/employee/edit/${employeeId}`);
+    if (role === "HR_ADMIN") {
+      navigate(`/hr/employee/edit/${employeeId}`);
     } else {
       alert("You are not authorized to edit employees.");
     }
   };
 
   const handleViewEmployee = (employeeId) => {
-    if (role === "SUPER_ADMIN" || role === "ADMIN") {
-      navigate(`/admin/dashboard/employee/details/${employeeId}`);
-    } else if (role === "HR_MANAGER") {
-      navigate(`/hr/dashboard/employee/details/${employeeId}`);
+    if (role === "HR_ADMIN") {
+      navigate(`/hr/employee/details/${employeeId}`);
     } else {
       alert("You are not authorized to view this employee.");
     }
@@ -263,4 +257,4 @@ const Employee = () => {
   );
 };
 
-export default Employee;
+export default EmployeeManagement;

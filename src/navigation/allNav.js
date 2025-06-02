@@ -21,6 +21,7 @@ import {
   MdHolidayVillage,
   MdOutlineSupervisorAccount,
   MdSettingsApplications,
+  MdApartment,
 } from "react-icons/md";
 import { FiBarChart2, FiSettings } from "react-icons/fi";
 import {
@@ -342,7 +343,7 @@ export const allNav = [
   {
     title: "Schedule Management",
     icon: <AiOutlineSchedule />,
-    path: "/manager/schedule-management",
+    path: "/manager/duty-schedule",
     role: ["MANAGER", "SUPER_ADMIN"],
     group: "Manager",
   },
@@ -569,7 +570,7 @@ export const allNav = [
   {
     title: "Employee Management",
     icon: <AiOutlineUserSwitch />, // Manage all employee profiles
-    path: "/hr/employees",
+    path: "/hr/employee",
     role: ["HR_ADMIN", "SUPER_ADMIN"],
     group: "HR",
   },
@@ -774,6 +775,13 @@ export const allNav = [
     title: "Cluster Management",
     icon: <AiOutlineCluster />,
     path: "/admin/setup/cluster",
+    role: ["ADMIN", "SUPER_ADMIN"],
+    group: "System Setup",
+  },
+  {
+    title: "Department Management",
+    icon: <MdApartment />,
+    path: "/admin/setup/department",
     role: ["ADMIN", "SUPER_ADMIN"],
     group: "System Setup",
   },
