@@ -1,4 +1,4 @@
-import { allNav } from "./allNav";
+import { allNav } from "./nav/allNav";
 
 export const getNav = (role) => {
   return allNav.filter((nav) => {

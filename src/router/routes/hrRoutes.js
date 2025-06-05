@@ -7,6 +7,10 @@ const EmployeeManagement = lazy(() =>
 const EmployeeForm = lazy(() =>
   import("../../pages/dashboard/hr/employeeManagement/EmployeeForm")
 );
+const EmployeeDetails = lazy(() =>
+  import("../../pages/dashboard/hr/employeeManagement/EmployeeDetails")
+);
+
 const DepartmentAttendance = lazy(() =>
   import("../../pages/dashboard/hr/DepartmentAttendance")
 );
@@ -72,7 +76,7 @@ const hrRoutes = [
   },
   {
     path: "/hr/employee/details/:id",
-    element: <EmployeeForm />,
+    element: <EmployeeDetails />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   {

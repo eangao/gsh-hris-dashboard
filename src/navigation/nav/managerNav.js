@@ -1,0 +1,141 @@
+import { FaUserCog } from "react-icons/fa";
+import {
+  AiOutlineDashboard,
+  AiOutlineCalendar,
+  AiOutlineTeam,
+  AiOutlineSchedule,
+  AiOutlineForm,
+  AiOutlineSafetyCertificate,
+  AiOutlineBarChart,
+  AiOutlineDollarCircle,
+  AiOutlineTrophy,
+  AiOutlineNotification,
+  AiOutlineFileText,
+  AiOutlineApartment,
+  AiOutlinePieChart,
+} from "react-icons/ai";
+
+const managerRoles = ["MANAGER", "SUPER_ADMIN"];
+
+export const managerNav = [
+  //====================================
+  // Manager Dashboard Navigation
+  {
+    title: "Manager",
+    isGroupTitle: true,
+    icon: <FaUserCog />,
+    role: managerRoles,
+  },
+  {
+    title: "Manager Dashboard",
+    icon: <AiOutlineDashboard />,
+    path: "/manager/dashboard",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Team Overview",
+    icon: <AiOutlineTeam />,
+    path: "/manager/team-overview",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Team Attendance",
+    icon: <AiOutlineCalendar />,
+    path: "/manager/team-attendance",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Schedule Management",
+    icon: <AiOutlineSchedule />,
+    path: "/manager/duty-schedule",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Leave Approvals",
+    icon: <AiOutlineForm />,
+    path: "/manager/leave-approvals",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "License Management",
+    icon: <AiOutlineSafetyCertificate />,
+    path: "/manager/license-management",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Performance Reviews",
+    icon: <AiOutlineBarChart />,
+    path: "/manager/performance-reviews",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Payroll Summary",
+    icon: <AiOutlineDollarCircle />,
+    path: "/manager/payroll-summary",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Training Management",
+    icon: <AiOutlineTrophy />,
+    path: "/manager/training-management",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Team Announcements",
+    icon: <AiOutlineNotification />,
+    path: "/manager/team-announcements",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Reports & Analytics",
+    icon: <AiOutlinePieChart />,
+    path: "/manager/reports-analytics",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Team Performance Dashboard",
+    icon: <AiOutlineBarChart />,
+    path: "/manager/team-performance-dashboard",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Succession Planning",
+    icon: <AiOutlineFileText />,
+    path: "/manager/succession-planning",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Incident Reports",
+    icon: <AiOutlineForm />,
+    path: "/manager/incident-reports",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Onboarding Tracker",
+    icon: <AiOutlineSchedule />,
+    path: "/manager/onboarding-tracker",
+    role: managerRoles,
+    group: "Manager",
+  },
+  {
+    title: "Organization Chart",
+    icon: <AiOutlineApartment />,
+    path: "/manager/org-chart",
+    role: managerRoles,
+    group: "Manager",
+  },
+];

@@ -14,11 +14,21 @@ import { fetchAllDepartments } from "../../../../store/Reducers/departmentReduce
 import { fetchAllClusters } from "../../../../store/Reducers/clusterReducer";
 
 import toast from "react-hot-toast";
-// import Select from "react-select";
+import { useManilaDateFormatter } from "../../../../hooks/useManilaDateFormatter";
+import FormDatePicker from "../../../../components/FormDatePicker";
+import { getBirthdateLimits } from "../../../../utils/getBirthdateLimits";
+import { getTodayDate } from "./../../../../utils/getTodayDate";
+import { useManilaToISODate } from "../../../../hooks/useManilaToISODate";
 
 const EmployeeForm = () => {
   const { id } = useParams(); // This will be undefined for add
   const isEditMode = !!id;
+
+  // ✅ Call hook at the top level of your component
+  const formatManilaDate = useManilaDateFormatter();
+  const toISO = useManilaToISODate();
+
+  const { minDate, maxDate } = getBirthdateLimits();
 
   const navigate = useNavigate();
   const { role } = useSelector((state) => state.auth);
@@ -88,29 +98,34 @@ const EmployeeForm = () => {
 
   useEffect(() => {
     if (isEditMode && employee) {
+      const formattedStatusHistory =
+        employee.employmentInformation?.statusHistory?.map((item) => ({
+          ...item,
+          dateEffective: formatManilaDate(item.dateEffective),
+        })) || [];
+
       setFormData({
         ...employee,
         personalInformation: {
           ...employee.personalInformation,
-          birthdate: formatDateForInput(
-            employee.personalInformation?.birthdate
-          ),
+          birthdate: formatManilaDate(employee.personalInformation?.birthdate),
         },
         employmentInformation: {
           ...employee.employmentInformation,
-          dateStarted: formatDateForInput(
+          dateStarted: formatManilaDate(
             employee.employmentInformation?.dateStarted
           ),
-          dateEmployed: formatDateForInput(
+          dateEmployed: formatManilaDate(
             employee.employmentInformation?.dateEmployed
           ),
-          dateTransferToGSH: formatDateForInput(
+          dateTransferToGSH: formatManilaDate(
             employee.employmentInformation?.dateTransferToGSH
           ),
+          statusHistory: formattedStatusHistory, // ✅ apply formatting to each item
         },
       });
     }
-  }, [employee, isEditMode]);
+  }, [employee, isEditMode, formatManilaDate]);
 
   useEffect(() => {
     if (successMessage || errorMessage) {
@@ -139,19 +154,51 @@ const EmployeeForm = () => {
     }));
   };
 
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+
+  //   if (isEditMode) {
+  //     dispatch(updateEmployee({ id, employeeData: formData }));
+  //   } else {
+  //     dispatch(createEmployee(formData));
+  //   }
+  // };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (isEditMode) {
-      dispatch(updateEmployee({ id, employeeData: formData }));
-    } else {
-      dispatch(createEmployee(formData));
-    }
-  };
+    // 🔁 Deep copy form data
+    const dataToSubmit = JSON.parse(JSON.stringify(formData));
 
-  const formatDateForInput = (isoDate) => {
-    if (!isoDate) return "";
-    return new Date(isoDate).toISOString().split("T")[0]; // returns "yyyy-MM-dd"
+    // 🔁 Convert personal birthdate
+    if (dataToSubmit.personalInformation.birthdate) {
+      dataToSubmit.personalInformation.birthdate = toISO(
+        dataToSubmit.personalInformation.birthdate
+      );
+    }
+
+    // 🔁 Convert employment dates
+    const emp = dataToSubmit.employmentInformation;
+    ["dateStarted", "dateEmployed", "dateTransferToGSH"].forEach((field) => {
+      if (emp[field]) {
+        emp[field] = toISO(emp[field]);
+      }
+    });
+
+    // 🔁 Convert statusHistory dates
+    if (Array.isArray(emp.statusHistory)) {
+      emp.statusHistory = emp.statusHistory.map((item) => ({
+        ...item,
+        dateEffective: item.dateEffective ? toISO(item.dateEffective) : null,
+      }));
+    }
+
+    // ✅ Final dispatch
+    if (isEditMode) {
+      dispatch(updateEmployee({ id, employeeData: dataToSubmit }));
+    } else {
+      dispatch(createEmployee(dataToSubmit));
+    }
   };
 
   //======================== School Attended Start============================
@@ -181,11 +228,16 @@ const EmployeeForm = () => {
   const handleAddSchool = () => {
     const { schoolName, educationLevel, yearGraduated } = schoolFormData;
 
+    //==================================================
+    //TEMPORARY COMMENTED TO ENCODE EMPLOYEE EITH LACKING INFO
+    //FOR INITIAL RELEASE
+    //==================================================
     // Validation check
-    if (!schoolName || !educationLevel || !yearGraduated) {
-      alert("Please fill in all required fields.");
-      return;
-    }
+    // if (!schoolName || !educationLevel || !yearGraduated) {
+    //   alert("Please fill in all required fields.");
+    //   return;
+    // }
+    //==================================================
 
     const schoolFormDatas = [...formData.educationInformation.schoolsAttended];
     schoolFormDatas.push(schoolFormData);
@@ -203,12 +255,16 @@ const EmployeeForm = () => {
 
   const handleEditSchool = () => {
     const { schoolName, educationLevel, yearGraduated } = schoolFormData;
-
+    //==================================================
+    //TEMPORARY COMMENTED TO ENCODE EMPLOYEE EITH LACKING INFO
+    //FOR INITIAL RELEASE
+    //==================================================
     // Validation check
-    if (!schoolName || !educationLevel || !yearGraduated) {
-      alert("Please fill in all required fields.");
-      return;
-    }
+    // if (!schoolName || !educationLevel || !yearGraduated) {
+    //   alert("Please fill in all required fields.");
+    //   return;
+    // }
+    //==================================================
 
     const newSchools = [...formData.educationInformation.schoolsAttended];
     newSchools[selectedSchoolIndex] = schoolFormData;
@@ -433,7 +489,9 @@ const EmployeeForm = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto overflow-y-auto">
-      <h1 className="text-2xl font-bold mb-4 text-center">Add New Employee</h1>
+      <h1 className="text-2xl font-bold mb-4 text-center">
+        {isEditMode ? "Update Employee Record" : "Add New Employee"}
+      </h1>
 
       <form onSubmit={handleSubmit}>
         {/* ============================================================== */}
@@ -520,11 +578,9 @@ const EmployeeForm = () => {
                 required
               >
                 <option value="">Select Civil Status</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-                <option value="Widowed">Widowed</option>
-                <option value="Divorced">Divorced</option>
-                <option value="Seperated">Seperated</option>
+                <option value="SINGLE">Single</option>
+                <option value="MARRIED">Married</option>
+                <option value="WIDOWED">Widowed</option>
               </select>
             </div>
             <div>
@@ -546,8 +602,8 @@ const EmployeeForm = () => {
                 required
               >
                 <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
               </select>
             </div>
             {/* Maiden Name Field - Hidden if Civil Status is 'Single' */}
@@ -576,19 +632,17 @@ const EmployeeForm = () => {
               <label className="block text-sm font-medium text-gray-700">
                 Birthdate
               </label>
-              <input
-                type="date"
+
+              <FormDatePicker
                 name="birthdate"
                 value={formData.personalInformation.birthdate}
-                onChange={(e) =>
-                  handleChange(
-                    "personalInformation",
-                    "birthdate",
-                    e.target.value
-                  )
+                onChange={(field, value) =>
+                  handleChange("personalInformation", field, value)
                 }
-                className="w-full p-2 border rounded mt-1"
                 required
+                placeholder="Select Birthdate"
+                minDate={minDate}
+                maxDate={maxDate}
               />
             </div>
             <div>
@@ -792,54 +846,45 @@ const EmployeeForm = () => {
               <label className="block text-sm font-medium text-gray-700">
                 Date Started
               </label>
-              <input
-                type="date"
+              <FormDatePicker
+                name="dateStarted"
                 value={formData.employmentInformation.dateStarted}
-                onChange={(e) =>
-                  handleChange(
-                    "employmentInformation",
-                    "dateStarted",
-                    e.target.value
-                  )
+                onChange={(field, value) =>
+                  handleChange("employmentInformation", field, value)
                 }
-                className="w-full p-2 border rounded mt-1"
                 required
+                placeholder="Select Date Started"
+                maxDate={getTodayDate()} // ⛔ prevent future date
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Date Transfered To GSH
               </label>
-              <input
-                type="date"
+              <FormDatePicker
+                name="dateTransferToGSH"
                 value={formData.employmentInformation.dateTransferToGSH}
-                onChange={(e) =>
-                  handleChange(
-                    "employmentInformation",
-                    "dateTransferToGSH",
-                    e.target.value
-                  )
+                onChange={(field, value) =>
+                  handleChange("employmentInformation", field, value)
                 }
-                className="w-full p-2 border rounded mt-1"
                 required
+                placeholder="Select Date Transfer to GSH"
+                maxDate={getTodayDate()}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 Date Employed
               </label>
-              <input
-                type="date"
+              <FormDatePicker
+                name="dateEmployed"
                 value={formData.employmentInformation.dateEmployed}
-                onChange={(e) =>
-                  handleChange(
-                    "employmentInformation",
-                    "dateEmployed",
-                    e.target.value
-                  )
+                onChange={(field, value) =>
+                  handleChange("employmentInformation", field, value)
                 }
-                className="w-full p-2 border rounded mt-1"
                 required
+                placeholder="Select Date Employed"
+                maxDate={getTodayDate()}
               />
             </div>
           </div>
@@ -889,7 +934,10 @@ const EmployeeForm = () => {
                           )?.name || "Unknown"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {new Date(status.dateEffective).toLocaleDateString()}
+                          {formatManilaDate(
+                            status.dateEffective,
+                            "MMM D, YYYY"
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {status.remarks}
@@ -1327,7 +1375,11 @@ const EmployeeForm = () => {
                   Year Graduated <span className="text-red-700">*</span>
                 </label>
                 <select
-                  required
+                  //==================================================
+                  //TEMPORARY COMMENTED REQUIRED TO ENCODE EMPLOYEE EITH LACKING INFO
+                  //FOR INITIAL RELEASE
+                  //==================================================
+                  // required
                   value={schoolFormData.yearGraduated}
                   onChange={(e) =>
                     setSchoolFormData({
@@ -1437,16 +1489,18 @@ const EmployeeForm = () => {
                 <label className="block text-sm font-medium text-gray-700">
                   Date Effective <span className="text-red-700">*</span>
                 </label>
-                <input
-                  type="date"
+                <FormDatePicker
+                  name="dateEffective"
                   value={employmentstatusHistoryFormData.dateEffective}
-                  onChange={(e) =>
-                    setEmploymentStatusHistoryFormData({
-                      ...employmentstatusHistoryFormData,
-                      dateEffective: e.target.value,
-                    })
+                  onChange={(name, value) =>
+                    setEmploymentStatusHistoryFormData((prev) => ({
+                      ...prev,
+                      [name]: value,
+                    }))
                   }
-                  className="w-full p-2 border rounded mt-1"
+                  required
+                  placeholder="Select date effective"
+                  maxDate={getTodayDate()} // ⛔ no future date
                 />
               </div>
               <div>
