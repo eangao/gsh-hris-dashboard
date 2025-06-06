@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { fetchEmployeeDetailsById } from "../../../../store/Reducers/employeeReducer";
+import { formatDatePH } from "./../../../../utils/phDateUtils";
 
 const EmployeeDetails = () => {
   const dispatch = useDispatch();
@@ -13,15 +14,6 @@ const EmployeeDetails = () => {
       dispatch(fetchEmployeeDetailsById(id));
     }
   }, [dispatch, id]);
-
-  const formatDate = (date) => {
-    if (!date) return "";
-    const d = new Date(date);
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
 
   const handlePrint = () => {
     window.print();
@@ -120,7 +112,10 @@ const EmployeeDetails = () => {
 
                   <InfoItem
                     label="Birthdate"
-                    value={formatDate(employee.personalInformation?.birthdate)}
+                    value={formatDatePH(
+                      employee.personalInformation?.birthdate,
+                      "MMM D, YYYY"
+                    )}
                   />
                   <InfoItem
                     label="Religion"
@@ -193,11 +188,17 @@ const EmployeeDetails = () => {
             />
             <InfoItem
               label="Date Started"
-              value={formatDate(employee.employmentInformation?.dateStarted)}
+              value={formatDatePH(
+                employee.employmentInformation?.dateStarted,
+                "MMM D, YYYY"
+              )}
             />
             <InfoItem
               label="Date Employed"
-              value={formatDate(employee.employmentInformation?.dateEmployed)}
+              value={formatDatePH(
+                employee.employmentInformation?.dateEmployed,
+                "MMM D, YYYY"
+              )}
             />
           </div>
 
@@ -218,7 +219,10 @@ const EmployeeDetails = () => {
                         />
                         <InfoItem
                           label="Date Effective"
-                          value={formatDate(status.dateEffective)}
+                          value={formatDatePH(
+                            status.dateEffective,
+                            "MMM D, YYYY"
+                          )}
                         />
                         <InfoItem label="Remarks" value={status.remarks} />
                       </div>

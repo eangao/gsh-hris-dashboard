@@ -14,19 +14,17 @@ import { fetchAllDepartments } from "../../../../store/Reducers/departmentReduce
 import { fetchAllClusters } from "../../../../store/Reducers/clusterReducer";
 
 import toast from "react-hot-toast";
-import { useManilaDateFormatter } from "../../../../hooks/useManilaDateFormatter";
 import FormDatePicker from "../../../../components/FormDatePicker";
-import { getBirthdateLimits } from "../../../../utils/getBirthdateLimits";
-import { getTodayDate } from "./../../../../utils/getTodayDate";
-import { useManilaToISODate } from "../../../../hooks/useManilaToISODate";
+import {
+  convertDatePHToUTCISO,
+  formatDatePH,
+  getBirthdateLimits,
+  getTodayDatePH,
+} from "./../../../../utils/phDateUtils";
 
 const EmployeeForm = () => {
   const { id } = useParams(); // This will be undefined for add
   const isEditMode = !!id;
-
-  // ✅ Call hook at the top level of your component
-  const formatManilaDate = useManilaDateFormatter();
-  const toISO = useManilaToISODate();
 
   const { minDate, maxDate } = getBirthdateLimits();
 
@@ -101,31 +99,31 @@ const EmployeeForm = () => {
       const formattedStatusHistory =
         employee.employmentInformation?.statusHistory?.map((item) => ({
           ...item,
-          dateEffective: formatManilaDate(item.dateEffective),
+          dateEffective: formatDatePH(item.dateEffective),
         })) || [];
 
       setFormData({
         ...employee,
         personalInformation: {
           ...employee.personalInformation,
-          birthdate: formatManilaDate(employee.personalInformation?.birthdate),
+          birthdate: formatDatePH(employee.personalInformation?.birthdate),
         },
         employmentInformation: {
           ...employee.employmentInformation,
-          dateStarted: formatManilaDate(
+          dateStarted: formatDatePH(
             employee.employmentInformation?.dateStarted
           ),
-          dateEmployed: formatManilaDate(
+          dateEmployed: formatDatePH(
             employee.employmentInformation?.dateEmployed
           ),
-          dateTransferToGSH: formatManilaDate(
+          dateTransferToGSH: formatDatePH(
             employee.employmentInformation?.dateTransferToGSH
           ),
           statusHistory: formattedStatusHistory, // ✅ apply formatting to each item
         },
       });
     }
-  }, [employee, isEditMode, formatManilaDate]);
+  }, [employee, isEditMode, formatDatePH]);
 
   useEffect(() => {
     if (successMessage || errorMessage) {
@@ -172,7 +170,7 @@ const EmployeeForm = () => {
 
     // 🔁 Convert personal birthdate
     if (dataToSubmit.personalInformation.birthdate) {
-      dataToSubmit.personalInformation.birthdate = toISO(
+      dataToSubmit.personalInformation.birthdate = convertDatePHToUTCISO(
         dataToSubmit.personalInformation.birthdate
       );
     }
@@ -181,7 +179,7 @@ const EmployeeForm = () => {
     const emp = dataToSubmit.employmentInformation;
     ["dateStarted", "dateEmployed", "dateTransferToGSH"].forEach((field) => {
       if (emp[field]) {
-        emp[field] = toISO(emp[field]);
+        emp[field] = convertDatePHToUTCISO(emp[field]);
       }
     });
 
@@ -189,7 +187,9 @@ const EmployeeForm = () => {
     if (Array.isArray(emp.statusHistory)) {
       emp.statusHistory = emp.statusHistory.map((item) => ({
         ...item,
-        dateEffective: item.dateEffective ? toISO(item.dateEffective) : null,
+        dateEffective: item.dateEffective
+          ? convertDatePHToUTCISO(item.dateEffective)
+          : null,
       }));
     }
 
@@ -854,7 +854,7 @@ const EmployeeForm = () => {
                 }
                 required
                 placeholder="Select Date Started"
-                maxDate={getTodayDate()} // ⛔ prevent future date
+                maxDate={getTodayDatePH()} // ⛔ prevent future date
               />
             </div>
             <div>
@@ -869,7 +869,7 @@ const EmployeeForm = () => {
                 }
                 required
                 placeholder="Select Date Transfer to GSH"
-                maxDate={getTodayDate()}
+                maxDate={getTodayDatePH()}
               />
             </div>
             <div>
@@ -884,7 +884,7 @@ const EmployeeForm = () => {
                 }
                 required
                 placeholder="Select Date Employed"
-                maxDate={getTodayDate()}
+                maxDate={getTodayDatePH()}
               />
             </div>
           </div>
@@ -934,10 +934,7 @@ const EmployeeForm = () => {
                           )?.name || "Unknown"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {formatManilaDate(
-                            status.dateEffective,
-                            "MMM D, YYYY"
-                          )}
+                          {formatDatePH(status.dateEffective, "MMM D, YYYY")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {status.remarks}
@@ -1500,7 +1497,7 @@ const EmployeeForm = () => {
                   }
                   required
                   placeholder="Select date effective"
-                  maxDate={getTodayDate()} // ⛔ no future date
+                  maxDate={getTodayDatePH()} // ⛔ no future date
                 />
               </div>
               <div>
