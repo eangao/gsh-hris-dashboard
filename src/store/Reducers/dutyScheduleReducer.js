@@ -85,6 +85,29 @@ export const deleteDutySchedule = createAsyncThunk(
   }
 );
 
+// Add new thunk to fetch schedules by department
+export const fetchDutySchedulesByDepartment = createAsyncThunk(
+  "dutySchedule/fetchDutySchedulesByDepartment",
+  async (
+    { departmentId, perPage, page, searchValue },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    console.log(departmentId);
+    try {
+      const { data } = await api.get(
+        `/hris/duty-schedules/by-department/${departmentId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        {
+          withCredentials: true,
+        }
+      );
+      console.log(data);
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const dutyScheduleSlice = createSlice({
   name: "dutySchedule",
   initialState: {
@@ -165,6 +188,14 @@ const dutyScheduleSlice = createSlice({
           (schedule) => schedule._id !== payload.dutyScheduleId
         );
       });
+
+    builder.addCase(
+      fetchDutySchedulesByDepartment.fulfilled,
+      (state, { payload }) => {
+        state.totalDutySchedule = payload.totalDutySchedule;
+        state.dutySchedules = payload.dutySchedules;
+      }
+    );
   },
 });
 

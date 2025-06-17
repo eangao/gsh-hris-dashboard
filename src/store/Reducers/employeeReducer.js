@@ -146,6 +146,42 @@ export const deleteEmployee = createAsyncThunk(
   }
 );
 
+export const fetchManagedDepartments = createAsyncThunk(
+  "employee/fetchManagedDepartments",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(
+        `/hris/employees/${id}/managed-departments`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Fetch employees by department ID (suggested name: fetchEmployeesByDepartment)
+export const fetchEmployeesByDepartment = createAsyncThunk(
+  "employee/fetchEmployeesByDepartment",
+  async (departmentId, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(
+        `/hris/employees/department/${departmentId}`,
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const employeeSlice = createSlice({
   name: "employee",
   initialState: {
@@ -157,6 +193,7 @@ const employeeSlice = createSlice({
     managers: [],
     directors: [],
     totalEmployee: 0,
+    managedDepartments: [], // <-- add this
   },
   reducers: {
     messageClear: (state) => {
@@ -264,6 +301,38 @@ const employeeSlice = createSlice({
           (employee) => employee._id !== payload.employeeId
         );
       });
+    builder.addCase(fetchManagedDepartments.fulfilled, (state, { payload }) => {
+      state.managedDepartments = payload.managedDepartments;
+      state.loading = false;
+    });
+    builder.addCase(fetchManagedDepartments.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(fetchManagedDepartments.rejected, (state, { payload }) => {
+      state.loading = false;
+      state.errorMessage =
+        payload?.error || "Failed to fetch managed departments";
+    });
+
+    // Fetch Employees By Department
+    builder.addCase(fetchEmployeesByDepartment.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(
+      fetchEmployeesByDepartment.fulfilled,
+      (state, { payload }) => {
+        state.employees = payload.employees;
+        state.loading = false;
+      }
+    );
+    builder.addCase(
+      fetchEmployeesByDepartment.rejected,
+      (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage =
+          payload?.error || "Failed to fetch employees by department";
+      }
+    );
   },
 });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
   fetchDutyScheduleById,
   createDutySchedule,
@@ -9,14 +9,13 @@ import {
 } from "../../../../store/Reducers/dutyScheduleReducer";
 
 import { fetchAllWorkSchedules } from "../../../../store/Reducers/workScheduleReducer";
-import { fetchEmployeesByDepartment } from "../../../../store/Reducers/employeeReducer";
-import { fetchDepartmentById } from "../../../../store/Reducers/departmentReducer";
+import { fetchAllEmployees } from "../../../../store/Reducers/employeeReducer";
+import { fetchAllDepartments } from "../../../../store/Reducers/departmentReducer";
 
 import toast from "react-hot-toast";
 import { PropagateLoader } from "react-spinners";
 import { buttonOverrideStyle } from "../../../../utils/utils";
 import { FaTimes } from "react-icons/fa";
-import { IoMdArrowBack } from "react-icons/io";
 import {
   getCurrentDatePH,
   formatDatePH,
@@ -44,11 +43,12 @@ const HOLIDAYS_2025 = [
 const DutyScheduleForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { role } = useSelector((state) => state.auth);
 
-  const { departmentId, scheduleId } = useParams();
-  const isEditMode = !!scheduleId;
+  const { id } = useParams();
+  const isEditMode = !!id;
 
   const isAtCurrentMonth = () => {
     const today = getCurrentDatePH();
@@ -64,7 +64,7 @@ const DutyScheduleForm = () => {
 
   const { employees } = useSelector((state) => state.employee);
   const { workSchedules } = useSelector((state) => state.workSchedule);
-  const { department } = useSelector((state) => state.department);
+  const { departments } = useSelector((state) => state.department);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
   const [days, setDays] = useState([]);
@@ -98,14 +98,28 @@ const DutyScheduleForm = () => {
   // Load initial data and duty schedule if in edit mode
   useEffect(() => {
     dispatch(fetchAllWorkSchedules());
-    if (departmentId) {
-      dispatch(fetchEmployeesByDepartment(departmentId));
-      dispatch(fetchDepartmentById(departmentId));
-    }
+    dispatch(fetchAllEmployees());
+    dispatch(fetchAllDepartments());
+
     if (isEditMode) {
-      dispatch(fetchDutyScheduleById(scheduleId));
+      dispatch(fetchDutyScheduleById(id));
     }
-  }, [dispatch, isEditMode, scheduleId, departmentId]);
+  }, [dispatch, isEditMode, id]);
+
+  // Read departmentId and departmentName from query params
+  useEffect(() => {
+    if (!isEditMode) {
+      const params = new URLSearchParams(location.search);
+      const departmentId = params.get("departmentId");
+      const departmentName = params.get("departmentName");
+      if (departmentId) {
+        setLocalDutySchedule((prev) => ({
+          ...prev,
+          department: departmentId,
+        }));
+      }
+    }
+  }, [location.search, isEditMode]);
 
   // Update local state when duty schedule data is loaded
   useEffect(() => {
@@ -116,16 +130,9 @@ const DutyScheduleForm = () => {
 
       if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
         // Set local duty schedule without entries
-
-        // Compose the schedule name: e.g., "PBO Department June 2025"
-        let departmentLabel = "";
-        if (department && department.name) {
-          departmentLabel = `${department.name} `;
-        }
-
         setLocalDutySchedule({
           ...dutySchedule,
-          name: `${departmentLabel}${getMonthLabelPH(currentDate)}`.trim(),
+          name: dutySchedule.name,
           department: dutySchedule.department?._id || dutySchedule.department,
           startDate: formatDatePH(startDateObj),
           endDate: formatDatePH(endDateObj),
@@ -151,23 +158,18 @@ const DutyScheduleForm = () => {
   //and will set the startDate and endDate
   useEffect(() => {
     const { startDate, endDate } = getDutyScheduleRangePH(currentDate, true);
+
     const days = getCalendarDaysInRangePH(startDate, endDate);
 
-    // Compose the schedule name: e.g., "PBO Department June 2025"
-    let departmentLabel = "";
-    if (department && department.name) {
-      departmentLabel = `${department.name} `;
-    }
     setLocalDutySchedule((prev) => ({
       ...prev,
-      name: `${departmentLabel}${getMonthLabelPH(currentDate)}`.trim(),
-      department: department?._id || department,
+      name: getMonthLabelPH(currentDate),
       startDate: formatDatePH(startDate),
       endDate: formatDatePH(endDate),
     }));
 
     setDays(days);
-  }, [currentDate, department]);
+  }, [currentDate]);
 
   // Handle success/error messages
   useEffect(() => {
@@ -193,6 +195,19 @@ const DutyScheduleForm = () => {
       dispatch(messageClear());
     }
   }, [successMessage, errorMessage, dispatch, isEditMode, navigate]);
+
+  // const calculateDutyPeriod = (date) => {
+  //   const year = date.getFullYear();
+  //   const month = date.getMonth();
+
+  //   const startDate = new Date(year, month - 1, 26);
+  //   const endDate = new Date(year, month, 25);
+
+  //   return {
+  //     startDate,
+  //     endDate,
+  //   };
+  // };
 
   const isHoliday = (date) => {
     if (!date) return false;
@@ -391,6 +406,17 @@ const DutyScheduleForm = () => {
     setAllEntries(entries); // Update the allEntries state
   };
 
+  //  output ex. April 2025
+  // const formatPHMonthYear = (date, includeDay = false) => {
+  //   if (!date) return "";
+  //   return new Intl.DateTimeFormat("en-US", {
+  //     timeZone: "Asia/Manila", // This ensures it uses PH timezone
+  //     month: "long",
+  //     year: "numeric",
+  //     ...(includeDay && { day: "numeric" }),
+  //   }).format(date);
+  // };
+
   const getShiftColor = (shiftName) => {
     const schedule = workSchedules.find(
       (ws) => ws.name.toLowerCase() === shiftName.toLowerCase()
@@ -398,6 +424,19 @@ const DutyScheduleForm = () => {
 
     return schedule?.shiftColor || "bg-white"; // fallback to white if not found or no color set
   };
+
+  // const formatTime12hPH = (time24) => {
+  //   if (!time24) return "";
+  //   const [hours, minutes] = time24.split(":").map(Number);
+  //   const date = new Date(Date.UTC(1970, 0, 1, hours - 8, minutes)); // UTC time minus 8 to align with PH time
+  //   const options = {
+  //     hour: "numeric",
+  //     minute: "numeric",
+  //     hour12: true,
+  //     timeZone: "Asia/Manila",
+  //   };
+  //   return new Intl.DateTimeFormat("en-US", options).format(date);
+  // };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -416,6 +455,11 @@ const DutyScheduleForm = () => {
     return entries.filter((entry) => {
       // Format the entry date using the same function
       const entryDate = formatDatePH(entry.date);
+
+      // Debugging logs
+      // console.log("Entry date:", entryDate);
+      // console.log("Start date:", startDate);
+      // console.log("End date:", endDate);
 
       return entryDate >= startDate && entryDate <= endDate;
     });
@@ -446,6 +490,43 @@ const DutyScheduleForm = () => {
     }
   };
 
+  // const handleSave = async () => {
+  //   // If in edit mode, update the duty schedule, otherwise create a new one
+  //   if (isEditMode) {
+  //     const payload = {
+  //       ...localDutySchedule,
+  //       entries: allEntries, // becuase next and prev month button is hidden
+  //     };
+
+  //     // console.log("Updating duty schedule:", localDutySchedule);
+  //     dispatch(updateDutySchedule({ _id: id, ...payload }));
+  //   } else {
+  //     const { startDate, endDate } = localDutySchedule;
+
+  //     // Debugging logs
+  //     // console.log("Start Date:", startDate);
+  //     // console.log("End Date:", endDate);
+  //     console.log("All Entries:", allEntries);
+
+  //     // Filter entries based on current date rangez
+  //     const filteredEntries = filterEntriesByDateRange(
+  //       allEntries,
+  //       startDate,
+  //       endDate
+  //     );
+
+  //     // Debugging log for filtered entries
+  //     // console.log("Filtered Entries:", filteredEntries);
+
+  //     const payload = {
+  //       ...localDutySchedule,
+  //       entries: filteredEntries,
+  //     };
+  //     // console.log("Creating new duty schedule:", payload);
+  //     dispatch(createDutySchedule(payload));
+  //   }
+  // };
+
   const handleSave = async () => {
     const startDateUTC = convertDatePHToUTCISO(localDutySchedule.startDate);
     const endDateUTC = convertDatePHToUTCISO(localDutySchedule.endDate);
@@ -469,7 +550,7 @@ const DutyScheduleForm = () => {
     };
 
     if (isEditMode) {
-      dispatch(updateDutySchedule({ _id: scheduleId, ...payload }));
+      dispatch(updateDutySchedule({ _id: id, ...payload }));
     } else {
       dispatch(createDutySchedule(payload));
     }
@@ -486,24 +567,8 @@ const DutyScheduleForm = () => {
   return (
     <div className="p-4">
       <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
-        {/* create a back button to navigate to the schedule list . use react icons. and sugget better appraoch
-         */}
-        <button
-          onClick={handleCancel}
-          className="flex items-center text-gray-500 hover:text-gray-700"
-        >
-          <IoMdArrowBack className="mr-2" />
-          Back to Schedule List
-        </button>
-
-        <h1 className="text-xl font-bold uppercase">
-          {isEditMode
-            ? `Edit ${
-                department?.name ? ` ${department?.name}` : ""
-              } Duty Schedule`
-            : `Create ${
-                department?.name ? ` ${department?.name}` : ""
-              } Duty Schedule`}
+        <h1 className="text-2xl font-bold">
+          {isEditMode ? "Edit Duty Schedule" : "Create Duty Schedule"}
         </h1>
 
         {!isEditMode && (
@@ -527,6 +592,25 @@ const DutyScheduleForm = () => {
             </button>
           </div>
         )}
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <select
+            name="department"
+            value={localDutySchedule.department}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded mt-1"
+            required
+          >
+            <option value="">Select Department</option>
+            {departments.map((dept) => (
+              <option key={dept._id} value={dept._id}>
+                {dept.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {loading ? (

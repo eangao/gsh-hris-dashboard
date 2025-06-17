@@ -75,12 +75,12 @@ const managerRoutes = [
     role: ["MANAGER", "SUPER_ADMIN"],
   },
   {
-    path: "/manager/duty-schedule/add",
+    path: "/manager/duty-schedule/:departmentId/create",
     element: <DutyScheduleForm />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
   {
-    path: "/manager/duty-schedule/edit/:id",
+    path: "/manager/duty-schedule/:departmentId/edit/:scheduleId",
     element: <DutyScheduleForm />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
