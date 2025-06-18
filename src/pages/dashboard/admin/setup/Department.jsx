@@ -77,6 +77,7 @@ const Department = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toAssignManager, setToAssignManager] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
 
@@ -109,9 +110,7 @@ const Department = () => {
     if (formData._id) {
       // Editing an existing department
       if (toAssignManager) {
-        const hasPreviousAssignedManger = dispatch(
-          assignDepartmentManager(formData)
-        );
+        dispatch(assignDepartmentManager(formData));
       } else {
         dispatch(updateDepartment(formData));
       }
@@ -164,6 +163,15 @@ const Department = () => {
 
   const getEmployeesManagers = () => {
     dispatch(fetchEmployeesManagers());
+  };
+
+  const handleAssignManager = (dept) => {
+    setToAssignManager(true);
+    setSelectedId(dept._id);
+    getEmployeesManagers();
+    dispatch(fetchDepartmentById(dept._id));
+    getAllClusters();
+    setIsModalOpen(true);
   };
 
   return (
@@ -252,11 +260,7 @@ const Department = () => {
                   </td>
                   <td className="p-2 flex justify-end space-x-2">
                     <button
-                      onClick={() => {
-                        getEmployeesManagers();
-                        setToAssignManager(true);
-                        handleEdit(dept._id);
-                      }}
+                      onClick={() => handleAssignManager(dept)}
                       className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
                       disabled={loading}
                       title="Assign Manager"

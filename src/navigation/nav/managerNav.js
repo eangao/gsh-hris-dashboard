@@ -33,13 +33,15 @@ export const managerNav = [
     role: managerRoles,
     group: "Manager",
   },
+
   {
-    title: "Team Overview",
-    icon: <AiOutlineTeam />,
-    path: "/manager/team-overview",
+    title: "Duty Schedule",
+    icon: <AiOutlineSchedule />,
+    path: "/manager/duty-schedule",
     role: managerRoles,
     group: "Manager",
   },
+
   {
     title: "Team Attendance",
     icon: <AiOutlineCalendar />,
@@ -48,9 +50,9 @@ export const managerNav = [
     group: "Manager",
   },
   {
-    title: "Schedule Management",
-    icon: <AiOutlineSchedule />,
-    path: "/manager/duty-schedule",
+    title: "Team Overview",
+    icon: <AiOutlineTeam />,
+    path: "/manager/team-overview",
     role: managerRoles,
     group: "Manager",
   },

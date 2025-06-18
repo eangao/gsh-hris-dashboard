@@ -96,6 +96,38 @@ export const deleteCluster = createAsyncThunk(
   }
 );
 
+export const assignClusterDirector = createAsyncThunk(
+  "cluster/assignClusterDirector",
+  async ({ _id, ...clusterData }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.put(
+        `/hris/reference-data/clusters/director/${_id}`,
+        clusterData,
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchClusterById = createAsyncThunk(
+  "cluster/fetchClusterById",
+  async (_id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(`/hris/reference-data/clusters/${_id}`, {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const clusterSlice = createSlice({
   name: "cluster",
   initialState: {
@@ -152,6 +184,20 @@ const clusterSlice = createSlice({
         state.successMessage = payload.message;
       });
 
+    // Assign Cluster Director
+    builder
+      .addCase(assignClusterDirector.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(assignClusterDirector.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(assignClusterDirector.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      });
+
     // Delete Cluster
     builder
       .addCase(deleteCluster.pending, (state, { payload }) => {
@@ -170,6 +216,11 @@ const clusterSlice = createSlice({
           (cluster) => cluster._id !== payload.clusterId
         );
       });
+
+    // Fetch Cluster By Id
+    builder.addCase(fetchClusterById.fulfilled, (state, { payload }) => {
+      state.cluster = payload.cluster;
+    });
   },
 });
 

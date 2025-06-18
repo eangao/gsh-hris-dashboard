@@ -59,21 +59,13 @@ const managerRoutes = [
     element: <ManagerDashboard />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
-  {
-    path: "/manager/team-overview",
-    element: <TeamOverview />,
-    role: ["MANAGER", "SUPER_ADMIN"],
-  },
-  {
-    path: "/manager/team-attendance",
-    element: <DepartmentAttendance />,
-    role: ["MANAGER", "SUPER_ADMIN"],
-  },
+
   {
     path: "/manager/duty-schedule",
     element: <ScheduleManagement />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
+
   {
     path: "/manager/duty-schedule/:departmentId/create",
     element: <DutyScheduleForm />,
@@ -82,6 +74,17 @@ const managerRoutes = [
   {
     path: "/manager/duty-schedule/:departmentId/edit/:scheduleId",
     element: <DutyScheduleForm />,
+    role: ["MANAGER", "SUPER_ADMIN"],
+  },
+
+  {
+    path: "/manager/team-attendance",
+    element: <DepartmentAttendance />,
+    role: ["MANAGER", "SUPER_ADMIN"],
+  },
+  {
+    path: "/manager/team-overview",
+    element: <TeamOverview />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
   {

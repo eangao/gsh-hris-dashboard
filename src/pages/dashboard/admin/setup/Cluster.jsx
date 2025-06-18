@@ -2,10 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchClusters,
+  fetchClusterById,
   createCluster,
   updateCluster,
   deleteCluster,
   messageClear,
+  assignClusterDirector,
+  fetchAllClusters,
 } from "./../../../../store/Reducers/clusterReducer";
 import { fetchEmployeesDirectors } from "./../../../../store/Reducers/employeeReducer";
 
@@ -21,8 +24,14 @@ import { PropagateLoader } from "react-spinners";
 const Cluster = () => {
   const dispatch = useDispatch();
 
-  const { clusters, totalCluster, loading, successMessage, errorMessage } =
-    useSelector((state) => state.cluster);
+  const {
+    clusters,
+    totalCluster,
+    loading,
+    successMessage,
+    errorMessage,
+    cluster,
+  } = useSelector((state) => state.cluster);
 
   const { directors } = useSelector((state) => state.employee);
 
@@ -68,6 +77,9 @@ const Cluster = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
 
+  const [toAssignDirector, setToAssignDirector] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
@@ -76,6 +88,10 @@ const Cluster = () => {
 
       setIsModalOpen(false);
       setDeleteId(null);
+
+      setToAssignDirector(false);
+      setSelectedId(null);
+      resetForm();
 
       dispatch(messageClear());
     }
@@ -86,6 +102,13 @@ const Cluster = () => {
     }
   }, [successMessage, errorMessage]);
 
+  useEffect(() => {
+    if (cluster && cluster._id === selectedId) {
+      setFormData(cluster);
+      setIsModalOpen(true);
+    }
+  }, [cluster, selectedId]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -93,15 +116,19 @@ const Cluster = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData._id) {
-      dispatch(updateCluster(formData));
+      if (toAssignDirector) {
+        dispatch(assignClusterDirector(formData));
+      } else {
+        dispatch(updateCluster(formData));
+      }
     } else {
       dispatch(createCluster(formData));
     }
   };
 
-  const handleEdit = (cluster) => {
-    setFormData(cluster);
-    setIsModalOpen(true);
+  const handleEdit = (clusterId) => {
+    setSelectedId(clusterId);
+    dispatch(fetchClusterById(clusterId));
   };
 
   const handleDeleteConfirm = (id, name) => {
@@ -125,6 +152,15 @@ const Cluster = () => {
     dispatch(fetchEmployeesDirectors());
   };
 
+  // Assign Director Handler
+  const handleAssignDirector = (cluster) => {
+    setSelectedId(cluster._id);
+    setToAssignDirector(true);
+    getEmployeesDirectors();
+    setIsModalOpen(true);
+    dispatch(fetchClusterById(cluster._id));
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/*  Header and Add Cluster */}
@@ -134,7 +170,6 @@ const Cluster = () => {
           onClick={() => {
             resetForm();
             setIsModalOpen(true);
-            getEmployeesDirectors();
           }}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
           disabled={loading}
@@ -208,13 +243,20 @@ const Cluster = () => {
                   <td className="p-2 flex justify-end space-x-2">
                     <button
                       onClick={() => {
-                        handleEdit(cluster);
-                        getEmployeesDirectors();
+                        handleEdit(cluster._id);
+                        setToAssignDirector(false);
                       }}
                       className="bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
                       disabled={loading}
                     >
                       <FaEdit />
+                    </button>
+                    <button
+                      onClick={() => handleAssignDirector(cluster)}
+                      className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
+                      disabled={loading}
+                    >
+                      Assign Director
                     </button>
                     <button
                       onClick={() =>
@@ -253,54 +295,67 @@ const Cluster = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">
-              {formData._id ? "Edit Cluster" : "Add Cluster"}
+              {formData._id
+                ? toAssignDirector
+                  ? "Assign Director"
+                  : "Edit Director"
+                : "Add Director"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Cluster Name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full p-2 border rounded capitalize"
-                required
-                disabled={loading}
-              />
-
-              <select
-                name="director"
-                value={formData.director?._id || formData.director} // handles both object or id
-                onChange={(e) =>
-                  setFormData({ ...formData, director: e.target.value })
-                }
-                className="w-full p-2 border rounded capitalize"
-                // required
-                disabled={loading}
-              >
-                <option value="">Assign Director</option>
-                {directors.map((director) => {
-                  const { firstName, middleName, lastName } =
-                    director.personalInformation;
-
-                  // Format: Lastname, Firstname M
-                  const middleInitial = middleName
-                    ? middleName.charAt(0).toUpperCase() + "."
-                    : "";
-                  const displayName =
-                    `${lastName}, ${firstName} ${middleInitial}`.trim();
-
-                  return (
-                    <option key={director._id} value={director._id}>
-                      {displayName}
-                    </option>
-                  );
-                })}
-              </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Cluster Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Cluster Name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full p-2 border rounded capitalize mt-1"
+                  required={!toAssignDirector}
+                  disabled={toAssignDirector}
+                />
+              </div>
+              {toAssignDirector && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Assign Director
+                  </label>
+                  <select
+                    name="director"
+                    value={formData.director}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded capitalize mt-1"
+                    required={toAssignDirector}
+                    disabled={!toAssignDirector}
+                  >
+                    <option value="">Assign Director</option>
+                    {directors.map((director) => {
+                      const { firstName, middleName, lastName } =
+                        director.personalInformation;
+                      const middleInitial = middleName
+                        ? middleName.charAt(0).toUpperCase() + "."
+                        : "";
+                      const displayName =
+                        `${lastName}, ${firstName} ${middleInitial}`.trim();
+                      return (
+                        <option key={director._id} value={director._id}>
+                          {displayName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
 
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setToAssignDirector(false);
+                  }}
                   className={`bg-gray-500 text-white px-4 py-2 rounded ${
                     loading ? "" : " hover:bg-gray-600"
                   }`}
@@ -322,7 +377,11 @@ const Cluster = () => {
                       cssOverride={buttonOverrideStyle}
                     />
                   ) : formData._id ? (
-                    "Update"
+                    toAssignDirector ? (
+                      "Assign Director"
+                    ) : (
+                      "Update"
+                    )
                   ) : (
                     "Add"
                   )}
