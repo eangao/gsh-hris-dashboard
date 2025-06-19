@@ -3,22 +3,31 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
 import { fetchManagedDepartments } from "../../../../store/Reducers/employeeReducer";
-import { fetchDutySchedulesByDepartment } from "../../../../store/Reducers/dutyScheduleReducer";
+import {
+  fetchDutySchedulesByDepartment,
+  messageClear,
+  submitDutyScheduleForApproval,
+} from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
+import toast from "react-hot-toast";
 
-const ScheduleManagement = () => {
+const ManagerDutySchedule = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { role, userInfo } = useSelector((state) => state.auth);
+  const { userInfo } = useSelector((state) => state.auth);
   const { employee: employeeId } = userInfo;
 
   const { managedDepartments } = useSelector((state) => state.employee);
 
-  const { dutySchedules, totalDutySchedule, loading } = useSelector(
-    (state) => state.dutySchedule
-  );
+  const {
+    dutySchedules,
+    totalDutySchedule,
+    loading,
+    successMessage,
+    errorMessage,
+  } = useSelector((state) => state.dutySchedule);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -39,16 +48,25 @@ const ScheduleManagement = () => {
   // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
   useEffect(() => {
     if (selectedDepartment) {
-      dispatch(
-        fetchDutySchedulesByDepartment({
-          departmentId: selectedDepartment,
-          perPage: parseInt(perPage),
-          page: parseInt(currentPage),
-          searchValue,
-        })
-      );
+      getDutySchedulesByDepartment();
     }
-  }, [currentPage, perPage, searchValue, selectedDepartment, dispatch]);
+  }, [selectedDepartment]);
+
+  // Handle success/error messages
+  useEffect(() => {
+    if (successMessage) {
+      toast.success(successMessage);
+
+      getDutySchedulesByDepartment();
+
+      dispatch(messageClear());
+    }
+
+    if (errorMessage) {
+      toast.error(errorMessage);
+      dispatch(messageClear());
+    }
+  }, [successMessage, errorMessage, dispatch]);
 
   // If only one department, set it as selected by default
   useEffect(() => {
@@ -60,6 +78,17 @@ const ScheduleManagement = () => {
       setSelectedDepartment(managedDepartments[0]._id);
     }
   }, [managedDepartments, selectedDepartment]);
+
+  const getDutySchedulesByDepartment = () => {
+    dispatch(
+      fetchDutySchedulesByDepartment({
+        departmentId: selectedDepartment,
+        perPage: parseInt(perPage),
+        page: parseInt(currentPage),
+        searchValue,
+      })
+    );
+  };
 
   // Handle department change
   const handleDepartmentChange = (e) => {
@@ -73,31 +102,31 @@ const ScheduleManagement = () => {
   };
 
   const handleAddDutySchedule = () => {
-    if (role === "MANAGER") {
-      if (selectedDepartment === "") {
-        alert("Please select a department first.");
-        return;
-      }
-      // Use departmentId in path param (no query string anymore)
-      navigate(`/manager/duty-schedule/${selectedDepartment}/create`);
-    } else {
-      alert("You are not authorized to add duty schedule.");
+    if (selectedDepartment === "") {
+      alert("Please select a department first.");
+      return;
     }
+    // Use departmentId in path param (no query string anymore)
+    navigate(`/manager/duty-schedule/${selectedDepartment}/create`);
   };
 
   const handleEditDutySchedule = (scheduleId) => {
-    if (role === "MANAGER") {
-      if (!selectedDepartment) {
-        alert("Please select a department first.");
-        return;
-      }
-      // Pass both departmentId and scheduleId in path param
-      navigate(
-        `/manager/duty-schedule/${selectedDepartment}/edit/${scheduleId}`
-      );
-    } else {
-      alert("You are not authorized to edit employees.");
+    if (!selectedDepartment) {
+      alert("Please select a department first.");
+      return;
     }
+    // Pass both departmentId and scheduleId in path param
+    navigate(`/manager/duty-schedule/${selectedDepartment}/edit/${scheduleId}`);
+  };
+
+  //  Add this function to handle submit for approval
+  const handleSubmitForApproval = (scheduleId) => {
+    if (!scheduleId) {
+      alert("Please select a schedule first.");
+      return;
+    }
+
+    dispatch(submitDutyScheduleForApproval(scheduleId));
   };
 
   // If no managed departments, show message and do not render the rest of the page
@@ -165,7 +194,8 @@ const ScheduleManagement = () => {
             <tr className="bg-gray-100 text-left">
               <th className="p-3">Schedule</th>
               <th className="p-3">Department</th>
-              <th className="p-3 text-center">Actions</th>
+              <th className="p-3">Status</th>
+              <th className="p-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -190,15 +220,27 @@ const ScheduleManagement = () => {
                   <td className="p-3 capitalize">
                     {schedule?.department?.name}
                   </td>
-                  <td className="p-3 flex justify-center space-x-2">
-                    <button
-                      onClick={() => handleEditDutySchedule(schedule?._id)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                      disabled={loading}
-                    >
-                      Edit
-                    </button>
-                  </td>
+                  <td className="p-3 capitalize">{schedule?.status}</td>
+                  {schedule?.status === "draft" ||
+                  schedule?.status === "director_rejected" ||
+                  schedule?.status === "hr_rejected" ? (
+                    <td className="p-3 flex space-x-2 justify-end">
+                      <button
+                        onClick={() => handleEditDutySchedule(schedule?._id)}
+                        className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleSubmitForApproval(schedule?._id)}
+                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      >
+                        Submit for Approval
+                      </button>
+                    </td>
+                  ) : (
+                    <td className="p-3"></td>
+                  )}
                 </tr>
               ))
             )}
@@ -224,4 +266,4 @@ const ScheduleManagement = () => {
   );
 };
 
-export default ScheduleManagement;
+export default ManagerDutySchedule;

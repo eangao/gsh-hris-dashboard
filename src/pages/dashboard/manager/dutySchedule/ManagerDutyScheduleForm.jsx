@@ -41,7 +41,7 @@ const HOLIDAYS_2025 = [
   { date: "2025-12-30", name: "Rizal Day" },
 ];
 
-const DutyScheduleForm = () => {
+const ManagerDutyScheduleForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -446,7 +446,7 @@ const DutyScheduleForm = () => {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveAsDraft = async () => {
     const startDateUTC = convertDatePHToUTCISO(localDutySchedule.startDate);
     const endDateUTC = convertDatePHToUTCISO(localDutySchedule.endDate);
 
@@ -482,6 +482,8 @@ const DutyScheduleForm = () => {
       alert("You are not authorized to access the schedule list.");
     }
   };
+
+  //
 
   return (
     <div className="p-4">
@@ -819,9 +821,9 @@ const DutyScheduleForm = () => {
             Cancel
           </button>
 
-          {allEntries.length !== 0 && (
+          {allEntries?.length !== 0 && (
             <button
-              onClick={handleSave}
+              onClick={handleSaveAsDraft}
               disabled={loading ? true : false}
               className={`bg-blue-500  text-white px-4 py-2 rounded ${
                 loading ? "" : " hover:bg-blue-600"
@@ -833,9 +835,9 @@ const DutyScheduleForm = () => {
                   cssOverride={buttonOverrideStyle}
                 />
               ) : isEditMode ? (
-                "Update Duty Schedule"
+                "Update As Draft"
               ) : (
-                "Create Duty Schedule"
+                "Save As Draft"
               )}
             </button>
           )}
@@ -845,4 +847,4 @@ const DutyScheduleForm = () => {
   );
 };
 
-export default DutyScheduleForm;
+export default ManagerDutyScheduleForm;

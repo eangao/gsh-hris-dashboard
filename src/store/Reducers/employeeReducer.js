@@ -182,6 +182,22 @@ export const fetchEmployeesByDepartment = createAsyncThunk(
   }
 );
 
+// Fetch managed cluster for directors
+export const fetchManagedCluster = createAsyncThunk(
+  "employee/fetchManagedCluster",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get(`/hris/employees/${id}/managed-cluster`, {
+        withCredentials: true,
+      });
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const employeeSlice = createSlice({
   name: "employee",
   initialState: {
@@ -194,6 +210,7 @@ const employeeSlice = createSlice({
     directors: [],
     totalEmployee: 0,
     managedDepartments: [], // <-- add this
+    managedCluster: null, // <-- add this for directors
   },
   reducers: {
     messageClear: (state) => {
@@ -333,6 +350,18 @@ const employeeSlice = createSlice({
           payload?.error || "Failed to fetch employees by department";
       }
     );
+    // Handle fetchManagedCluster
+    builder.addCase(fetchManagedCluster.pending, (state) => {
+      state.loading = true;
+    });
+    builder.addCase(fetchManagedCluster.fulfilled, (state, { payload }) => {
+      state.managedCluster = payload.managedCluster;
+      state.loading = false;
+    });
+    builder.addCase(fetchManagedCluster.rejected, (state, { payload }) => {
+      state.loading = false;
+      state.errorMessage = payload?.error || "Failed to fetch managed cluster";
+    });
   },
 });
 

@@ -92,7 +92,6 @@ export const fetchDutySchedulesByDepartment = createAsyncThunk(
     { departmentId, perPage, page, searchValue },
     { rejectWithValue, fulfillWithValue }
   ) => {
-    console.log(departmentId);
     try {
       const { data } = await api.get(
         `/hris/duty-schedules/by-department/${departmentId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
@@ -100,10 +99,68 @@ export const fetchDutySchedulesByDepartment = createAsyncThunk(
           withCredentials: true,
         }
       );
-      console.log(data);
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Add new thunk to submit duty schedule for approval
+export const submitDutyScheduleForApproval = createAsyncThunk(
+  "dutySchedule/submitDutyScheduleForApproval",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post(
+        `/hris/duty-schedules/${id}/submit`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { error: "Unknown error" }
+      );
+    }
+  }
+);
+
+// Add new thunk to fetch schedules by cluster
+export const fetchDutySchedulesByCluster = createAsyncThunk(
+  "dutySchedule/fetchDutySchedulesByCluster",
+  async (
+    { clusterId, perPage, page, searchValue },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const { data } = await api.get(
+        `/hris/duty-schedules/by-cluster/${clusterId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Add new thunk for director approval/rejection
+export const directorApproval = createAsyncThunk(
+  "dutySchedule/directorApproval",
+  async ({ id, action, remarks }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post(
+        `/hris/duty-schedules/${id}/director-approval`,
+        { action, remarks },
+        { withCredentials: true }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response?.data || { error: "Unknown error" });
     }
   }
 );
@@ -196,6 +253,46 @@ const dutyScheduleSlice = createSlice({
         state.dutySchedules = payload.dutySchedules;
       }
     );
+
+    // Handle fetchDutySchedulesByCluster
+    builder.addCase(
+      fetchDutySchedulesByCluster.fulfilled,
+      (state, { payload }) => {
+        state.totalDutySchedule = payload.totalDutySchedule;
+        state.dutySchedules = payload.dutySchedules;
+      }
+    );
+
+    // Handle submitDutyScheduleForApproval
+    builder
+      .addCase(submitDutyScheduleForApproval.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(
+        submitDutyScheduleForApproval.fulfilled,
+        (state, { payload }) => {
+          state.loading = false;
+          state.successMessage = payload.message;
+        }
+      )
+      .addCase(submitDutyScheduleForApproval.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      });
+
+    // Handle directorApproval
+    builder
+      .addCase(directorApproval.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(directorApproval.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      })
+      .addCase(directorApproval.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      });
   },
 });
 
