@@ -128,15 +128,15 @@ export const submitDutyScheduleForApproval = createAsyncThunk(
 );
 
 // Add new thunk to fetch schedules by cluster
-export const fetchDutySchedulesByCluster = createAsyncThunk(
-  "dutySchedule/fetchDutySchedulesByCluster",
+export const fetchDutySchedulesForDirectorApprovalByCluster = createAsyncThunk(
+  "dutySchedule/fetchDutySchedulesForDirectorApprovalByCluster",
   async (
     { clusterId, perPage, page, searchValue },
     { rejectWithValue, fulfillWithValue }
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/duty-schedules/by-cluster/${clusterId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/duty-schedules/pending-director-approval/${clusterId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -144,6 +144,29 @@ export const fetchDutySchedulesByCluster = createAsyncThunk(
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Add new thunk to fetch schedules for HR approval
+export const fetchHrDutySchedulesByStatus = createAsyncThunk(
+  "dutySchedule/fetchHrDutySchedulesByStatus",
+  async (
+    { perPage, page, searchValue, statusFilter },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const { data } = await api.get(
+        `/hris/duty-schedules/hr-approval/?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&statusFilter=${statusFilter}`,
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { error: "Unknown error" }
+      );
     }
   }
 );
@@ -160,7 +183,28 @@ export const directorApproval = createAsyncThunk(
       );
       return fulfillWithValue(data);
     } catch (error) {
-      return rejectWithValue(error.response?.data || { error: "Unknown error" });
+      return rejectWithValue(
+        error.response?.data || { error: "Unknown error" }
+      );
+    }
+  }
+);
+
+// Add new thunk for HR approval/rejection
+export const hrApproval = createAsyncThunk(
+  "dutySchedule/hrApproval",
+  async ({ id, action, remarks }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post(
+        `/hris/duty-schedules/${id}/hr-approval`,
+        { action, remarks },
+        { withCredentials: true }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { error: "Unknown error" }
+      );
     }
   }
 );
@@ -254,9 +298,18 @@ const dutyScheduleSlice = createSlice({
       }
     );
 
-    // Handle fetchDutySchedulesByCluster
+    // Handle fetchDutySchedulesForDirectorApprovalByCluster
     builder.addCase(
-      fetchDutySchedulesByCluster.fulfilled,
+      fetchDutySchedulesForDirectorApprovalByCluster.fulfilled,
+      (state, { payload }) => {
+        state.totalDutySchedule = payload.totalDutySchedule;
+        state.dutySchedules = payload.dutySchedules;
+      }
+    );
+
+    // Handle fetchHrDutySchedulesByStatus
+    builder.addCase(
+      fetchHrDutySchedulesByStatus.fulfilled,
       (state, { payload }) => {
         state.totalDutySchedule = payload.totalDutySchedule;
         state.dutySchedules = payload.dutySchedules;
@@ -290,6 +343,20 @@ const dutyScheduleSlice = createSlice({
         state.successMessage = payload.message;
       })
       .addCase(directorApproval.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      });
+
+    // Handle HR Approval
+    builder
+      .addCase(hrApproval.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(hrApproval.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      })
+      .addCase(hrApproval.rejected, (state, { payload }) => {
         state.loading = false;
         state.errorMessage = payload.error;
       });

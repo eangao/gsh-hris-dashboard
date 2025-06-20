@@ -70,7 +70,7 @@ const EmployeeManagement = () => {
 
   const handleAddEmployee = () => {
     if (role === "HR_ADMIN") {
-      navigate("/hr/employee/add");
+      navigate("/hr/employees/add");
     } else {
       // Optional: fallback if unauthorized role
       alert("You are not authorized to add employees.");
@@ -79,7 +79,7 @@ const EmployeeManagement = () => {
 
   const handleEditEmployee = (employeeId) => {
     if (role === "HR_ADMIN") {
-      navigate(`/hr/employee/edit/${employeeId}`);
+      navigate(`/hr/employees/edit/${employeeId}`);
     } else {
       alert("You are not authorized to edit employees.");
     }
@@ -87,7 +87,7 @@ const EmployeeManagement = () => {
 
   const handleViewEmployee = (employeeId) => {
     if (role === "HR_ADMIN") {
-      navigate(`/hr/employee/details/${employeeId}`);
+      navigate(`/hr/employees/details/${employeeId}`);
     } else {
       alert("You are not authorized to view this employee.");
     }

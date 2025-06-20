@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  directorApproval,
   messageClear,
+  hrApproval,
 } from "../../../../store/Reducers/dutyScheduleReducer";
 import toast from "react-hot-toast";
 
-import { fetchManagedCluster } from "../../../../store/Reducers/employeeReducer";
-import { fetchDutySchedulesForDirectorApprovalByCluster } from "../../../../store/Reducers/dutyScheduleReducer";
+import { fetchHrDutySchedulesByStatus } from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
 
-const DirectorDutySchedule = () => {
+const HrDutySchedule = () => {
   const dispatch = useDispatch();
-
-  const { userInfo } = useSelector((state) => state.auth);
-  const { employee: employeeId } = userInfo;
-
-  const { managedCluster } = useSelector((state) => state.employee);
 
   const { dutySchedules, totalDutySchedule, loading } = useSelector(
     (state) => state.dutySchedule
@@ -34,10 +28,7 @@ const DirectorDutySchedule = () => {
   const { successMessage, errorMessage } = useSelector(
     (state) => state.dutySchedule
   );
-
-  useEffect(() => {
-    dispatch(fetchManagedCluster(employeeId)); // fetch managed cluster for this director
-  }, [employeeId, dispatch]);
+  const [statusFilter, setStatusFilter] = useState("pending_hr_approval");
 
   // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
@@ -48,17 +39,15 @@ const DirectorDutySchedule = () => {
 
   // 2️⃣ Fetch data after currentPage, perPage, or searchValue is updated
   useEffect(() => {
-    if (managedCluster && managedCluster._id) {
-      dispatch(
-        fetchDutySchedulesForDirectorApprovalByCluster({
-          clusterId: managedCluster._id,
-          perPage: parseInt(perPage),
-          page: parseInt(currentPage),
-          searchValue,
-        })
-      );
-    }
-  }, [currentPage, perPage, searchValue, managedCluster, dispatch]);
+    dispatch(
+      fetchHrDutySchedulesByStatus({
+        perPage: parseInt(perPage),
+        page: parseInt(currentPage),
+        searchValue,
+        statusFilter,
+      })
+    );
+  }, [currentPage, perPage, searchValue, statusFilter, dispatch]);
 
   useEffect(() => {
     if (successMessage) {
@@ -66,17 +55,16 @@ const DirectorDutySchedule = () => {
       dispatch(messageClear());
       setRemarksModal({ open: false, scheduleId: null });
       setRemarks("");
+
       // Optionally, refetch schedules here
-      if (managedCluster && managedCluster._id) {
-        dispatch(
-          fetchDutySchedulesForDirectorApprovalByCluster({
-            clusterId: managedCluster._id,
-            perPage: parseInt(perPage),
-            page: parseInt(currentPage),
-            searchValue,
-          })
-        );
-      }
+      dispatch(
+        fetchHrDutySchedulesByStatus({
+          perPage: parseInt(perPage),
+          page: parseInt(currentPage),
+          searchValue,
+          statusFilter, // Pass status to thunk
+        })
+      );
     }
     if (errorMessage) {
       toast.error(errorMessage);
@@ -84,22 +72,15 @@ const DirectorDutySchedule = () => {
     }
   }, [successMessage, errorMessage]);
 
-  // If no managed cluster, show message and do not render the rest of the page
-  if (!managedCluster) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="bg-white p-8 rounded shadow text-center">
-          <h2 className="text-xl font-bold mb-2">No Cluster Assigned</h2>
-          <p className="text-gray-600">
-            You have no cluster assigned to manage yet.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Handler for status tab click
+  const handleStatusTabClick = (status) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page on tab change
+  };
 
-  const handleDirectorApproval = (scheduleId) => {
-    dispatch(directorApproval({ id: scheduleId, action: "approve" }));
+  // Rename handler for HR approval
+  const handleHrApproval = (scheduleId) => {
+    dispatch(hrApproval({ id: scheduleId, action: "approve" }));
   };
 
   const handleRejectDutySchedule = (scheduleId) => {
@@ -112,7 +93,7 @@ const DirectorDutySchedule = () => {
       return;
     }
     dispatch(
-      directorApproval({
+      hrApproval({
         id: remarksModal.scheduleId,
         action: "reject",
         remarks,
@@ -124,7 +105,29 @@ const DirectorDutySchedule = () => {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold text-center">Duty Schedule</h1>
-        <div className="flex items-center space-x-2"></div>
+      </div>
+      {/* Status Tabs - above the table for better UX */}
+      <div className="flex items-center space-x-2 mb-4">
+        <button
+          className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
+            statusFilter === "pending_hr_approval"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          onClick={() => handleStatusTabClick("pending_hr_approval")}
+        >
+          For Approval
+        </button>
+        <button
+          className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
+            statusFilter === "hr_approved"
+              ? "bg-green-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+          }`}
+          onClick={() => handleStatusTabClick("hr_approved")}
+        >
+          Approved
+        </button>
       </div>
 
       <div className="mb-4">
@@ -169,7 +172,7 @@ const DirectorDutySchedule = () => {
                     {schedule?.department?.name}
                   </td>
                   <td className="p-3 capitalize">{schedule?.status}</td>
-                  {schedule?.status === "submitted" ? (
+                  {schedule?.status === "director_approved" ? (
                     <td className="p-3 flex justify-end space-x-2">
                       <button
                         onClick={() => handleRejectDutySchedule(schedule?._id)}
@@ -178,7 +181,7 @@ const DirectorDutySchedule = () => {
                         Reject
                       </button>
                       <button
-                        onClick={() => handleDirectorApproval(schedule?._id)}
+                        onClick={() => handleHrApproval(schedule?._id)}
                         className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                       >
                         Approve
@@ -247,4 +250,4 @@ const DirectorDutySchedule = () => {
   );
 };
 
-export default DirectorDutySchedule;
+export default HrDutySchedule;

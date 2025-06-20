@@ -60,7 +60,7 @@ const directorRoutes = [
   },
 
   {
-    path: "/director/schedule-approvals",
+    path: "/director/duty-schedule-approval",
     element: <DirectorDutySchedule />,
     role: ["DIRECTOR", "SUPER_ADMIN"],
   },

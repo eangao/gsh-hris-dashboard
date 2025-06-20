@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { fetchEmployeeDetailsById } from "../../../../store/Reducers/employeeReducer";
-import { formatDatePH } from "./../../../../utils/phDateUtils";
+import { formatDatePH } from "../../../../utils/phDateUtils";
 
 const EmployeeDetails = () => {
   const dispatch = useDispatch();

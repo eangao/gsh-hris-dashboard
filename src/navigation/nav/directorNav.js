@@ -35,11 +35,10 @@ export const directorNav = [
     role: directorRoles,
     group: "Director",
   },
-
   {
-    title: "Schedule Approvals",
+    title: "Duty Schedule",
     icon: <AiOutlineForm />,
-    path: "/director/schedule-approvals",
+    path: "/director/duty-schedule-approval",
     role: directorRoles,
     group: "Director",
   },

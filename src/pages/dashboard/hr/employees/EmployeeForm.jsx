@@ -20,7 +20,7 @@ import {
   formatDatePH,
   getBirthdateLimits,
   getTodayDatePH,
-} from "./../../../../utils/phDateUtils";
+} from "../../../../utils/phDateUtils";
 
 const EmployeeForm = () => {
   const { id } = useParams(); // This will be undefined for add
@@ -130,7 +130,7 @@ const EmployeeForm = () => {
       if (successMessage) {
         toast.success(successMessage);
         if (role === "HR_ADMIN") {
-          navigate("/hr/employee");
+          navigate("/hr/employees");
         }
       }
 
@@ -481,7 +481,7 @@ const EmployeeForm = () => {
 
   const handleCancel = () => {
     if (role === "HR_ADMIN") {
-      navigate("/hr/employee");
+      navigate("/hr/employees");
     } else {
       alert("You are not authorized to access the employee list.");
     }
