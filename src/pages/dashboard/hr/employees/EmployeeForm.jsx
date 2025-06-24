@@ -45,6 +45,7 @@ const EmployeeForm = () => {
       firstName: "",
       middleName: "",
       lastName: "",
+      suffix: "",
       civilStatus: "",
       maidenName: "",
       birthdate: "",
@@ -480,11 +481,7 @@ const EmployeeForm = () => {
   // }));
 
   const handleCancel = () => {
-    if (role === "HR_ADMIN") {
-      navigate("/hr/employees");
-    } else {
-      alert("You are not authorized to access the employee list.");
-    }
+    navigate("/hr/employees");
   };
 
   return (
@@ -557,6 +554,32 @@ const EmployeeForm = () => {
                 className="w-full p-2 border rounded mt-1"
                 required
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Suffix
+              </label>
+              <select
+                name="suffix"
+                value={formData.personalInformation.suffix || ""}
+                onChange={(e) =>
+                  handleChange("personalInformation", "suffix", e.target.value)
+                }
+                className="w-full p-2 border rounded mt-1"
+              >
+                <option value="">Select Suffix</option>
+                <option value="Jr.">Jr.</option>
+                <option value="Sr.">Sr.</option>
+                <option value="II">II</option>
+                <option value="III">III</option>
+                <option value="IV">IV</option>
+                <option value="V">V</option>
+                <option value="VI">VI</option>
+                <option value="VII">VII</option>
+                <option value="VIII">VIII</option>
+                <option value="IX">IX</option>
+                <option value="X">X</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -722,7 +745,6 @@ const EmployeeForm = () => {
             </div>
           </div>
         </div>
-
         {/* ============================================================== */}
         {/* Employment Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
@@ -971,7 +993,6 @@ const EmployeeForm = () => {
             </div>
           </div>
         </div>
-
         {/* ============================================================== */}
         {/* Education Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
@@ -1175,7 +1196,6 @@ const EmployeeForm = () => {
             </div>
           </div>
         </div>
-
         {/* ============================================================== */}
         {/* Government Information Section */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
@@ -1249,7 +1269,6 @@ const EmployeeForm = () => {
             </div>
           </div>
         </div>
-
         {/* ============================================================== */}
         {/* Section Save Buttons */}
         <div className="flex justify-between items-center mt-6">

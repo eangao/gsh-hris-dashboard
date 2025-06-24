@@ -13,6 +13,11 @@ import { PropagateLoader } from "react-spinners";
 import { buttonOverrideStyle } from "./../../../../utils/utils";
 import Search from "./../../../../components/Search";
 import Pagination from "./../../../../components/Pagination";
+import {
+  convertTimePHToUTCISO,
+  convertTimeUTCISOToPH,
+  formatTimeTo12HourPH,
+} from "../../../../utils/phDateUtils";
 
 const shiftColors = [
   "bg-yellow-100",
@@ -159,20 +164,79 @@ const ShiftTemplates = () => {
     return availableColors.length > 0 ? availableColors[0] : "bg-white";
   };
 
+  // Convert formData times to UTC ISO before submit
+  const prepareFormDataForSubmit = (data) => {
+    const isStandard = data.type === "Standard";
+    if (isStandard) {
+      return {
+        ...data,
+        morningIn: data.morningIn ? convertTimePHToUTCISO(data.morningIn) : "",
+        morningOut: data.morningOut
+          ? convertTimePHToUTCISO(data.morningOut)
+          : "",
+        afternoonIn: data.afternoonIn
+          ? convertTimePHToUTCISO(data.afternoonIn)
+          : "",
+        afternoonOut: data.afternoonOut
+          ? convertTimePHToUTCISO(data.afternoonOut)
+          : "",
+      };
+    } else {
+      return {
+        ...data,
+        startTime: data.startTime ? convertTimePHToUTCISO(data.startTime) : "",
+        endTime: data.endTime ? convertTimePHToUTCISO(data.endTime) : "",
+      };
+    }
+  };
+
+  // Convert UTC ISO times from DB to PH time string for form
+  const mapScheduleForForm = (schedule) => {
+    if (!schedule) return schedule;
+    if (schedule.type === "Standard") {
+      return {
+        ...schedule,
+        morningIn: schedule.morningIn
+          ? convertTimeUTCISOToPH(schedule.morningIn)
+          : "",
+        morningOut: schedule.morningOut
+          ? convertTimeUTCISOToPH(schedule.morningOut)
+          : "",
+        afternoonIn: schedule.afternoonIn
+          ? convertTimeUTCISOToPH(schedule.afternoonIn)
+          : "",
+        afternoonOut: schedule.afternoonOut
+          ? convertTimeUTCISOToPH(schedule.afternoonOut)
+          : "",
+      };
+    } else {
+      return {
+        ...schedule,
+        startTime: schedule.startTime
+          ? convertTimeUTCISOToPH(schedule.startTime)
+          : "",
+        endTime: schedule.endTime
+          ? convertTimeUTCISOToPH(schedule.endTime)
+          : "",
+      };
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    const submitData = prepareFormDataForSubmit(formData);
     if (formData._id) {
-      dispatch(updateWorkSchedule(formData));
+      dispatch(updateWorkSchedule(submitData));
     } else {
       const uniqueColor = getUniqueShiftColor();
-      const newFormData = { ...formData, shiftColor: uniqueColor };
+      const newFormData = { ...submitData, shiftColor: uniqueColor };
       dispatch(createWorkSchedule(newFormData));
     }
   };
 
   const handleEdit = (schedule) => {
-    setFormData(schedule);
+    setFormData(mapScheduleForForm(schedule));
     setIsModalOpen(true);
   };
 
@@ -187,16 +251,6 @@ const ShiftTemplates = () => {
 
   const resetForm = () => {
     setFormData(initialFormData);
-  };
-
-  const formatTime = (time24) => {
-    if (!time24) return "";
-    const [hours, minutes] = time24.split(":").map(Number);
-    const date = new Date();
-    date.setHours(hours);
-    date.setMinutes(minutes);
-    const options = { hour: "numeric", minute: "numeric", hour12: true };
-    return date.toLocaleTimeString([], options);
   };
 
   const renderScheduleForm = () => {
@@ -448,18 +502,19 @@ const ShiftTemplates = () => {
                     {schedule.type === "Standard" ? (
                       <>
                         <div>
-                          Morning: {formatTime(schedule.morningIn)} -{" "}
-                          {formatTime(schedule.morningOut)}
+                          Morning: {formatTimeTo12HourPH(schedule.morningIn)} -{" "}
+                          {formatTimeTo12HourPH(schedule.morningOut)}
                         </div>
                         <div>
-                          Afternoon: {formatTime(schedule.afternoonIn)} -{" "}
-                          {formatTime(schedule.afternoonOut)}
+                          Afternoon:{" "}
+                          {formatTimeTo12HourPH(schedule.afternoonIn)} -{" "}
+                          {formatTimeTo12HourPH(schedule.afternoonOut)}
                         </div>
                       </>
                     ) : (
                       <>
-                        {formatTime(schedule.startTime)} -{" "}
-                        {formatTime(schedule.endTime)}
+                        {formatTimeTo12HourPH(schedule.startTime)} -{" "}
+                        {formatTimeTo12HourPH(schedule.endTime)}
                         {schedule.isNightDifferential && " (Night)"}
                       </>
                     )}
@@ -550,19 +605,19 @@ const ShiftTemplates = () => {
                     <>
                       <div>
                         <span className="text-gray-600">Morning: </span>
-                        {formatTime(schedule.morningIn)} -{" "}
-                        {formatTime(schedule.morningOut)}
+                        {formatTimeTo12HourPH(schedule.morningIn)} -{" "}
+                        {formatTimeTo12HourPH(schedule.morningOut)}
                       </div>
                       <div>
                         <span className="text-gray-600">Afternoon: </span>
-                        {formatTime(schedule.afternoonIn)} -{" "}
-                        {formatTime(schedule.afternoonOut)}
+                        {formatTimeTo12HourPH(schedule.afternoonIn)} -{" "}
+                        {formatTimeTo12HourPH(schedule.afternoonOut)}
                       </div>
                     </>
                   ) : (
                     <div>
-                      {formatTime(schedule.startTime)} -{" "}
-                      {formatTime(schedule.endTime)}
+                      {formatTimeTo12HourPH(schedule.startTime)} -{" "}
+                      {formatTimeTo12HourPH(schedule.endTime)}
                       {schedule.isNightDifferential && (
                         <span className="text-blue-600 font-medium">
                           {" "}

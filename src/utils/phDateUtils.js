@@ -28,23 +28,6 @@ export const convertDatePHToUTCISO = (phDateStr) => {
 };
 
 /**
- * Converts 24-hour time string (e.g., '14:30') to 12-hour format (e.g., '2:30 PM') in PH timezone.
- *
- * @param {string} time24 - Time string in HH:mm format
- * @returns {string} - Formatted 12-hour time string
- */
-export const formatTime12hPH = (time24) => {
-  if (!time24) return "";
-  const [hour, minute] = time24.split(":");
-  return moment
-    .utc()
-    .hour(hour)
-    .minute(minute)
-    .tz("Asia/Manila")
-    .format("h:mm A");
-};
-
-/**
  * Formats a date into "Month Year" or "Month Day, Year" string.
  *
  * @param {Date|string} date
@@ -181,4 +164,55 @@ export const getAgePH = (birthdate) => {
   const age = todayPH.diff(birth, "years");
 
   return `${age} years old`;
+};
+
+/**
+ * Converts a PH-local time string (e.g., '08:00') to a UTC ISO string (e.g., '1970-01-01T00:00:00.000Z').
+ * Used for storing time-only fields in MongoDB as UTC ISO.
+ * @param {string} time24 - Time string in HH:mm format (PH time)
+ * @returns {string|null} - UTC ISO string or null if invalid
+ */
+export const convertTimePHToUTCISO = (time24) => {
+  if (!time24) return ""; // Return empty string if no value (model default)
+  const [hour, minute] = time24.split(":").map(Number);
+  if (isNaN(hour) || isNaN(minute)) return "";
+  const m = moment
+    .tz("1970-01-01", "Asia/Manila")
+    .hour(hour)
+    .minute(minute)
+    .second(0)
+    .millisecond(0);
+  return m.clone().utc().toISOString();
+};
+
+/**
+ * Converts a UTC ISO time string (e.g., '1970-01-01T00:00:00.000Z') to PH-local time string (e.g., '08:00').
+ * Used for displaying time-only fields from MongoDB in PH time.
+ * @param {string} timeISO - UTC ISO time string
+ * @returns {string} - Time string in HH:mm (PH time)
+ */
+export const convertTimeUTCISOToPH = (timeISO) => {
+  if (!timeISO) return "";
+  // If already in HH:mm format, just return
+  if (/^\d{2}:\d{2}$/.test(timeISO)) return timeISO;
+  return moment.utc(timeISO).tz("Asia/Manila").format("HH:mm");
+};
+
+/**
+ * Formats a time value (ISO string or HH:mm) to PH 12-hour display string (e.g., '2:30 PM').
+ * Returns empty string if input is empty or invalid.
+ * @param {string} timeValue - ISO string or HH:mm
+ * @returns {string} - 12-hour formatted time string in PH time
+ */
+export const formatTimeTo12HourPH = (timeValue) => {
+  if (!timeValue) return "";
+  // If ISO string, convert to PH time
+  const timePH = convertTimeUTCISOToPH(timeValue);
+  if (!timePH) return "";
+  const [hours, minutes] = timePH.split(":").map(Number);
+  const date = new Date();
+  date.setHours(hours);
+  date.setMinutes(minutes);
+  const options = { hour: "numeric", minute: "numeric", hour12: true };
+  return date.toLocaleTimeString([], options);
 };

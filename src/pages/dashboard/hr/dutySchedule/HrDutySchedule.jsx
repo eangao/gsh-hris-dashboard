@@ -9,9 +9,11 @@ import toast from "react-hot-toast";
 import { fetchHrDutySchedulesByStatus } from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
+import { useNavigate } from "react-router-dom";
 
 const HrDutySchedule = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { dutySchedules, totalDutySchedule, loading } = useSelector(
     (state) => state.dutySchedule
@@ -76,6 +78,12 @@ const HrDutySchedule = () => {
   const handleStatusTabClick = (status) => {
     setStatusFilter(status);
     setCurrentPage(1); // Reset to first page on tab change
+  };
+
+  // Handler for viewing a duty schedule (implement navigation or modal as needed)
+  const handleViewDutySchedule = (departmentId, scheduleId) => {
+    // Pass both departmentId and scheduleId in path param
+    navigate(`/hr/duty-schedule/${departmentId}/view/${scheduleId}`);
   };
 
   // Rename handler for HR approval
@@ -172,24 +180,56 @@ const HrDutySchedule = () => {
                     {schedule?.department?.name}
                   </td>
                   <td className="p-3 capitalize">{schedule?.status}</td>
-                  {schedule?.status === "director_approved" ? (
-                    <td className="p-3 flex justify-end space-x-2">
-                      <button
-                        onClick={() => handleRejectDutySchedule(schedule?._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => handleHrApproval(schedule?._id)}
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                      >
-                        Approve
-                      </button>
-                    </td>
-                  ) : (
-                    ""
-                  )}
+                  <td className="p-3 flex justify-end space-x-2">
+                    {/* Print Button: Opens print-optimized view in new tab */}
+
+                    {schedule?.status === "hr_approved" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/hr/duty-schedule/print/${schedule?._id}?preview=1`
+                            )
+                          }
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
+                          disabled={loading}
+                        >
+                          Print
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleViewDutySchedule(
+                              schedule.department?._id,
+                              schedule?._id
+                            )
+                          }
+                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                        >
+                          View
+                        </button>
+                      </>
+                    )}
+
+                    {schedule?.status === "director_approved" && (
+                      <>
+                        <button
+                          onClick={() =>
+                            handleRejectDutySchedule(schedule?._id)
+                          }
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                        >
+                          Reject
+                        </button>
+                        <button
+                          onClick={() => handleHrApproval(schedule?._id)}
+                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                        >
+                          Approve
+                        </button>
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))
             )}

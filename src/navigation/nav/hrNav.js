@@ -49,7 +49,7 @@ export const hrNav = [
   {
     title: "Duty Schedule",
     icon: <AiOutlineForm />,
-    path: "/hr/duty-schedule-approval",
+    path: "/hr/duty-schedule",
     role: hrRoles,
     group: "HR",
   },

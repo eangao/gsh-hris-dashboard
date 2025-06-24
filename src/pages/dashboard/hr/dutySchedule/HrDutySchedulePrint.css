@@ -1,0 +1,37 @@
+@page {
+  size: 8.5in 13in landscape;
+  margin: 0.3in;
+}
+
+@media print {
+  thead {
+    display: table-header-group;
+    page-break-inside: avoid;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+
+  body {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .print-bg {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-footer {
+    text-align: center;
+    font-size: 12px;
+    margin-top: 40px;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

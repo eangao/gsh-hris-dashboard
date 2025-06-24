@@ -14,6 +14,12 @@ const EmployeeDetails = lazy(() =>
 const HrDutySchedule = lazy(() =>
   import("../../pages/dashboard/hr/dutySchedule/HrDutySchedule")
 );
+const HrDutyScheduleDetails = lazy(() =>
+  import("../../pages/dashboard/hr/dutySchedule/HrDutyScheduleDetails")
+);
+const HrDutySchedulePrint = lazy(() =>
+  import("../../pages/dashboard/hr/dutySchedule/HrDutySchedulePrint")
+);
 
 // const DepartmentAttendance = lazy(() =>
 //   import("../../pages/dashboard/hr/DepartmentAttendance")
@@ -83,8 +89,18 @@ const hrRoutes = [
   },
 
   {
-    path: "/hr/duty-schedule-approval",
+    path: "/hr/duty-schedule",
     element: <HrDutySchedule />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/duty-schedule/:departmentId/view/:scheduleId",
+    element: <HrDutyScheduleDetails />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/duty-schedule/print/:scheduleId",
+    element: <HrDutySchedulePrint />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   // {

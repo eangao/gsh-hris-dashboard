@@ -1,4 +1,5 @@
 import { lazy } from "react";
+import ChangePasswordGuard from "./ChangePasswordGuard";
 
 const Login = lazy(() => import("../../pages/auth/Login"));
 const AdminLogin = lazy(() => import("../../pages/auth/AdminLogin"));
@@ -31,7 +32,11 @@ const publicRoutes = [
   },
   {
     path: "/change-password",
-    element: <ChangePassword />,
+    element: (
+      <ChangePasswordGuard>
+        <ChangePassword />
+      </ChangePasswordGuard>
+    ),
   },
 ];
 

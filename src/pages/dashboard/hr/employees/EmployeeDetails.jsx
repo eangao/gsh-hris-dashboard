@@ -86,7 +86,8 @@ const EmployeeDetails = () => {
                 <p className="text-lg font-medium text-gray-900">
                   {employee.personalInformation?.firstName}{" "}
                   {employee.personalInformation?.middleName}{" "}
-                  {employee.personalInformation?.lastName}
+                  {employee.personalInformation?.lastName}{" "}
+                  {employee.personalInformation?.suffix || ""}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InfoItem

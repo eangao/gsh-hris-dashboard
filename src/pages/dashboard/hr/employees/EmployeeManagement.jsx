@@ -104,7 +104,6 @@ const EmployeeManagement = () => {
           Add Employee
         </button>
       </div>
-
       <div className="mb-4">
         <Search
           setPerpage={setPerpage}
@@ -155,8 +154,17 @@ const EmployeeManagement = () => {
                         {employee.personalInformation?.middleName
                           .charAt(0)
                           .toUpperCase()}
-                        .
+                        {"."}
                       </span>
+                    )}
+                    {employee.personalInformation?.suffix ? (
+                      <>
+                        <span className="capitalize">
+                          , {employee.personalInformation?.suffix}
+                        </span>
+                      </>
+                    ) : (
+                      ""
                     )}
                   </td>
                   <td className="p-3 capitalize">
@@ -194,17 +202,17 @@ const EmployeeManagement = () => {
                       Edit
                     </button>
                     {/* <button
-                      onClick={() =>
-                        handleDeleteConfirm(
-                          employee._id,
-                          `${employee.personalInformation?.lastName}, ${employee.personalInformation?.firstName}`
-                        )
-                      }
-                      className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                      disabled={loading}
-                    >
-                      <FaTrashAlt />
-                    </button> */}
+                onClick={() =>
+              handleDeleteConfirm(
+                employee._id,
+                `${employee.personalInformation?.lastName}, ${employee.personalInformation?.firstName}`
+              )
+                }
+                className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+                disabled={loading}
+              >
+                <FaTrashAlt />
+              </button> */}
                   </td>
                 </tr>
               ))
@@ -212,7 +220,6 @@ const EmployeeManagement = () => {
           </tbody>
         </table>
       </div>
-
       {/* Pagination  */}
       {totalEmployee <= perPage ? (
         ""
@@ -227,7 +234,6 @@ const EmployeeManagement = () => {
           />
         </div>
       )}
-
       {/* Delete Confirmation Modal */}
       {deleteId !== null && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">

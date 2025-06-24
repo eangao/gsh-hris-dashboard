@@ -23,9 +23,9 @@ import {
   getDutyScheduleRangePH,
   parseDatePH,
   getMonthLabelPH,
-  formatTime12hPH,
   getCalendarDaysInRangePH,
   convertDatePHToUTCISO,
+  formatTimeTo12HourPH,
 } from "../../../../utils/phDateUtils";
 
 // Holiday data for 2025
@@ -249,14 +249,16 @@ const ManagerDutyScheduleForm = () => {
 
       const shiftTime = workSchedule
         ? workSchedule.type === "Standard"
-          ? `${formatTime12hPH(workSchedule.morningIn)}-${formatTime12hPH(
+          ? `${formatTimeTo12HourPH(
+              workSchedule.morningIn
+            )}-${formatTimeTo12HourPH(
               workSchedule.morningOut
-            )}, ${formatTime12hPH(workSchedule.afternoonIn)}-${formatTime12hPH(
-              workSchedule.afternoonOut
-            )}`
-          : `${formatTime12hPH(workSchedule.startTime)}-${formatTime12hPH(
-              workSchedule.endTime
-            )}`
+            )}, ${formatTimeTo12HourPH(
+              workSchedule.afternoonIn
+            )}-${formatTimeTo12HourPH(workSchedule.afternoonOut)}`
+          : `${formatTimeTo12HourPH(
+              workSchedule.startTime
+            )}-${formatTimeTo12HourPH(workSchedule.endTime)}`
         : "Unknown";
 
       return {
@@ -399,14 +401,6 @@ const ManagerDutyScheduleForm = () => {
     return schedule?.shiftColor || "bg-white"; // fallback to white if not found or no color set
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setLocalDutySchedule((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   // Filter entries by date range
   const filterEntriesByDateRange = (entries, start, end) => {
     // Use the formatToPHDateString to format start and end dates in Philippines timezone (YYYY-MM-DD)
@@ -482,8 +476,6 @@ const ManagerDutyScheduleForm = () => {
       alert("You are not authorized to access the schedule list.");
     }
   };
-
-  //
 
   return (
     <div className="p-4">
@@ -725,16 +717,16 @@ const ManagerDutyScheduleForm = () => {
                     <option key={schedule._id} value={schedule._id}>
                       {schedule.name}{" "}
                       {schedule.type === "Standard"
-                        ? `(${formatTime12hPH(
+                        ? `(${formatTimeTo12HourPH(
                             schedule.morningIn
-                          )}-${formatTime12hPH(
+                          )}-${formatTimeTo12HourPH(
                             schedule.morningOut
-                          )}, ${formatTime12hPH(
+                          )}, ${formatTimeTo12HourPH(
                             schedule.afternoonIn
-                          )}-${formatTime12hPH(schedule.afternoonOut)})`
-                        : `(${formatTime12hPH(
+                          )}-${formatTimeTo12HourPH(schedule.afternoonOut)})`
+                        : `(${formatTimeTo12HourPH(
                             schedule.startTime
-                          )}-${formatTime12hPH(schedule.endTime)})`}
+                          )}-${formatTimeTo12HourPH(schedule.endTime)})`}
                     </option>
                   ))}
                 </select>
