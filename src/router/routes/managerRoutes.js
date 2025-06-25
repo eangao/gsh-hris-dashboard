@@ -7,6 +7,12 @@ const ManagerDashboard = lazy(() =>
 const ManagerDutySchedule = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutySchedule")
 );
+
+const ManagerDutyScheduleDetails = lazy(() =>
+  import(
+    "../../pages/dashboard/manager/dutySchedule/ManagerDutyScheduleDetails"
+  )
+);
 const ManagerDutyScheduleForm = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutyScheduleForm")
 );
@@ -76,6 +82,12 @@ const managerRoutes = [
   {
     path: "/manager/duty-schedule/:departmentId/edit/:scheduleId",
     element: <ManagerDutyScheduleForm />,
+    role: ["MANAGER", "SUPER_ADMIN"],
+  },
+
+  {
+    path: "/manager/duty-schedule/:departmentId/view/:scheduleId",
+    element: <ManagerDutyScheduleDetails />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
 

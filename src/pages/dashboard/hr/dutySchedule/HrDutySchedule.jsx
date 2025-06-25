@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  messageClear,
-  hrApproval,
-} from "../../../../store/Reducers/dutyScheduleReducer";
-import toast from "react-hot-toast";
 
 import { fetchHrDutySchedulesByStatus } from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
@@ -22,14 +17,7 @@ const HrDutySchedule = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
-  const [remarksModal, setRemarksModal] = useState({
-    open: false,
-    scheduleId: null,
-  });
-  const [remarks, setRemarks] = useState("");
-  const { successMessage, errorMessage } = useSelector(
-    (state) => state.dutySchedule
-  );
+
   const [statusFilter, setStatusFilter] = useState("pending_hr_approval");
 
   // 1️⃣ Reset page to 1 when searchValue changes
@@ -51,29 +39,6 @@ const HrDutySchedule = () => {
     );
   }, [currentPage, perPage, searchValue, statusFilter, dispatch]);
 
-  useEffect(() => {
-    if (successMessage) {
-      toast.success(successMessage);
-      dispatch(messageClear());
-      setRemarksModal({ open: false, scheduleId: null });
-      setRemarks("");
-
-      // Optionally, refetch schedules here
-      dispatch(
-        fetchHrDutySchedulesByStatus({
-          perPage: parseInt(perPage),
-          page: parseInt(currentPage),
-          searchValue,
-          statusFilter, // Pass status to thunk
-        })
-      );
-    }
-    if (errorMessage) {
-      toast.error(errorMessage);
-      dispatch(messageClear());
-    }
-  }, [successMessage, errorMessage]);
-
   // Handler for status tab click
   const handleStatusTabClick = (status) => {
     setStatusFilter(status);
@@ -84,29 +49,6 @@ const HrDutySchedule = () => {
   const handleViewDutySchedule = (departmentId, scheduleId) => {
     // Pass both departmentId and scheduleId in path param
     navigate(`/hr/duty-schedule/${departmentId}/view/${scheduleId}`);
-  };
-
-  // Rename handler for HR approval
-  const handleHrApproval = (scheduleId) => {
-    dispatch(hrApproval({ id: scheduleId, action: "approve" }));
-  };
-
-  const handleRejectDutySchedule = (scheduleId) => {
-    setRemarksModal({ open: true, scheduleId });
-  };
-
-  const handleSubmitRejection = () => {
-    if (!remarks.trim()) {
-      toast.error("Remarks are required for rejection.");
-      return;
-    }
-    dispatch(
-      hrApproval({
-        id: remarksModal.scheduleId,
-        action: "reject",
-        remarks,
-      })
-    );
   };
 
   return (
@@ -180,7 +122,7 @@ const HrDutySchedule = () => {
                     {schedule?.department?.name}
                   </td>
                   <td className="p-3 capitalize">{schedule?.status}</td>
-                  <td className="p-3 flex justify-end space-x-2">
+                  <td className="p-3 capitalize text-right">
                     {/* Print Button: Opens print-optimized view in new tab */}
 
                     {schedule?.status === "hr_approved" && (
@@ -197,6 +139,11 @@ const HrDutySchedule = () => {
                         >
                           Print
                         </button>
+                      </>
+                    )}
+
+                    {schedule?.status === "director_approved" && (
+                      <>
                         <button
                           onClick={() =>
                             handleViewDutySchedule(
@@ -210,25 +157,6 @@ const HrDutySchedule = () => {
                         </button>
                       </>
                     )}
-
-                    {schedule?.status === "director_approved" && (
-                      <>
-                        <button
-                          onClick={() =>
-                            handleRejectDutySchedule(schedule?._id)
-                          }
-                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                        >
-                          Reject
-                        </button>
-                        <button
-                          onClick={() => handleHrApproval(schedule?._id)}
-                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                        >
-                          Approve
-                        </button>
-                      </>
-                    )}
                   </td>
                 </tr>
               ))
@@ -236,41 +164,6 @@ const HrDutySchedule = () => {
           </tbody>
         </table>
       </div>
-
-      {/* Remarks Modal for Rejection */}
-      {remarksModal.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h2 className="text-lg font-bold mb-2 text-red-600">
-              Reject Duty Schedule
-            </h2>
-            <textarea
-              className="w-full border rounded p-2 mb-4"
-              rows={4}
-              placeholder="Enter remarks (required)"
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => {
-                  setRemarksModal({ open: false, scheduleId: null });
-                  setRemarks("");
-                }}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitRejection}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-              >
-                Submit Rejection
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Pagination  */}
       {totalDutySchedule <= perPage ? (

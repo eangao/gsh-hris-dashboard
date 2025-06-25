@@ -8,6 +8,12 @@ const DirectorDutySchedule = lazy(() =>
   import("../../pages/dashboard/director/dutySchedule/DirectorDutySchedule")
 );
 
+const DirectorDutyScheduleDetails = lazy(() =>
+  import(
+    "../../pages/dashboard/director/dutySchedule/DirectorDutyScheduleDetails"
+  )
+);
+
 // const DepartmentOverview = lazy(() =>
 //   import("../../pages/dashboard/director/DepartmentOverview")
 // );
@@ -60,8 +66,14 @@ const directorRoutes = [
   },
 
   {
-    path: "/director/duty-schedule-approval",
+    path: "/director/duty-schedule",
     element: <DirectorDutySchedule />,
+    role: ["DIRECTOR", "SUPER_ADMIN"],
+  },
+
+  {
+    path: "/director/duty-schedule/:departmentId/view/:scheduleId",
+    element: <DirectorDutyScheduleDetails />,
     role: ["DIRECTOR", "SUPER_ADMIN"],
   },
 

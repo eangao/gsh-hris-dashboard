@@ -1,10 +1,12 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { fetchEmployeeDetailsById } from "../../../../store/Reducers/employeeReducer";
 import { formatDatePH } from "../../../../utils/phDateUtils";
+import { IoMdArrowBack } from "react-icons/io";
 
 const EmployeeDetails = () => {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const { id } = useParams();
   const { employee, loading } = useSelector((state) => state.employee);
@@ -50,6 +52,14 @@ const EmployeeDetails = () => {
     <div className="container mx-auto px-4 py-6 max-w-7xl print:px-0 print:py-0 print:max-w-none">
       {/* Header with Print Button */}
       <div className="flex justify-between items-center mb-6 print:hidden">
+        {/* create a back button to navigate to the schedule list . use react icons. and suggest better approach */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center text-gray-500 hover:text-gray-700 print:hidden"
+        >
+          <IoMdArrowBack className="mr-2" />
+          Back
+        </button>
         <h1 className="text-2xl font-bold text-gray-800">Employee Details</h1>
         {/* <button
           onClick={handlePrint}

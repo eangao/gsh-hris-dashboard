@@ -130,9 +130,8 @@ const EmployeeForm = () => {
     if (successMessage || errorMessage) {
       if (successMessage) {
         toast.success(successMessage);
-        if (role === "HR_ADMIN") {
-          navigate("/hr/employees");
-        }
+
+        navigate(-1);
       }
 
       if (errorMessage) {
@@ -481,7 +480,7 @@ const EmployeeForm = () => {
   // }));
 
   const handleCancel = () => {
-    navigate("/hr/employees");
+    navigate(-1);
   };
 
   return (

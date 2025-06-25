@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -27,6 +27,9 @@ import {
   convertDatePHToUTCISO,
   formatTimeTo12HourPH,
 } from "../../../../utils/phDateUtils";
+
+import { UNSAFE_NavigationContext as NavigationContext } from "react-router-dom";
+import { useContext } from "react";
 
 // Holiday data for 2025
 const HOLIDAYS_2025 = [
@@ -84,6 +87,8 @@ const ManagerDutyScheduleForm = () => {
     entries: [],
     isFinalized: false,
   });
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const weekDays = [
     { day: "Sun", isWeekend: true },
@@ -174,7 +179,7 @@ const ManagerDutyScheduleForm = () => {
     if (successMessage) {
       toast.success(successMessage);
       dispatch(messageClear());
-      navigate("/manager/duty-schedule");
+      navigate(-1);
 
       if (!isEditMode) {
         setLocalDutySchedule({
@@ -470,26 +475,25 @@ const ManagerDutyScheduleForm = () => {
   };
 
   const handleCancel = () => {
-    if (role === "MANAGER") {
-      navigate("/manager/duty-schedule");
+    if (allEntries && allEntries.length > 0) {
+      setShowCancelModal(true);
     } else {
-      alert("You are not authorized to access the schedule list.");
+      navigate(-1);
     }
+  };
+
+  const handleConfirmCancel = () => {
+    setShowCancelModal(false);
+    navigate(-1);
+  };
+
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false);
   };
 
   return (
     <div className="p-4">
       <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
-        {/* create a back button to navigate to the schedule list . use react icons. and sugget better appraoch
-         */}
-        <button
-          onClick={handleCancel}
-          className="flex items-center text-gray-500 hover:text-gray-700"
-        >
-          <IoMdArrowBack className="mr-2" />
-          Back to Schedule List
-        </button>
-
         <h1 className="text-xl font-bold uppercase">
           {isEditMode
             ? `Edit ${
@@ -835,6 +839,35 @@ const ManagerDutyScheduleForm = () => {
           )}
         </div>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-sm mx-4">
+            <h2 className="text-lg font-bold mb-4 text-center">
+              Discard Changes?
+            </h2>
+            <p className="mb-6 text-center text-gray-700">
+              You have unsaved changes. Are you sure you want to cancel and lose
+              your progress?
+            </p>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={handleCloseCancelModal}
+                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                No, Go Back
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              >
+                Yes, Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -11,6 +11,7 @@ import {
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
 import toast from "react-hot-toast";
+import App from "./../../../../App";
 
 const ManagerDutySchedule = () => {
   const navigate = useNavigate();
@@ -119,14 +120,9 @@ const ManagerDutySchedule = () => {
     navigate(`/manager/duty-schedule/${selectedDepartment}/edit/${scheduleId}`);
   };
 
-  //  Add this function to handle submit for approval
-  const handleSubmitForApproval = (scheduleId) => {
-    if (!scheduleId) {
-      alert("Please select a schedule first.");
-      return;
-    }
-
-    dispatch(submitDutyScheduleForApproval(scheduleId));
+  const handleViewDutyScheduleForApproval = (departmentId, scheduleId) => {
+    // Pass both departmentId and scheduleId in path param
+    navigate(`/manager/duty-schedule/${departmentId}/view/${scheduleId}`);
   };
 
   // If no managed departments, show message and do not render the rest of the page
@@ -231,11 +227,17 @@ const ManagerDutySchedule = () => {
                       >
                         Edit
                       </button>
+
                       <button
-                        onClick={() => handleSubmitForApproval(schedule?._id)}
+                        onClick={() =>
+                          handleViewDutyScheduleForApproval(
+                            schedule.department?._id,
+                            schedule?._id
+                          )
+                        }
                         className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                       >
-                        Submit for Approval
+                        Submit For Approval
                       </button>
                     </td>
                   ) : (

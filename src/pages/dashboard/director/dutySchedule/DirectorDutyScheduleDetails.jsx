@@ -1,10 +1,12 @@
 import { useParams } from "react-router-dom";
 import DutyScheduleDetails from "../../../../components/dutySchedule/DutySheduleDetails";
 
-const HrDutyScheduleDetails = () => {
+const DirectorDutyScheduleDetails = () => {
   const { scheduleId } = useParams();
 
-  return <DutyScheduleDetails scheduleId={scheduleId} approvalType="hr" />;
+  return (
+    <DutyScheduleDetails scheduleId={scheduleId} approvalType="director" />
+  );
 };
 
-export default HrDutyScheduleDetails;
+export default DirectorDutyScheduleDetails;

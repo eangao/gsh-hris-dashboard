@@ -107,22 +107,6 @@ const HrDutySchedulePrint = () => {
     setDays(days);
   }, [currentDate]);
 
-  // Handle success/error messages
-  useEffect(() => {
-    if (successMessage) {
-      toast.success(successMessage);
-      dispatch(messageClear());
-      navigate("/hr/duty-schedule");
-    }
-
-    if (errorMessage) {
-      toast.error(errorMessage);
-      dispatch(messageClear());
-    }
-  }, [successMessage, errorMessage]);
-
-  console.log(dutySchedule);
-
   const isHoliday = (date) => {
     if (!date) return false;
     const dateStr = formatDatePH(date);
@@ -210,11 +194,11 @@ const HrDutySchedulePrint = () => {
   };
 
   const handleCancel = () => {
-    navigate("/hr/duty-schedule");
+    navigate(-1);
   };
 
   return (
-    <div className="bg-white p-4 print:p-0">
+    <div className="bg-white p-4 print:p-0 min-h-screen">
       <div className=" mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between print:hidden">
         {/* create a back button to navigate to the schedule list . use react icons. and suggest better approach */}
         <button
@@ -438,29 +422,29 @@ const HrDutySchedulePrint = () => {
               </div>
             </div>
           </div>
+
+          {/* Section Save Buttons */}
+          <div className="flex justify-between items-center mt-6 print:hidden">
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="no-print bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Print Schedule
+              </button>
+            </div>
+          </div>
         </>
       )}
-
-      {/* Section Save Buttons */}
-      <div className="flex justify-between items-center mt-6 print:hidden">
-        <div className="flex space-x-2">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="no-print bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Print Schedule
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

@@ -109,11 +109,11 @@ export const fetchDutySchedulesByDepartment = createAsyncThunk(
 // Add new thunk to submit duty schedule for approval
 export const submitDutyScheduleForApproval = createAsyncThunk(
   "dutySchedule/submitDutyScheduleForApproval",
-  async (id, { rejectWithValue, fulfillWithValue }) => {
+  async ({ id, action, password }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
         `/hris/duty-schedules/${id}/submit`,
-        {},
+        { action, password },
         {
           withCredentials: true,
         }
@@ -174,11 +174,14 @@ export const fetchHrDutySchedulesByStatus = createAsyncThunk(
 // Add new thunk for director approval/rejection
 export const directorApproval = createAsyncThunk(
   "dutySchedule/directorApproval",
-  async ({ id, action, remarks }, { rejectWithValue, fulfillWithValue }) => {
+  async (
+    { id, action, remarks, password },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
       const { data } = await api.post(
         `/hris/duty-schedules/${id}/director-approval`,
-        { action, remarks },
+        { action, remarks, password },
         { withCredentials: true }
       );
       return fulfillWithValue(data);
@@ -193,11 +196,14 @@ export const directorApproval = createAsyncThunk(
 // Add new thunk for HR approval/rejection
 export const hrApproval = createAsyncThunk(
   "dutySchedule/hrApproval",
-  async ({ id, action, remarks }, { rejectWithValue, fulfillWithValue }) => {
+  async (
+    { id, action, remarks, password },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
       const { data } = await api.post(
         `/hris/duty-schedules/${id}/hr-approval`,
-        { action, remarks },
+        { action, remarks, password },
         { withCredentials: true }
       );
       return fulfillWithValue(data);

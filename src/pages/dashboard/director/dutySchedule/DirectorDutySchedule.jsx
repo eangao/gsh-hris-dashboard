@@ -10,9 +10,11 @@ import { fetchManagedCluster } from "../../../../store/Reducers/employeeReducer"
 import { fetchDutySchedulesForDirectorApprovalByCluster } from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
+import { useNavigate } from "react-router-dom";
 
 const DirectorDutySchedule = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { userInfo } = useSelector((state) => state.auth);
   const { employee: employeeId } = userInfo;
@@ -83,6 +85,11 @@ const DirectorDutySchedule = () => {
       dispatch(messageClear());
     }
   }, [successMessage, errorMessage]);
+
+  const handleViewDutySchedule = (departmentId, scheduleId) => {
+    // Pass both departmentId and scheduleId in path param
+    navigate(`/director/duty-schedule/${departmentId}/view/${scheduleId}`);
+  };
 
   // If no managed cluster, show message and do not render the rest of the page
   if (!managedCluster) {
@@ -169,65 +176,29 @@ const DirectorDutySchedule = () => {
                     {schedule?.department?.name}
                   </td>
                   <td className="p-3 capitalize">{schedule?.status}</td>
-                  {schedule?.status === "submitted" ? (
-                    <td className="p-3 flex justify-end space-x-2">
-                      <button
-                        onClick={() => handleRejectDutySchedule(schedule?._id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => handleDirectorApproval(schedule?._id)}
-                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                      >
-                        Approve
-                      </button>
-                    </td>
-                  ) : (
-                    ""
-                  )}
+                  <td className="p-3 capitalize text-right">
+                    {schedule?.status === "submitted" && (
+                      <>
+                        <button
+                          onClick={() =>
+                            handleViewDutySchedule(
+                              schedule.department?._id,
+                              schedule?._id
+                            )
+                          }
+                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                        >
+                          View
+                        </button>
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
-
-      {/* Remarks Modal for Rejection */}
-      {remarksModal.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-            <h2 className="text-lg font-bold mb-2 text-red-600">
-              Reject Duty Schedule
-            </h2>
-            <textarea
-              className="w-full border rounded p-2 mb-4"
-              rows={4}
-              placeholder="Enter remarks (required)"
-              value={remarks}
-              onChange={(e) => setRemarks(e.target.value)}
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => {
-                  setRemarksModal({ open: false, scheduleId: null });
-                  setRemarks("");
-                }}
-                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmitRejection}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-              >
-                Submit Rejection
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Pagination  */}
       {totalDutySchedule <= perPage ? (
