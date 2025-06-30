@@ -23,12 +23,12 @@ export const fetchDutySchedules = createAsyncThunk(
   }
 );
 
-//for edit
 export const fetchDutyScheduleById = createAsyncThunk(
   "dutySchedule/fetchDutyScheduleById",
-  async (id, { rejectWithValue, fulfillWithValue }) => {
+  async ({ scheduleId, employeeId }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.get(`/hris/duty-schedules/${id}`, {
+      const { data } = await api.get(`/hris/duty-schedules/${scheduleId}`, {
+        params: { employeeId }, // 👈 Add employeeId as a query param
         withCredentials: true,
       });
 
@@ -128,15 +128,15 @@ export const submitDutyScheduleForApproval = createAsyncThunk(
 );
 
 // Add new thunk to fetch schedules by cluster
-export const fetchDutySchedulesForDirectorApprovalByCluster = createAsyncThunk(
-  "dutySchedule/fetchDutySchedulesForDirectorApprovalByCluster",
+export const fetchDirectorDutySchedulesByClusterStatus = createAsyncThunk(
+  "dutySchedule/fetchDirectorDutySchedulesByClusterStatus",
   async (
-    { clusterId, perPage, page, searchValue },
+    { clusterId, perPage, page, searchValue, statusFilter },
     { rejectWithValue, fulfillWithValue }
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/duty-schedules/pending-director-approval/${clusterId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/duty-schedules/director-approval/${clusterId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&statusFilter=${statusFilter}`,
         {
           withCredentials: true,
         }
@@ -158,6 +158,29 @@ export const fetchHrDutySchedulesByStatus = createAsyncThunk(
     try {
       const { data } = await api.get(
         `/hris/duty-schedules/hr-approval/?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&statusFilter=${statusFilter}`,
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || { error: "Unknown error" }
+      );
+    }
+  }
+);
+
+// Add new thunk to fetch schedules for HR approval
+export const fetchDutySchedulesByEmployee = createAsyncThunk(
+  "dutySchedule/fetchDutySchedulesByEmployee",
+  async (
+    { employeeId, perPage, page, searchValue },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const { data } = await api.get(
+        `/hris/duty-schedules/employee/${employeeId}?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -304,9 +327,9 @@ const dutyScheduleSlice = createSlice({
       }
     );
 
-    // Handle fetchDutySchedulesForDirectorApprovalByCluster
+    // Handle fetchDirectorDutySchedulesByClusterStatus
     builder.addCase(
-      fetchDutySchedulesForDirectorApprovalByCluster.fulfilled,
+      fetchDirectorDutySchedulesByClusterStatus.fulfilled,
       (state, { payload }) => {
         state.totalDutySchedule = payload.totalDutySchedule;
         state.dutySchedules = payload.dutySchedules;
@@ -316,6 +339,14 @@ const dutyScheduleSlice = createSlice({
     // Handle fetchHrDutySchedulesByStatus
     builder.addCase(
       fetchHrDutySchedulesByStatus.fulfilled,
+      (state, { payload }) => {
+        state.totalDutySchedule = payload.totalDutySchedule;
+        state.dutySchedules = payload.dutySchedules;
+      }
+    );
+    // Handle fetchDutySchedulesByEmployee
+    builder.addCase(
+      fetchDutySchedulesByEmployee.fulfilled,
       (state, { payload }) => {
         state.totalDutySchedule = payload.totalDutySchedule;
         state.dutySchedules = payload.dutySchedules;

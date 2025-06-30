@@ -8,15 +8,18 @@ const ManagerDutySchedule = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutySchedule")
 );
 
+const ManagerDutyScheduleForm = lazy(() =>
+  import("../../pages/dashboard/manager/dutySchedule/ManagerDutyScheduleForm")
+);
+
 const ManagerDutyScheduleDetails = lazy(() =>
   import(
     "../../pages/dashboard/manager/dutySchedule/ManagerDutyScheduleDetails"
   )
 );
-const ManagerDutyScheduleForm = lazy(() =>
-  import("../../pages/dashboard/manager/dutySchedule/ManagerDutyScheduleForm")
+const ManagerDutySchedulePrint = lazy(() =>
+  import("../../pages/dashboard/manager/dutySchedule/ManagerDutySchedulePrint")
 );
-
 // const TeamOverview = lazy(() =>
 //   import("../../pages/dashboard/manager/TeamOverview")
 // );
@@ -88,6 +91,12 @@ const managerRoutes = [
   {
     path: "/manager/duty-schedule/:departmentId/view/:scheduleId",
     element: <ManagerDutyScheduleDetails />,
+    role: ["MANAGER", "SUPER_ADMIN"],
+  },
+
+  {
+    path: "/manager/duty-schedule/print/department/:departmentId/schedule/:scheduleId",
+    element: <ManagerDutySchedulePrint />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
 

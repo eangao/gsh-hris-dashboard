@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   directorApproval,
   fetchDutyScheduleById,
@@ -10,8 +10,6 @@ import {
 } from "../../store/Reducers/dutyScheduleReducer";
 
 import toast from "react-hot-toast";
-import { PropagateLoader } from "react-spinners";
-import { buttonOverrideStyle } from "../../utils/utils";
 import { FaTimes } from "react-icons/fa";
 import { IoMdArrowBack } from "react-icons/io";
 import {
@@ -37,7 +35,14 @@ const HOLIDAYS_2025 = [
   { date: "2025-12-30", name: "Rizal Day" },
 ];
 
-const DutyScheduleDetails = ({ scheduleId, approvalType }) => {
+//approvalType = "" if employee
+// is viewing their own schedule, otherwise it will be the employeeId of the schedule being viewed
+// approvalType = "hr" | "director" | "manager" to determine the type
+const DutyScheduleDetails = ({
+  scheduleId,
+  approvalType = "", // used when viewing a schedule for approval, empty when employee is viewing their own schedule
+  employeeId = "", // used when employee is viewing their own schedule
+}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -71,7 +76,7 @@ const DutyScheduleDetails = ({ scheduleId, approvalType }) => {
 
   // Load initial data and duty schedule if in edit mode
   useEffect(() => {
-    dispatch(fetchDutyScheduleById(scheduleId));
+    dispatch(fetchDutyScheduleById({ scheduleId, employeeId }));
   }, [dispatch, scheduleId]);
 
   // Update local state when duty schedule data is loaded
@@ -381,34 +386,39 @@ const DutyScheduleDetails = ({ scheduleId, approvalType }) => {
             </div>
           </div>
           {/* Section Save Buttons */}
-          <div className="flex justify-between items-center mt-6 print:hidden">
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                disabled={loading}
-              >
-                Cancel
-              </button>
-              {approvalType !== "manager" && (
+
+          {!employeeId && (
+            <div className="flex justify-between items-center mt-6 print:hidden">
+              <div className="flex space-x-2">
                 <button
-                  onClick={() => handleRejectDutySchedule(scheduleId)}
-                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                  type="button"
+                  onClick={handleCancel}
+                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                   disabled={loading}
                 >
-                  Reject
+                  Cancel
                 </button>
-              )}
-              <button
-                onClick={() => handleApproval(scheduleId)}
-                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                disabled={loading}
-              >
-                {approvalType === "manager" ? "Submit for Approval" : "Approve"}
-              </button>
+                {approvalType !== "manager" && (
+                  <button
+                    onClick={() => handleRejectDutySchedule(scheduleId)}
+                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                    disabled={loading}
+                  >
+                    Reject
+                  </button>
+                )}
+                <button
+                  onClick={() => handleApproval(scheduleId)}
+                  className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                  disabled={loading}
+                >
+                  {approvalType === "manager"
+                    ? "Submit for Approval"
+                    : "Approve"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Password Confirmation Modal */}
           {passwordModal.open && (

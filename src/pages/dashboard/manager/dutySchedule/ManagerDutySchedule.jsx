@@ -6,12 +6,10 @@ import { fetchManagedDepartments } from "../../../../store/Reducers/employeeRedu
 import {
   fetchDutySchedulesByDepartment,
   messageClear,
-  submitDutyScheduleForApproval,
 } from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
 import toast from "react-hot-toast";
-import App from "./../../../../App";
 
 const ManagerDutySchedule = () => {
   const navigate = useNavigate();
@@ -34,6 +32,9 @@ const ManagerDutySchedule = () => {
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalRemarks, setModalRemarks] = useState("");
+  const [modalTitle, setModalTitle] = useState("");
 
   useEffect(() => {
     dispatch(fetchManagedDepartments(employeeId)); // fetch managed departments for this employee
@@ -125,6 +126,12 @@ const ManagerDutySchedule = () => {
     navigate(`/manager/duty-schedule/${departmentId}/view/${scheduleId}`);
   };
 
+  const handlePrintDutySchedule = (departmentId, scheduleId) => {
+    navigate(
+      `/manager/duty-schedule/print/department/${departmentId}/schedule/${scheduleId}`
+    );
+  };
+
   // If no managed departments, show message and do not render the rest of the page
   if (!managedDepartments || managedDepartments.length === 0) {
     return (
@@ -144,23 +151,41 @@ const ManagerDutySchedule = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
+      {/* Modal for remarks */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              onClick={() => setModalOpen(false)}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 className="text-lg font-semibold mb-2">{modalTitle}</h2>
+            <div className="text-gray-800 whitespace-pre-line break-words max-h-96 overflow-y-auto">
+              {modalRemarks}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between mb-4">
         <h1 className="text-2xl font-bold text-center">Duty Schedule</h1>
         <div className="flex items-center space-x-2">
           {managedDepartments && managedDepartments.length === 1 ? (
-            <span className="font-semibold px-3 py-2 bg-gray-100 rounded">
+            <span className="font-semibold px-3 py-2 bg-gray-100 rounded uppercase">
               {managedDepartments[0].name}
             </span>
           ) : (
             <select
-              className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 uppercase"
               value={selectedDepartment}
               onChange={handleDepartmentChange}
             >
               <option value="">Select Department</option>
               {managedDepartments &&
                 managedDepartments.map((dept) => (
-                  <option key={dept._id} value={dept._id}>
+                  <option key={dept._id} value={dept._id} className="uppercase">
                     {dept.name}
                   </option>
                 ))}
@@ -216,7 +241,81 @@ const ManagerDutySchedule = () => {
                   <td className="p-3 capitalize">
                     {schedule?.department?.name}
                   </td>
-                  <td className="p-3 capitalize">{schedule?.status}</td>
+                  <td className="p-3 capitalize">
+                    {schedule?.status === "draft" ? (
+                      "Draft"
+                    ) : schedule?.status === "submitted" ? (
+                      "For Cluster Approval"
+                    ) : schedule?.status === "director_approved" ? (
+                      "For HR Approval"
+                    ) : schedule?.status === "hr_approved" ? (
+                      "Approved"
+                    ) : schedule?.status === "director_rejected" ? (
+                      <span className="flex items-center space-x-1 text-red-500">
+                        Rejected By Cluster Head
+                        {schedule?.directorApproval?.remarks && (
+                          <button
+                            type="button"
+                            className="ml-1 cursor-pointer group relative text-gray-500 hover:text-blue-600 focus:outline-none"
+                            onClick={() => {
+                              setModalRemarks(schedule.directorApproval.remarks);
+                              setModalTitle("Remarks from Cluster Head");
+                              setModalOpen(true);
+                            }}
+                            aria-label="View Remarks"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </span>
+                    ) : schedule?.status === "hr_rejected" ? (
+                      <span className="flex items-center space-x-1 text-red-500">
+                        Rejected By HR
+                        {schedule?.hrApproval?.remarks && (
+                          <button
+                            type="button"
+                            className="ml-1 cursor-pointer group relative text-gray-500 hover:text-blue-600 focus:outline-none"
+                            onClick={() => {
+                              setModalRemarks(schedule.hrApproval.remarks);
+                              setModalTitle("Remarks from HR");
+                              setModalOpen(true);
+                            }}
+                            aria-label="View Remarks"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </span>
+                    ) : (
+                      ""
+                    )}
+                  </td>
                   {schedule?.status === "draft" ||
                   schedule?.status === "director_rejected" ||
                   schedule?.status === "hr_rejected" ? (
@@ -241,7 +340,25 @@ const ManagerDutySchedule = () => {
                       </button>
                     </td>
                   ) : (
-                    <td className="p-3"></td>
+                    <td className="p-3 text-right">
+                      {schedule?.status === "hr_approved" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handlePrintDutySchedule(
+                                schedule.department?._id,
+                                schedule?._id
+                              )
+                            }
+                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
+                            disabled={loading}
+                          >
+                            Print
+                          </button>
+                        </>
+                      )}
+                    </td>
                   )}
                 </tr>
               ))

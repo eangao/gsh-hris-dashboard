@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  directorApproval,
-  messageClear,
-} from "../../../../store/Reducers/dutyScheduleReducer";
-import toast from "react-hot-toast";
 
 import { fetchManagedCluster } from "../../../../store/Reducers/employeeReducer";
-import { fetchDutySchedulesForDirectorApprovalByCluster } from "../../../../store/Reducers/dutyScheduleReducer";
+import { fetchDirectorDutySchedulesByClusterStatus } from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
 import { useNavigate } from "react-router-dom";
@@ -28,14 +23,8 @@ const DirectorDutySchedule = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
-  const [remarksModal, setRemarksModal] = useState({
-    open: false,
-    scheduleId: null,
-  });
-  const [remarks, setRemarks] = useState("");
-  const { successMessage, errorMessage } = useSelector(
-    (state) => state.dutySchedule
-  );
+
+  const [statusFilter, setStatusFilter] = useState("submitted");
 
   useEffect(() => {
     dispatch(fetchManagedCluster(employeeId)); // fetch managed cluster for this director
@@ -52,43 +41,39 @@ const DirectorDutySchedule = () => {
   useEffect(() => {
     if (managedCluster && managedCluster._id) {
       dispatch(
-        fetchDutySchedulesForDirectorApprovalByCluster({
+        fetchDirectorDutySchedulesByClusterStatus({
           clusterId: managedCluster._id,
           perPage: parseInt(perPage),
           page: parseInt(currentPage),
           searchValue,
+          statusFilter,
         })
       );
     }
-  }, [currentPage, perPage, searchValue, managedCluster, dispatch]);
+  }, [
+    currentPage,
+    perPage,
+    searchValue,
+    managedCluster,
+    statusFilter,
+    dispatch,
+  ]);
 
-  useEffect(() => {
-    if (successMessage) {
-      toast.success(successMessage);
-      dispatch(messageClear());
-      setRemarksModal({ open: false, scheduleId: null });
-      setRemarks("");
-      // Optionally, refetch schedules here
-      if (managedCluster && managedCluster._id) {
-        dispatch(
-          fetchDutySchedulesForDirectorApprovalByCluster({
-            clusterId: managedCluster._id,
-            perPage: parseInt(perPage),
-            page: parseInt(currentPage),
-            searchValue,
-          })
-        );
-      }
-    }
-    if (errorMessage) {
-      toast.error(errorMessage);
-      dispatch(messageClear());
-    }
-  }, [successMessage, errorMessage]);
+  // Handler for status tab click
+  const handleStatusTabClick = (status) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page on tab change
+  };
 
   const handleViewDutySchedule = (departmentId, scheduleId) => {
     // Pass both departmentId and scheduleId in path param
     navigate(`/director/duty-schedule/${departmentId}/view/${scheduleId}`);
+  };
+
+  const handlePrintDutySchedule = (departmentId, scheduleId) => {
+    navigate(
+      `/director/duty-schedule/print/department/${departmentId}/schedule/${scheduleId}`
+    );
   };
 
   // If no managed cluster, show message and do not render the rest of the page
@@ -105,33 +90,43 @@ const DirectorDutySchedule = () => {
     );
   }
 
-  const handleDirectorApproval = (scheduleId) => {
-    dispatch(directorApproval({ id: scheduleId, action: "approve" }));
-  };
-
-  const handleRejectDutySchedule = (scheduleId) => {
-    setRemarksModal({ open: true, scheduleId });
-  };
-
-  const handleSubmitRejection = () => {
-    if (!remarks.trim()) {
-      toast.error("Remarks are required for rejection.");
-      return;
-    }
-    dispatch(
-      directorApproval({
-        id: remarksModal.scheduleId,
-        action: "reject",
-        remarks,
-      })
-    );
-  };
-
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-between mb-2">
+        {/* Status Tabs - above the table for better UX */}
+        <div className="flex items-center space-x-2 mb-0">
+          <button
+            className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
+              statusFilter === "submitted"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            onClick={() => handleStatusTabClick("submitted")}
+          >
+            For Cluster Approval
+          </button>
+          <button
+            className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
+              statusFilter === "director_approved"
+                ? "bg-yellow-500 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            onClick={() => handleStatusTabClick("director_approved")}
+          >
+            For HR Approval
+          </button>
+          <button
+            className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
+              statusFilter === "hr_approved"
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            onClick={() => handleStatusTabClick("hr_approved")}
+          >
+            Approved
+          </button>
+        </div>
         <h1 className="text-2xl font-bold text-center">Duty Schedule</h1>
-        <div className="flex items-center space-x-2"></div>
       </div>
 
       <div className="mb-4">
@@ -175,7 +170,15 @@ const DirectorDutySchedule = () => {
                   <td className="p-3 capitalize">
                     {schedule?.department?.name}
                   </td>
-                  <td className="p-3 capitalize">{schedule?.status}</td>
+                  <td className="p-3 capitalize">
+                    {schedule?.status === "submitted"
+                      ? "For Cluster Approval"
+                      : schedule?.status === "director_approved"
+                      ? "For HR Approval"
+                      : schedule?.status === "hr_approved"
+                      ? "Approved"
+                      : ""}
+                  </td>
                   <td className="p-3 capitalize text-right">
                     {schedule?.status === "submitted" && (
                       <>
@@ -189,6 +192,24 @@ const DirectorDutySchedule = () => {
                           className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                         >
                           View
+                        </button>
+                      </>
+                    )}
+
+                    {schedule?.status === "hr_approved" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handlePrintDutySchedule(
+                              schedule.department?._id,
+                              schedule?._id
+                            )
+                          }
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
+                          disabled={loading}
+                        >
+                          Print
                         </button>
                       </>
                     )}

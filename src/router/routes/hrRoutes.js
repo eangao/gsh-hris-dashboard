@@ -99,7 +99,7 @@ const hrRoutes = [
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "/hr/duty-schedule/print/:scheduleId",
+    path: "/hr/duty-schedule/print/department/:departmentId/schedule/:scheduleId",
     element: <HrDutySchedulePrint />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },

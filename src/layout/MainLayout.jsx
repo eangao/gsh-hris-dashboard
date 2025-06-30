@@ -9,9 +9,19 @@ const MainLayout = () => {
 
   // Pages where you want to hide the Header and Sidebar
   // Add print route prefix to hide layout for print pages
+  // Define all routes where layout should be hidden
+  const hideLayoutRoutes = ["/change-password"];
+  const hideLayoutPrefixes = [
+    "/hr/duty-schedule/print",
+    "/manager/duty-schedule/print",
+    "/director/duty-schedule/print",
+    "/employee/duty-schedule/print",
+    "/admin/duty-schedule/print",
+  ];
+
   const hideLayout =
-    location.pathname === "/change-password" ||
-    location.pathname.startsWith("/hr/duty-schedule/print");
+    hideLayoutRoutes.includes(location.pathname) ||
+    hideLayoutPrefixes.some((prefix) => location.pathname.startsWith(prefix));
 
   return (
     <div className="bg-[#cdcae9] w-full min-h-screen">

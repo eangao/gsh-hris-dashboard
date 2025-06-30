@@ -18,7 +18,7 @@ const HrDutySchedule = () => {
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(5);
 
-  const [statusFilter, setStatusFilter] = useState("pending_hr_approval");
+  const [statusFilter, setStatusFilter] = useState("director_approved");
 
   // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
@@ -51,33 +51,39 @@ const HrDutySchedule = () => {
     navigate(`/hr/duty-schedule/${departmentId}/view/${scheduleId}`);
   };
 
+  const handlePrintDutySchedule = (departmentId, scheduleId) => {
+    navigate(
+      `/hr/duty-schedule/print/department/${departmentId}/schedule/${scheduleId}`
+    );
+  };
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex justify-between mb-4">
+    <div className="p-6 pt-1 max-w-7xl mx-auto">
+      <div className="flex justify-between mb-2">
+        {/* Status Tabs - above the table for better UX */}
+        <div className="flex items-center space-x-2 mb-0">
+          <button
+            className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
+              statusFilter === "director_approved"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            onClick={() => handleStatusTabClick("director_approved")}
+          >
+            For Approval
+          </button>
+          <button
+            className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
+              statusFilter === "hr_approved"
+                ? "bg-green-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+            onClick={() => handleStatusTabClick("hr_approved")}
+          >
+            Approved
+          </button>
+        </div>
         <h1 className="text-2xl font-bold text-center">Duty Schedule</h1>
-      </div>
-      {/* Status Tabs - above the table for better UX */}
-      <div className="flex items-center space-x-2 mb-4">
-        <button
-          className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
-            statusFilter === "pending_hr_approval"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-          onClick={() => handleStatusTabClick("pending_hr_approval")}
-        >
-          For Approval
-        </button>
-        <button
-          className={`px-4 py-2 rounded font-medium transition-colors duration-150 ${
-            statusFilter === "hr_approved"
-              ? "bg-green-600 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-          onClick={() => handleStatusTabClick("hr_approved")}
-        >
-          Approved
-        </button>
       </div>
 
       <div className="mb-4">
@@ -121,7 +127,13 @@ const HrDutySchedule = () => {
                   <td className="p-3 capitalize">
                     {schedule?.department?.name}
                   </td>
-                  <td className="p-3 capitalize">{schedule?.status}</td>
+                  <td className="p-3 capitalize">
+                    {schedule?.status === "director_approved"
+                      ? "For HR Approval"
+                      : schedule?.status === "hr_approved"
+                      ? "Approved"
+                      : ""}
+                  </td>
                   <td className="p-3 capitalize text-right">
                     {/* Print Button: Opens print-optimized view in new tab */}
 
@@ -130,8 +142,9 @@ const HrDutySchedule = () => {
                         <button
                           type="button"
                           onClick={() =>
-                            navigate(
-                              `/hr/duty-schedule/print/${schedule?._id}?preview=1`
+                            handlePrintDutySchedule(
+                              schedule.department?._id,
+                              schedule?._id
                             )
                           }
                           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
