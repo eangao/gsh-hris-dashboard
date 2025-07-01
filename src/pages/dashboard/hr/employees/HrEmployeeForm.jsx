@@ -22,9 +22,9 @@ import {
   getTodayDatePH,
 } from "../../../../utils/phDateUtils";
 
-const EmployeeForm = () => {
-  const { id } = useParams(); // This will be undefined for add
-  const isEditMode = !!id;
+const HrEmployeeForm = () => {
+  const { employeeId } = useParams(); // This will be undefined for add
+  const isEditMode = !!employeeId;
 
   const { minDate, maxDate } = getBirthdateLimits();
 
@@ -91,9 +91,9 @@ const EmployeeForm = () => {
     dispatch(fetchAllClusters());
 
     if (isEditMode) {
-      dispatch(fetchEmployeeById(id)); // Assuming you have this action
+      dispatch(fetchEmployeeById(employeeId)); // Assuming you have this action
     }
-  }, [dispatch, isEditMode, id]);
+  }, [dispatch, isEditMode, employeeId]);
 
   useEffect(() => {
     if (isEditMode && employee) {
@@ -195,7 +195,7 @@ const EmployeeForm = () => {
 
     // ✅ Final dispatch
     if (isEditMode) {
-      dispatch(updateEmployee({ id, employeeData: dataToSubmit }));
+      dispatch(updateEmployee({ employeeId, employeeData: dataToSubmit }));
     } else {
       dispatch(createEmployee(dataToSubmit));
     }
@@ -1598,4 +1598,4 @@ const EmployeeForm = () => {
   );
 };
 
-export default EmployeeForm;
+export default HrEmployeeForm;

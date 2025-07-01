@@ -1,21 +1,25 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useParams } from "react-router-dom";
-import { fetchEmployeeDetailsById } from "../../../../store/Reducers/employeeReducer";
-import { formatDatePH } from "../../../../utils/phDateUtils";
+import { useNavigate } from "react-router-dom";
+import { fetchEmployeeDetailsById } from "../../store/Reducers/employeeReducer";
+import {
+  formatDatePH,
+  getAgePH,
+  getAgePHFromISO,
+} from "../../utils/phDateUtils";
 import { IoMdArrowBack } from "react-icons/io";
 
-const EmployeeDetails = () => {
+const EmployeeDetails = ({ employeeId }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { id } = useParams();
+
   const { employee, loading } = useSelector((state) => state.employee);
 
   useEffect(() => {
-    if (id) {
-      dispatch(fetchEmployeeDetailsById(id));
+    if (employeeId) {
+      dispatch(fetchEmployeeDetailsById(employeeId));
     }
-  }, [dispatch, id]);
+  }, [dispatch, employeeId]);
 
   const handlePrint = () => {
     window.print();
@@ -127,6 +131,16 @@ const EmployeeDetails = () => {
                       employee.personalInformation?.birthdate,
                       "MMM D, YYYY"
                     )}
+                  />
+                  <InfoItem
+                    label="Age"
+                    value={
+                      employee.personalInformation?.birthdate
+                        ? getAgePHFromISO(
+                            employee.personalInformation.birthdate
+                          ) + " Years Old"
+                        : "-"
+                    }
                   />
                   <InfoItem
                     label="Religion"

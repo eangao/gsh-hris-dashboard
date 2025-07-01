@@ -11,7 +11,7 @@ import Pagination from "../../../../components/Pagination";
 import { FaTrashAlt } from "react-icons/fa";
 import toast from "react-hot-toast";
 
-const EmployeeManagement = () => {
+const HrEmployees = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -263,4 +263,4 @@ const EmployeeManagement = () => {
   );
 };
 
-export default EmployeeManagement;
+export default HrEmployees;

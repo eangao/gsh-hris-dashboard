@@ -1,14 +1,14 @@
 import { lazy } from "react";
 
 const HrDashboard = lazy(() => import("../../pages/dashboard/hr/HrDashboard"));
-const EmployeeManagement = lazy(() =>
-  import("../../pages/dashboard/hr/employees/EmployeeManagement")
+const HrEmployees = lazy(() =>
+  import("../../pages/dashboard/hr/employees/HrEmployees")
 );
-const EmployeeForm = lazy(() =>
-  import("../../pages/dashboard/hr/employees/EmployeeForm")
+const HrEmployeeForm = lazy(() =>
+  import("../../pages/dashboard/hr/employees/HrEmployeeForm")
 );
-const EmployeeDetails = lazy(() =>
-  import("../../pages/dashboard/hr/employees/EmployeeDetails")
+const HrEmployeeDetails = lazy(() =>
+  import("../../pages/dashboard/hr/employees/HrEmployeeDetails")
 );
 
 const HrDutySchedule = lazy(() =>
@@ -69,22 +69,22 @@ const hrRoutes = [
   },
   {
     path: "/hr/employees",
-    element: <EmployeeManagement />,
+    element: <HrEmployees />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   {
     path: "/hr/employees/add",
-    element: <EmployeeForm />,
+    element: <HrEmployeeForm />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "/hr/employees/edit/:id",
-    element: <EmployeeForm />,
+    path: "/hr/employees/edit/:employeeId",
+    element: <HrEmployeeForm />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
   {
-    path: "/hr/employees/details/:id",
-    element: <EmployeeDetails />,
+    path: "/hr/employees/details/:employeeId",
+    element: <HrEmployeeDetails />,
     role: ["HR_ADMIN", "SUPER_ADMIN"],
   },
 

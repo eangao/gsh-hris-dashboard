@@ -1,13 +1,11 @@
-
-import React from 'react';
+import EmployeeDetails from "../../../components/employee/EmployeeDetails";
+import { useSelector } from "react-redux";
 
 const MyProfile = () => {
-  return (
-    <div>
-      <h2>MyProfile Page</h2>
-      <p>This is the MyProfile page.</p>
-    </div>
-  );
+  const { userInfo } = useSelector((state) => state.auth);
+  const { employee: employeeId } = userInfo;
+
+  return <EmployeeDetails employeeId={employeeId} />;
 };
 
 export default MyProfile;

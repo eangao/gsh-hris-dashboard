@@ -216,3 +216,34 @@ export const formatTimeTo12HourPH = (timeValue) => {
   const options = { hour: "numeric", minute: "numeric", hour12: true };
   return date.toLocaleTimeString([], options);
 };
+
+/**
+ * Formats a Date object to PH-local date and 12-hour time string (e.g., 'July 1, 2025, 2:30 PM').
+ * @param {Date} date - JS Date object
+ * @param {string} dateFormat - moment.js format string for date (default: 'MMMM D, YYYY')
+ * @returns {string} - Formatted date and time string in PH timezone
+ */
+export const formatDateTimePH = (date, dateFormat = "MMMM D, YYYY") => {
+  if (!date) return "";
+  const m = moment(date).tz("Asia/Manila");
+  const dateStr = m.format(dateFormat);
+  const timeStr = m.format("h:mm A");
+  return `${dateStr}, ${timeStr}`;
+};
+
+/**
+ * Calculates age based on birthdate (ISO string or date string), using Asia/Manila timezone.
+ * Accepts ISO string (e.g., '1991-07-30T16:00:00.000Z'), 'YYYY-MM-DD', or Date object.
+ * Returns a user-friendly string or "Invalid date" if input is invalid.
+ *
+ * @param {string|Date} birthdate - ISO string, 'YYYY-MM-DD', or Date
+ * @returns {string} - e.g., '42 years old'
+ */
+export const getAgePHFromISO = (birthdate) => {
+  if (!birthdate) return "Invalid date";
+  const m = moment.tz(birthdate, "Asia/Manila");
+  if (!m.isValid()) return "Invalid date";
+  const todayPH = moment.tz("Asia/Manila");
+  const age = todayPH.diff(m, "years");
+  return `${age} `;
+};

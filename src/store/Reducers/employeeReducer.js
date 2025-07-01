@@ -120,11 +120,18 @@ export const createEmployee = createAsyncThunk(
 
 export const updateEmployee = createAsyncThunk(
   "employee/updateEmployee",
-  async ({ id, employeeData }, { rejectWithValue, fulfillWithValue }) => {
+  async (
+    { employeeId, employeeData },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
-      const { data } = await api.put(`/hris/employees/${id}`, employeeData, {
-        withCredentials: true,
-      });
+      const { data } = await api.put(
+        `/hris/employees/${employeeId}`,
+        employeeData,
+        {
+          withCredentials: true,
+        }
+      );
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);

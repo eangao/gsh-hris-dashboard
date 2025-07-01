@@ -5,13 +5,13 @@ import { OptimizedDutyScheduleDetails } from "../../../../components/dutySchedul
 const ManagerDutyScheduleDetails = () => {
   const { scheduleId } = useParams();
 
-  // return <DutyScheduleDetails scheduleId={scheduleId} approvalType="manager" />;
-  return (
-    <OptimizedDutyScheduleDetails
-      scheduleId={scheduleId}
-      approvalType="manager"
-    />
-  );
+  return <DutyScheduleDetails scheduleId={scheduleId} approvalType="manager" />;
+  // return (
+  //   <OptimizedDutyScheduleDetails
+  //     scheduleId={scheduleId}
+  //     approvalType="manager"
+  //   />
+  // );
 };
 
 export default ManagerDutyScheduleDetails;

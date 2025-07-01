@@ -34,7 +34,7 @@ const MainLayout = () => {
 
       <div
         className={`${
-          !hideLayout ? "ml-0 lg:ml-[260px] pt-[95px]" : ""
+          !hideLayout ? "ml-0 lg:ml-[260px] pt-14" : ""
         } transition-all`}
       >
         <Outlet />

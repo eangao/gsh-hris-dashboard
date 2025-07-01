@@ -81,6 +81,20 @@ const ManagerDutySchedule = () => {
     }
   }, [managedDepartments, selectedDepartment]);
 
+  // Set first department as selected and trigger handleDepartmentChange on first load
+  useEffect(() => {
+    if (
+      managedDepartments &&
+      managedDepartments.length > 0 &&
+      !selectedDepartment
+    ) {
+      setSelectedDepartment(managedDepartments[0]._id);
+      // Simulate event for handleDepartmentChange
+      handleDepartmentChange({ target: { value: managedDepartments[0]._id } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [managedDepartments]);
+
   const getDutySchedulesByDepartment = () => {
     dispatch(
       fetchDutySchedulesByDepartment({
@@ -182,13 +196,11 @@ const ManagerDutySchedule = () => {
               value={selectedDepartment}
               onChange={handleDepartmentChange}
             >
-              <option value="">Select Department</option>
-              {managedDepartments &&
-                managedDepartments.map((dept) => (
-                  <option key={dept._id} value={dept._id} className="uppercase">
-                    {dept.name}
-                  </option>
-                ))}
+              {managedDepartments.map((dept, idx) => (
+                <option key={dept._id} value={dept._id} className="uppercase">
+                  {dept.name}
+                </option>
+              ))}
             </select>
           )}
           <button
@@ -258,7 +270,9 @@ const ManagerDutySchedule = () => {
                             type="button"
                             className="ml-1 cursor-pointer group relative text-gray-500 hover:text-blue-600 focus:outline-none"
                             onClick={() => {
-                              setModalRemarks(schedule.directorApproval.remarks);
+                              setModalRemarks(
+                                schedule.directorApproval.remarks
+                              );
                               setModalTitle("Remarks from Cluster Head");
                               setModalOpen(true);
                             }}
