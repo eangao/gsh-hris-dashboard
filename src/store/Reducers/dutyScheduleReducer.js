@@ -25,7 +25,12 @@ export const fetchDutySchedules = createAsyncThunk(
 
 export const fetchDutyScheduleById = createAsyncThunk(
   "dutySchedule/fetchDutyScheduleById",
-  async ({ scheduleId, employeeId }, { rejectWithValue, fulfillWithValue }) => {
+  async (
+    //employeeId is optional, so we set a default value
+    // This allows fetching a specific employee's schedule within the duty schedule
+    { scheduleId, employeeId = "" },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
       const { data } = await api.get(`/hris/duty-schedules/${scheduleId}`, {
         params: { employeeId }, // 👈 Add employeeId as a query param

@@ -8,6 +8,12 @@ const ManagerDutySchedule = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutySchedule")
 );
 
+const OptimizedManagerDutySchedule = lazy(() =>
+  import(
+    "../../pages/dashboard/manager/dutySchedule/OptimizedManagerDutySchedule"
+  )
+);
+
 const ManagerDutyScheduleForm = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutyScheduleForm")
 );
@@ -74,6 +80,7 @@ const managerRoutes = [
   {
     path: "/manager/duty-schedule",
     element: <ManagerDutySchedule />,
+    // element: <OptimizedManagerDutySchedule />,
     role: ["MANAGER", "SUPER_ADMIN"],
   },
 

@@ -26,6 +26,7 @@ import {
   getCalendarDaysInRangePH,
   convertDatePHToUTCISO,
   formatTimeTo12HourPH,
+  formatMonthYearPH,
 } from "../../../../utils/phDateUtils";
 
 import { UNSAFE_NavigationContext as NavigationContext } from "react-router-dom";
@@ -73,7 +74,7 @@ const ManagerDutyScheduleForm = () => {
   const [days, setDays] = useState([]);
 
   const [allEntries, setAllEntries] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [employeeInput, setEmployeeInput] = useState("");
   const [selectedShift, setSelectedShift] = useState("");
@@ -108,7 +109,8 @@ const ManagerDutyScheduleForm = () => {
       dispatch(fetchDepartmentById(departmentId));
     }
     if (isEditMode) {
-      dispatch(fetchDutyScheduleById(scheduleId));
+      // If in edit mode, fetch the duty schedule by ID
+      dispatch(fetchDutyScheduleById({ scheduleId }));
     }
   }, [dispatch, isEditMode, scheduleId, departmentId]);
 
@@ -226,7 +228,7 @@ const ManagerDutyScheduleForm = () => {
   const handleDateClick = (date) => {
     if (!date) return;
     setSelectedDate(date);
-    setIsModalOpen(true);
+    setShowAddModal(true);
     setEmployeeInput("");
     setSelectedShift("");
     setDescription("");
@@ -364,11 +366,12 @@ const ManagerDutyScheduleForm = () => {
     }
 
     setAllEntries(entries);
-    setIsModalOpen(false);
+    setShowAddModal(false);
 
     // Optional: reset form values if needed
     setEmployeeInput(null);
     setSelectedShift(null);
+    setSelectedDate(null);
     setDescription("");
   };
 
@@ -491,6 +494,197 @@ const ManagerDutyScheduleForm = () => {
     setShowCancelModal(false);
   };
 
+  // Drag and Drop State
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverDate, setDragOverDate] = useState(null);
+
+  // Drag and Drop Handlers
+  const handleDragStart = (e, type, data) => {
+    setDraggedItem({ type, data });
+    e.dataTransfer.effectAllowed = "copy";
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverDate(null);
+  };
+
+  const handleDragOver = (e, date) => {
+    e.preventDefault();
+    setDragOverDate(formatDatePH(date));
+  };
+
+  const handleDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverDate(null);
+    }
+  };
+
+  const handleDrop = (e, targetDate) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    if (!draggedItem || !targetDate) {
+      setDraggedItem(null);
+      return;
+    }
+
+    console.log("Dragged Item:", draggedItem);
+    if (draggedItem.type === "employee") {
+      // Only add the single employee to the target date
+      const emp = draggedItem.data;
+      // Defensive: ensure emp has id and shiftId
+      if (!emp || !emp.id || !emp.shiftId) {
+        setDraggedItem(null);
+        return;
+      }
+      setSelectedDate(targetDate);
+      setEmployeeInput(emp.id);
+      setSelectedShift(emp.shiftId);
+      setDescription(emp.description || "");
+      setTimeout(() => {
+        handleEmployeeAdd();
+        setEmployeeInput(null);
+        setSelectedShift(null);
+        setSelectedDate(null);
+        setDescription("");
+        setDraggedItem(null);
+      }, 0);
+    } else if (draggedItem.type === "group") {
+      // Add each employee in the group to the target date, one by one
+      const group = draggedItem.data;
+      if (!group || !Array.isArray(group.employees) || !group.shiftId) {
+        setDraggedItem(null);
+        return;
+      }
+      group.employees.forEach((emp, idx) => {
+        setTimeout(() => {
+          setSelectedDate(targetDate);
+          setEmployeeInput(emp.id);
+          setSelectedShift(group.shiftId);
+          setDescription(emp.description || "");
+          handleEmployeeAdd();
+          setEmployeeInput(null);
+          setSelectedShift(null);
+          setSelectedDate(null);
+          setDescription("");
+          if (idx === group.employees.length - 1) setDraggedItem(null);
+        }, idx * 10);
+      });
+    } else if (draggedItem.type === "dateBox") {
+      // Add all employees from the source date to the target date, preserving shift/group
+      const sourceDate = draggedItem.data.date;
+      const sourceDateKey = formatDatePH(sourceDate);
+      const targetDateKey = formatDatePH(targetDate);
+      let entries = JSON.parse(JSON.stringify(allEntries));
+      // Find source entry
+      const sourceEntry = entries.find(
+        (e) => formatDatePH(e.date) === sourceDateKey
+      );
+      if (!sourceEntry || !sourceEntry.employeeSchedules.length) {
+        setDraggedItem(null);
+        return;
+      }
+      // Find or create target entry
+      let targetEntry = entries.find(
+        (e) => formatDatePH(e.date) === targetDateKey
+      );
+      if (!targetEntry) {
+        targetEntry = { date: targetDate, employeeSchedules: [] };
+        entries.push(targetEntry);
+      }
+      // Get all employee IDs already scheduled for this date
+      const scheduledEmpIds = new Set(
+        targetEntry.employeeSchedules.map((es) =>
+          typeof es.employee === "string" ? es.employee : es.employee?._id
+        )
+      );
+      sourceEntry.employeeSchedules.forEach((sched) => {
+        const empId =
+          typeof sched.employee === "string"
+            ? sched.employee
+            : sched.employee?._id;
+        if (!scheduledEmpIds.has(empId)) {
+          targetEntry.employeeSchedules.push({ ...sched });
+          scheduledEmpIds.add(empId);
+        }
+      });
+      setAllEntries(entries);
+      setDraggedItem(null);
+    }
+  };
+
+  // Copy To Modal State
+  const [showCopyToModal, setShowCopyToModal] = useState(false);
+  const [copySourceDate, setCopySourceDate] = useState(null);
+  const [copyTargetDates, setCopyTargetDates] = useState([]);
+
+  // Open Copy To Modal on right click
+  const handleDateBoxContextMenu = (e, date) => {
+    e.preventDefault();
+    setCopySourceDate(date);
+    setCopyTargetDates([]);
+    setShowCopyToModal(true);
+  };
+
+  // Toggle date selection in modal
+  const handleToggleCopyTargetDate = (date) => {
+    setCopyTargetDates((prev) => {
+      const exists = prev.some((d) => formatDatePH(d) === formatDatePH(date));
+      if (exists) {
+        return prev.filter((d) => formatDatePH(d) !== formatDatePH(date));
+      } else {
+        return [...prev, date];
+      }
+    });
+  };
+
+  // Perform the copy to selected dates
+  const handleCopyToDates = () => {
+    if (!copySourceDate || copyTargetDates.length === 0) {
+      setShowCopyToModal(false);
+      return;
+    }
+    const sourceDateKey = formatDatePH(copySourceDate);
+    let entries = JSON.parse(JSON.stringify(allEntries));
+    const sourceEntry = entries.find(
+      (e) => formatDatePH(e.date) === sourceDateKey
+    );
+    if (!sourceEntry || !sourceEntry.employeeSchedules.length) {
+      setShowCopyToModal(false);
+      return;
+    }
+    copyTargetDates.forEach((targetDate) => {
+      const targetDateKey = formatDatePH(targetDate);
+      let targetEntry = entries.find(
+        (e) => formatDatePH(e.date) === targetDateKey
+      );
+      if (!targetEntry) {
+        targetEntry = { date: targetDate, employeeSchedules: [] };
+        entries.push(targetEntry);
+      }
+      // Get all employee IDs already scheduled for this date
+      const scheduledEmpIds = new Set(
+        targetEntry.employeeSchedules.map((es) =>
+          typeof es.employee === "string" ? es.employee : es.employee?._id
+        )
+      );
+      sourceEntry.employeeSchedules.forEach((sched) => {
+        const empId =
+          typeof sched.employee === "string"
+            ? sched.employee
+            : sched.employee?._id;
+        if (!scheduledEmpIds.has(empId)) {
+          targetEntry.employeeSchedules.push({ ...sched });
+          scheduledEmpIds.add(empId);
+        }
+      });
+    });
+    setAllEntries(entries);
+    setShowCopyToModal(false);
+    setCopySourceDate(null);
+    setCopyTargetDates([]);
+  };
+
   return (
     <div className="p-4">
       <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
@@ -541,6 +735,38 @@ const ManagerDutyScheduleForm = () => {
                   className={`p-2 font-semibold text-center hidden lg:block ${
                     index === 0 || index === 6 ? "text-red-600" : ""
                   }`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverDate(`WEEKDAY-${index}`);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverDate(null);
+                    if (!draggedItem || draggedItem.type !== "dateBox") {
+                      setDraggedItem(null);
+                      return;
+                    }
+                    // Find the first date in this column (week day)
+                    const firstDate = days.find(
+                      (d) => d && d.getDay() === index
+                    );
+                    if (firstDate) {
+                      handleDrop(e, firstDate);
+                    } else {
+                      setDraggedItem(null);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget)) {
+                      setDragOverDate(null);
+                    }
+                  }}
+                  style={{
+                    cursor:
+                      draggedItem && draggedItem.type === "dateBox"
+                        ? "copy"
+                        : "default",
+                  }}
                 >
                   {day}
                 </div>
@@ -559,8 +785,21 @@ const ManagerDutyScheduleForm = () => {
                   <div key={index}>
                     {day && (
                       <button
+                        draggable={true}
+                        onDragStart={(e) =>
+                          handleDragStart(e, "dateBox", { date: day })
+                        }
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, day)}
+                        onDrop={(e) => handleDrop(e, day)}
+                        onDragLeave={handleDragLeave}
                         onClick={() => handleDateClick(day)}
-                        className="w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left"
+                        onContextMenu={(e) => handleDateBoxContextMenu(e, day)}
+                        className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left ${
+                          dragOverDate === formatDatePH(day)
+                            ? "ring-4 ring-blue-400"
+                            : ""
+                        }`}
                       >
                         <div className="mb-1">
                           <div className="hidden lg:flex justify-center">
@@ -605,6 +844,7 @@ const ManagerDutyScheduleForm = () => {
                               className={`rounded p-1 ${getShiftColor(
                                 group.shiftName
                               )}`}
+                              // Remove draggable and drag handlers from group
                             >
                               <div className="text-xs font-bold mb-1 uppercase text-gray-700">
                                 {group.shift}
@@ -614,6 +854,7 @@ const ManagerDutyScheduleForm = () => {
                                 <div
                                   key={emp.id}
                                   className="text-sm mb-1 p-1 rounded bg-white/50"
+                                  // Remove draggable and drag handlers from employee
                                 >
                                   <div className="flex justify-between items-center">
                                     <span>{emp.name}</span>
@@ -643,164 +884,6 @@ const ManagerDutyScheduleForm = () => {
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {isModalOpen && selectedDate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold mb-4">
-              Add Employee Schedule
-              <br />
-              <span className="text-sm font-normal">
-                {getMonthLabelPH(selectedDate, true)}
-              </span>
-            </h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Employee Name
-                </label>
-
-                {(() => {
-                  const dateKey = formatDatePH(selectedDate);
-                  const scheduledEmployeeIds =
-                    allEntries
-                      ?.find((entry) => formatDatePH(entry.date) === dateKey)
-                      ?.employeeSchedules.map((es) =>
-                        typeof es.employee === "string"
-                          ? es.employee
-                          : es.employee?._id
-                      ) || [];
-
-                  const availableEmployees = employees?.filter(
-                    (employee) => !scheduledEmployeeIds.includes(employee._id)
-                  );
-
-                  return (
-                    <select
-                      required
-                      value={employeeInput}
-                      onChange={(e) => setEmployeeInput(e.target.value)}
-                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                      autoFocus
-                    >
-                      <option value="">-- Select Employee --</option>
-                      {availableEmployees?.map((employee) => (
-                        <option
-                          key={employee._id}
-                          value={employee._id}
-                          className="capitalize"
-                        >
-                          {employee.personalInformation.lastName},{" "}
-                          {employee.personalInformation.firstName}{" "}
-                          {employee.personalInformation.middleName
-                            ? employee.personalInformation.middleName.charAt(
-                                0
-                              ) + "."
-                            : ""}
-                        </option>
-                      ))}
-                    </select>
-                  );
-                })()}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Work Schedule
-                </label>
-                <select
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="">-- Select Work Schedule --</option>
-                  {workSchedules?.map((schedule) => (
-                    <option key={schedule._id} value={schedule._id}>
-                      {schedule.name}{" "}
-                      {schedule.type === "Standard"
-                        ? `(${formatTimeTo12HourPH(
-                            schedule.morningIn
-                          )}-${formatTimeTo12HourPH(
-                            schedule.morningOut
-                          )}, ${formatTimeTo12HourPH(
-                            schedule.afternoonIn
-                          )}-${formatTimeTo12HourPH(schedule.afternoonOut)})`
-                        : `(${formatTimeTo12HourPH(
-                            schedule.startTime
-                          )}-${formatTimeTo12HourPH(schedule.endTime)})`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Description (Optional)
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Add any additional notes"
-                  rows={2}
-                />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setDescription("");
-                  }}
-                  className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={handleEmployeeAdd}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  Add
-                </button>
-              </div>
-            </div>
-
-            {/* {getEmployeesForDate(selectedDate)?.length > 0 && (
-              <div className="mt-4">
-                <h3 className="font-medium mb-2">Current Assignments</h3>
-                <div className="space-y-1">
-                  {getEmployeesForDate(selectedDate).map((emp) => (
-                    <div
-                      key={emp.id}
-                      className={`text-sm p-2 rounded ${getShiftColor(
-                        emp.shiftName
-                      )}`}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span>
-                          {emp.name} - {emp.shift}
-                        </span>
-                        <button
-                          onClick={() =>
-                            handleEmployeeRemove(selectedDate, emp.id)
-                          }
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                      {emp.description && (
-                        <div className="text-gray-600 mt-1 text-sm italic">
-                          {emp.description}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )} */}
           </div>
         </div>
       )}
@@ -865,6 +948,209 @@ const ManagerDutyScheduleForm = () => {
                 Yes, Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Copy To Modal */}
+      {showCopyToModal && copySourceDate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold mb-4">Copy Schedule To...</h2>
+            <div className="flex justify-end mb-2 space-x-2">
+              <button
+                type="button"
+                className="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-semibold"
+                onClick={() =>
+                  setCopyTargetDates(
+                    days.filter(
+                      (date) =>
+                        formatDatePH(date) !== formatDatePH(copySourceDate)
+                    )
+                  )
+                }
+              >
+                Select All
+              </button>
+              <button
+                type="button"
+                className="px-3 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-semibold"
+                onClick={() => setCopyTargetDates([])}
+              >
+                Deselect All
+              </button>
+            </div>
+            <div className="grid grid-cols-4 gap-2 mb-4">
+              {days.map((date, idx) => {
+                const isSelected = copyTargetDates.some(
+                  (d) => formatDatePH(d) === formatDatePH(date)
+                );
+                const isSource =
+                  formatDatePH(date) === formatDatePH(copySourceDate);
+                return (
+                  <button
+                    key={idx}
+                    disabled={isSource}
+                    onClick={() => handleToggleCopyTargetDate(date)}
+                    className={`p-2 rounded border text-center text-sm font-medium transition-colors ${
+                      isSource
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : isSelected
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-white hover:bg-blue-100 border-gray-300"
+                    }`}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowCopyToModal(false)}
+                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCopyToDates}
+                disabled={copyTargetDates.length === 0}
+                className={`px-4 py-2 rounded-lg text-white ${
+                  copyTargetDates.length === 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-blue-500 hover:bg-blue-600"
+                }`}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddModal && selectedDate && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white shadow-2xl rounded-xl w-full max-w-lg mx-4 p-0">
+            <div className="px-6 pt-6 pb-2 border-b flex flex-col gap-1">
+              <h2 className="text-2xl font-bold text-gray-800 mb-1">
+                Add Employee Schedule
+              </h2>
+              <span className="text-sm font-medium text-gray-500 mb-2">
+                {formatMonthYearPH(selectedDate, true)}
+              </span>
+            </div>
+            <form className="px-6 py-6 space-y-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Employee Name
+                </label>
+
+                {(() => {
+                  const dateKey = formatDatePH(selectedDate);
+                  const scheduledEmployeeIds =
+                    allEntries
+                      ?.find((entry) => formatDatePH(entry.date) === dateKey)
+                      ?.employeeSchedules.map((es) =>
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id
+                      ) || [];
+
+                  const availableEmployees = employees?.filter(
+                    (employee) => !scheduledEmployeeIds.includes(employee._id)
+                  );
+
+                  return (
+                    <select
+                      required
+                      value={employeeInput}
+                      onChange={(e) => setEmployeeInput(e.target.value)}
+                      className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm"
+                      autoFocus
+                    >
+                      <option value="">-- Select Employee --</option>
+                      {availableEmployees?.map((employee) => (
+                        <option
+                          key={employee._id}
+                          value={employee._id}
+                          className="capitalize"
+                        >
+                          {employee.personalInformation.lastName},{" "}
+                          {employee.personalInformation.firstName}{" "}
+                          {employee.personalInformation.middleName
+                            ? employee.personalInformation.middleName.charAt(
+                                0
+                              ) + "."
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  );
+                })()}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Work Schedule
+                </label>
+                <select
+                  value={selectedShift}
+                  onChange={(e) => setSelectedShift(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm"
+                >
+                  <option value="">-- Select Work Schedule --</option>
+                  {workSchedules?.map((schedule) => (
+                    <option key={schedule._id} value={schedule._id}>
+                      {schedule.name}{" "}
+                      {schedule.type === "Standard"
+                        ? `(${formatTimeTo12HourPH(
+                            schedule.morningIn
+                          )}-${formatTimeTo12HourPH(
+                            schedule.morningOut
+                          )}, ${formatTimeTo12HourPH(
+                            schedule.afternoonIn
+                          )}-${formatTimeTo12HourPH(schedule.afternoonOut)})`
+                        : `(${formatTimeTo12HourPH(
+                            schedule.startTime
+                          )}-${formatTimeTo12HourPH(schedule.endTime)})`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Description{" "}
+                  <span className="font-normal text-gray-400">(Optional)</span>
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm resize-none"
+                  placeholder="Add any additional notes"
+                  rows={2}
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t mt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setDescription("");
+                  }}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEmployeeAdd}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-sm"
+                >
+                  Add
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
