@@ -1,81 +1,51 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
-// Async thunks for API calls
-export const fetchAttendance = createAsyncThunk(
-  "attendance/fetchAttendance",
-  async (date) => {
+export const fetchAttendanceByEmployee = createAsyncThunk(
+  "attendance/fetchAttendanceByEmployee",
+  async (
+    { employeeId, startDate, endDate },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
-      const response = await api.get(`/attendances?date=${date}`);
-      return response.data;
+      const { data } = await api.get(
+        `/hris/attendances/employee/${employeeId}/daily-summary`,
+        { params: { startDate, endDate }, withCredentials: true }
+      );
+
+      return fulfillWithValue(data);
     } catch (error) {
-      throw error;
+      return rejectWithValue(error.response.data);
     }
   }
 );
-
-export const markAttendance = createAsyncThunk(
-  "attendances/markAttendance",
-  async (attendanceData) => {
-    try {
-      const response = await api.post("/attendances", attendanceData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-);
-
-const initialState = {
-  attendanceRecords: [],
-  loading: false,
-  error: null,
-  message: "",
-  success: false,
-};
 
 const attendanceSlice = createSlice({
   name: "attendance",
-  initialState,
+  initialState: {
+    loading: false,
+    successMessage: "",
+    errorMessage: "",
+    attendances: [],
+    attendance: "",
+    totalAttendance: 0,
+  },
   reducers: {
-    clearMessage: (state) => {
-      state.message = "";
-      state.success = false;
-      state.error = null;
+    messageClear: (state) => {
+      state.errorMessage = "";
+      state.successMessage = "";
     },
   },
   extraReducers: (builder) => {
-    builder
-      // Fetch Attendance
-      .addCase(fetchAttendance.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchAttendance.fulfilled, (state, action) => {
+    builder.addCase(
+      fetchAttendanceByEmployee.fulfilled,
+      (state, { payload }) => {
         state.loading = false;
-        state.attendanceRecords = action.payload;
-      })
-      .addCase(fetchAttendance.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      })
-      // Mark Attendance
-      .addCase(markAttendance.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(markAttendance.fulfilled, (state, action) => {
-        state.loading = false;
-        state.success = true;
-        state.message = "Attendance marked successfully";
-        state.attendanceRecords = [...state.attendanceRecords, action.payload];
-      })
-      .addCase(markAttendance.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message;
-      });
+        state.attendances = payload.attendances;
+      }
+    );
   },
 });
 
-export const { clearMessage } = attendanceSlice.actions;
+export const { messageClear } = attendanceSlice.actions;
 export default attendanceSlice.reducer;

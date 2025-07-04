@@ -19,13 +19,14 @@ const EmployeeDutyScheduleDetails = lazy(() =>
     "../../pages/dashboard/employee/dutySchedule/EmployeeDutyScheduleDetails"
   )
 );
-
 const MyAttendance = lazy(() =>
   import("../../pages/dashboard/employee/MyAttendance")
 );
 const MyDependents = lazy(() =>
   import("../../pages/dashboard/employee/MyDependents")
 );
+const AccountSettings = lazy(() => import("../../pages/AccountSettings"));
+const HelpSupport = lazy(() => import("../../pages/HelpSupport"));
 
 // const MyLeaveRequests = lazy(() =>
 //   import("../../pages/dashboard/employee/MyLeaveRequests")
@@ -149,6 +150,30 @@ const employeeRoutes = [
       "ADMIN",
       "SUPER_ADMIN",
     ], // ✅ whoever needs personal dashboard
+  },
+  {
+    path: "/employee/account-settings",
+    element: <AccountSettings />,
+    role: [
+      "EMPLOYEE",
+      "MANAGER",
+      "HR_ADMIN",
+      "DIRECTOR",
+      "ADMIN",
+      "SUPER_ADMIN",
+    ],
+  },
+  {
+    path: "/employee/help-support",
+    element: <HelpSupport />,
+    role: [
+      "EMPLOYEE",
+      "MANAGER",
+      "HR_ADMIN",
+      "DIRECTOR",
+      "ADMIN",
+      "SUPER_ADMIN",
+    ],
   },
 
   // {

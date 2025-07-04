@@ -3,18 +3,9 @@ import { FaList } from "react-icons/fa6";
 import { getCurrentDatePH, formatDateTimePH } from "../utils/phDateUtils";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEmployeeDetailsById } from "../store/Reducers/employeeReducer";
-import { logout } from "../store/Reducers/authReducer";
-import {
-  BiLogOutCircle,
-  BiUserCircle,
-  BiCog,
-  BiHelpCircle,
-} from "react-icons/bi";
-import { useNavigate } from "react-router-dom";
 
 const Header = ({ showSidebar, setShowSidebar }) => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const { userInfo } = useSelector((state) => state.auth);
   const { employee: employeeId } = userInfo;
@@ -39,25 +30,23 @@ const Header = ({ showSidebar, setShowSidebar }) => {
     }
   }, [employeeId, dispatch]);
 
-  // State to manage dropdown visibility
-  const [showDropdown, setShowDropdown] = useState(false);
-
   return (
-    <div className="fixed top-0 left-0 w-full z-40 shadow-md bg-gradient-to-r from-[#3B5998] via-[#6A82FB] to-[#56CCF2]">
-      <div className="ml-0 lg:ml-[260px] flex justify-between items-center px-5 py-2 transition-all">
+    <div className="fixed top-0 left-0 w-full   z-40">
+      <div className="ml-0 lg:ml-[260px]  flex justify-between items-center bg-[#b1addf] px-5 transition-all">
         {/* Sidebar toggle button for mobile */}
         <div
           onClick={() => setShowSidebar(!showSidebar)}
-          className="w-[40px] flex lg:hidden h-[40px] rounded-full bg-[#3B5998] shadow-lg hover:bg-[#6A82FB] justify-center items-center cursor-pointer border-2 border-white"
+          className="w-[35px] flex lg:hidden h-[35px] rounded-sm bg-indigo-500 shadow-lg hover:shadow-indigo-500/50 justify-center items-center cursor-pointer"
         >
-          <span className="text-white text-xl">
+          <span>
             <FaList />
           </span>
         </div>
 
         {/* PH Date and Time display (visible on md and up) */}
         <div className="hidden md:block">
-          <span className="font-bold text-lg text-white drop-shadow-md tracking-wide">
+          {/* Professional, bold, and larger PH date/time with indigo color for contrast */}
+          <span className="font-bold text-lg text-indigo-900">
             {dateTimePH}
           </span>
         </div>
@@ -66,8 +55,8 @@ const Header = ({ showSidebar, setShowSidebar }) => {
         <div className="flex justify-center items-center gap-8 relative">
           <div className="flex justify-center items-center">
             <div className="flex justify-center items-center gap-3">
-              <div className="flex justify-center items-end flex-col text-end drop-shadow-lg">
-                <h2 className="text-md font-bold text-[#1a237e] drop-shadow-sm">
+              <div className="flex justify-center items-center flex-col text-end">
+                <h2 className="text-md font-bold">
                   {employeeDetails?.personalInformation
                     ? `${employeeDetails.personalInformation.firstName} ${
                         employeeDetails.personalInformation.middleName
@@ -82,7 +71,7 @@ const Header = ({ showSidebar, setShowSidebar }) => {
                       }`
                     : ""}
                 </h2>
-                <div className="text-[14px] w-full font-normal text-[#263159] drop-shadow">
+                <div className="text-[14px] w-full font-normal">
                   {employeeDetails?.employmentInformation ? (
                     employeeDetails.employmentInformation.position?.level?.toLowerCase() ===
                     "staff" ? (
@@ -121,63 +110,11 @@ const Header = ({ showSidebar, setShowSidebar }) => {
                 </div>
               </div>
 
-              {/* Profile image with dropdown menu */}
-              <div className="relative">
-                <img
-                  className="w-[45px] h-[45px] rounded-full border-2 border-white shadow-md object-cover bg-white cursor-pointer"
-                  src="http://localhost:3001/images/admin.jpg"
-                  alt="User profile"
-                  tabIndex={0}
-                  onClick={() => setShowDropdown((prev) => !prev)}
-                  onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                />
-                {/* Dropdown menu (controlled by click) */}
-                {showDropdown && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 z-50 transition-opacity duration-200">
-                    <button
-                      className="w-full flex items-center gap-3 text-left px-4 py-2 text-[#1a237e] hover:bg-[#e3eafd] rounded-t-lg"
-                      onClick={() => {
-                        setShowDropdown(false);
-                        navigate("/employee/account-settings");
-                      }}
-                    >
-                      <BiCog className="text-lg" />
-                      <span>Account Settings</span>
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-3 text-left px-4 py-2 text-[#1a237e] hover:bg-[#e3eafd]"
-                      onClick={() => {
-                        setShowDropdown(false);
-                        navigate("/employee/profile");
-                      }}
-                    >
-                      <BiUserCircle className="text-lg" />
-                      <span>My Profile</span>
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-3 text-left px-4 py-2 text-[#1a237e] hover:bg-[#e3eafd]"
-                      onClick={() => {
-                        setShowDropdown(false);
-                        navigate("/employee/help-support");
-                      }}
-                    >
-                      <BiHelpCircle className="text-lg" />
-                      <span>Help & Support</span>
-                    </button>
-                    <button
-                      className="w-full flex items-center gap-3 text-left px-4 py-2 text-[#1a237e] hover:bg-[#e3eafd] rounded-b-lg"
-                      onClick={async () => {
-                        setShowDropdown(false);
-                        await dispatch(logout({}));
-                        navigate("/login");
-                      }}
-                    >
-                      <BiLogOutCircle className="text-lg" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                )}
-              </div>
+              <img
+                className="w-[35px] h-[35px] rounded-full overflow-hidden"
+                src="http://localhost:3001/images/admin.jpg"
+                alt=""
+              />
             </div>
           </div>
         </div>

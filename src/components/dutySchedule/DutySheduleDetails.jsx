@@ -267,6 +267,8 @@ const DutyScheduleDetails = ({
     setShowPassword(false);
   };
 
+  console.log(dutySchedule);
+
   return (
     <div className="p-4">
       <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">

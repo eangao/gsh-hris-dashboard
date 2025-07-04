@@ -247,3 +247,62 @@ export const getAgePHFromISO = (birthdate) => {
   const age = todayPH.diff(m, "years");
   return `${age} `;
 };
+
+/**
+ * Formats a date (Date object, ISO string, or PH-local string) to a PH-localized readable string (e.g., 'July 2, 2025').
+ * @param {Date|string} input - Date object or date string
+ * @param {string} format - moment.js format string (default: 'MMMM D, YYYY')
+ * @returns {string}
+ */
+export const formatReadableDatePH = (input, format = "MMMM D, YYYY") => {
+  if (!input) return "";
+  return moment(input).tz("Asia/Manila").format(format);
+};
+
+/**
+ * Returns a PH-localized date range for attendance queries.
+ * - On initial render: start = today at 12:00 AM PH time, end = current PH time (now)
+ * - For viewType 'last7': start = 6 days before today at 12:00 AM PH time, end = current PH time (now)
+ * - For viewType 'last30': start = 29 days before today at 12:00 AM PH time, end = current PH time (now)
+ * - For viewType 'range': start and end are provided, but start is set to 12:00 AM PH time, end is set to current PH time if end is today, else 11:59:59 PM PH time
+ *
+ * @param {string} viewType - 'last7', 'last30', 'range', or 'initial'
+ * @param {Date|string} [customStart] - For 'range', the custom start date
+ * @param {Date|string} [customEnd] - For 'range', the custom end date
+ * @returns {{ start: Date, end: Date }}
+ */
+export const getAttendanceDateRangePH = (
+  viewType = "last7",
+  customStart,
+  customEnd
+) => {
+  const nowPH = moment().tz("Asia/Manila");
+  let start, end;
+
+  if (viewType === "last7") {
+    // Start: 6 days before today at 12:00 AM PH, End: now PH
+    start = nowPH.clone().subtract(6, "days").startOf("day").toDate();
+    end = nowPH.toDate();
+  } else if (viewType === "last30") {
+    // Start: 29 days before today at 12:00 AM PH, End: now PH
+    start = nowPH.clone().subtract(29, "days").startOf("day").toDate();
+    end = nowPH.toDate();
+  } else if (viewType === "range") {
+    // Custom range: start at 12:00 AM PH, end at 11:59:59 PM PH unless end is today, then use now PH
+    const startMoment = moment.tz(customStart, "Asia/Manila").startOf("day");
+    let endMoment = moment.tz(customEnd, "Asia/Manila");
+    if (endMoment.isSame(nowPH, "day")) {
+      endMoment = nowPH;
+    } else {
+      endMoment = endMoment.endOf("day");
+    }
+    start = startMoment.toDate();
+    end = endMoment.toDate();
+  } else {
+    // Fallback: today at 12:00 AM PH to now PH
+    start = nowPH.clone().startOf("day").toDate();
+    end = nowPH.toDate();
+  }
+
+  return { start, end };
+};
