@@ -9,7 +9,7 @@ import attendanceReducer from "./Reducers/attendanceReducer";
 import holidayReducer from "./Reducers/holidayReducer";
 import roleReducer from "./Reducers/roleReducer";
 import dutyScheduleReducer from "./Reducers/dutyScheduleReducer";
-import workScheduleReducer from "./Reducers/workScheduleReducer";
+import shiftTemplateReducer from "./Reducers/shiftTemplateReducer";
 
 const rootReducer = {
   auth: authReducer,
@@ -20,7 +20,7 @@ const rootReducer = {
   holidays: holidayReducer,
   role: roleReducer,
   dutySchedule: dutyScheduleReducer,
-  workSchedule: workScheduleReducer,
+  shiftTemplate: shiftTemplateReducer,
   position: positionReducer,
   cluster: clusterReducer,
   department: departmentReducer,

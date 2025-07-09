@@ -2,15 +2,15 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
 // Async Thunks
-export const fetchWorkSchedules = createAsyncThunk(
-  "workSchedule/fetchWorkSchedules",
+export const fetchShiftTemplates = createAsyncThunk(
+  "shiftTemplate/fetchShiftTemplates",
   async (
     { perPage, page, searchValue },
     { rejectWithValue, fulfillWithValue }
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/reference-data/work-schedules?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
+        `/hris/reference-data/shift-templates?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}`,
         {
           withCredentials: true,
         }
@@ -23,12 +23,12 @@ export const fetchWorkSchedules = createAsyncThunk(
   }
 );
 
-export const fetchAllWorkSchedules = createAsyncThunk(
-  "workSchedule/fetchAllWorkSchedules",
+export const fetchAllShiftTemplates = createAsyncThunk(
+  "shiftTemplate/fetchAllShiftTemplates",
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.get(
-        "/hris/reference-data/work-schedules/options",
+        "/hris/reference-data/shift-templates/options",
         {
           withCredentials: true,
         }
@@ -41,12 +41,12 @@ export const fetchAllWorkSchedules = createAsyncThunk(
   }
 );
 
-export const createWorkSchedule = createAsyncThunk(
-  "workSchedule/createWorkSchedule",
+export const createShiftTemplate = createAsyncThunk(
+  "shiftTemplate/createShiftTemplate = createAsyncThunk(",
   async (scheduleData, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
-        "/hris/reference-data/work-schedules",
+        "/hris/reference-data/shift-templates",
         scheduleData,
         {
           withCredentials: true,
@@ -59,12 +59,12 @@ export const createWorkSchedule = createAsyncThunk(
   }
 );
 
-export const updateWorkSchedule = createAsyncThunk(
-  "workSchedule/updateWorkSchedule",
+export const updateShiftTemplate = createAsyncThunk(
+  "shiftTemplate/updateShiftTemplate",
   async ({ _id, ...scheduleData }, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.put(
-        `/hris/reference-data/work-schedules/${_id}`,
+        `/hris/reference-data/shift-templates/${_id}`,
         scheduleData,
         {
           withCredentials: true,
@@ -77,12 +77,12 @@ export const updateWorkSchedule = createAsyncThunk(
   }
 );
 
-export const deleteWorkSchedule = createAsyncThunk(
-  "workSchedule/deleteWorkSchedule",
+export const deleteShiftTemplate = createAsyncThunk(
+  "shiftTemplate/deleteShiftTemplate",
   async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.delete(
-        `/hris/reference-data/work-schedules/${id}`,
+        `/hris/reference-data/shift-templates/${id}`,
         {
           withCredentials: true,
         }
@@ -94,15 +94,15 @@ export const deleteWorkSchedule = createAsyncThunk(
   }
 );
 
-const workScheduleSlice = createSlice({
-  name: "workSchedule",
+const shiftTemplateSlice = createSlice({
+  name: "shiftTemplate",
   initialState: {
     loading: false,
     successMessage: "",
     errorMessage: "",
-    workSchedules: [],
-    workSchedule: "",
-    totalWorkSchedule: 0,
+    shiftTemplates: [],
+    shiftTemplate: "",
+    totalShiftTemplate: 0,
   },
   reducers: {
     messageClear: (state) => {
@@ -111,64 +111,66 @@ const workScheduleSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Fetch workScheduless
-    builder.addCase(fetchWorkSchedules.fulfilled, (state, { payload }) => {
-      state.totalWorkSchedule = payload.totalWorkSchedule;
-      state.workSchedules = payload.workSchedules;
+    // Fetch shiftTemplates
+    builder.addCase(fetchShiftTemplates.fulfilled, (state, { payload }) => {
+      state.loading = false;
+      state.totalShiftTemplate = payload.totalShiftTemplate;
+      state.shiftTemplates = payload.shiftTemplates;
     });
 
-    builder.addCase(fetchAllWorkSchedules.fulfilled, (state, { payload }) => {
-      state.workSchedules = payload.workSchedules;
+    builder.addCase(fetchAllShiftTemplates.fulfilled, (state, { payload }) => {
+      state.loading = false;
+      state.shiftTemplates = payload.shiftTemplates;
     });
 
-    // Create workSchedules
+    // Create shiftTemplates
     builder
-      .addCase(createWorkSchedule.pending, (state, { payload }) => {
+      .addCase(createShiftTemplate.pending, (state, { payload }) => {
         state.loading = true;
       })
-      .addCase(createWorkSchedule.rejected, (state, { payload }) => {
+      .addCase(createShiftTemplate.rejected, (state, { payload }) => {
         state.loading = false;
         state.errorMessage = payload.error;
       })
-      .addCase(createWorkSchedule.fulfilled, (state, { payload }) => {
+      .addCase(createShiftTemplate.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
       });
 
-    // Update workSchedules
+    // Update shiftTemplates
     builder
-      .addCase(updateWorkSchedule.pending, (state, { payload }) => {
+      .addCase(updateShiftTemplate.pending, (state, { payload }) => {
         state.loading = true;
       })
-      .addCase(updateWorkSchedule.rejected, (state, { payload }) => {
+      .addCase(updateShiftTemplate.rejected, (state, { payload }) => {
         state.loading = false;
         state.errorMessage = payload.error;
       })
-      .addCase(updateWorkSchedule.fulfilled, (state, { payload }) => {
+      .addCase(updateShiftTemplate.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
       });
 
-    // Delete workSchedules
+    // Delete shiftTemplates
     builder
-      .addCase(deleteWorkSchedule.pending, (state, { payload }) => {
+      .addCase(deleteShiftTemplate.pending, (state, { payload }) => {
         state.loading = true;
       })
-      .addCase(deleteWorkSchedule.rejected, (state, { payload }) => {
+      .addCase(deleteShiftTemplate.rejected, (state, { payload }) => {
         state.loading = false;
         state.errorMessage = payload.error;
       })
-      .addCase(deleteWorkSchedule.fulfilled, (state, { payload }) => {
+      .addCase(deleteShiftTemplate.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
 
-        // Remove the deleted workSchedules from the state
-        state.workSchedules = state.workSchedules.filter(
-          (workSchedule) => workSchedule._id !== payload.workScheduleId
+        // Remove the deleted shiftTemplates from the state
+        state.shiftTemplates = state.shiftTemplates.filter(
+          (shiftTemplate) => shiftTemplate._id !== payload.shiftTemplateId
         );
       });
   },
 });
 
-export const { messageClear } = workScheduleSlice.actions;
-export default workScheduleSlice.reducer;
+export const { messageClear } = shiftTemplateSlice.actions;
+export default shiftTemplateSlice.reducer;

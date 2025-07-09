@@ -7,7 +7,8 @@ import {
   updateDutySchedule,
   messageClear,
 } from "../../../../store/Reducers/dutyScheduleReducer";
-import { fetchAllShiftTemplates } from "../../../../store/Reducers/shiftTemplateReducer";
+
+import { fetchAllWorkSchedules } from "../../../../store/Reducers/workScheduleReducer";
 import { fetchEmployeesByDepartment } from "../../../../store/Reducers/employeeReducer";
 import { fetchDepartmentById } from "../../../../store/Reducers/departmentReducer";
 
@@ -66,7 +67,7 @@ const ManagerDutyScheduleForm = () => {
   );
 
   const { employees } = useSelector((state) => state.employee);
-  const { shiftTemplates } = useSelector((state) => state.shiftTemplate);
+  const { workSchedules } = useSelector((state) => state.workSchedule);
   const { department } = useSelector((state) => state.department);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
@@ -90,9 +91,6 @@ const ManagerDutyScheduleForm = () => {
 
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  const [shiftError, setShiftError] = useState("");
-  const [employeeError, setEmployeeError] = useState("");
-
   const weekDays = [
     { day: "Sun", isWeekend: true },
     { day: "Mon", isWeekend: false },
@@ -105,7 +103,7 @@ const ManagerDutyScheduleForm = () => {
 
   // Load initial data and duty schedule if in edit mode
   useEffect(() => {
-    dispatch(fetchAllShiftTemplates());
+    dispatch(fetchAllWorkSchedules());
     if (departmentId) {
       dispatch(fetchEmployeesByDepartment(departmentId));
       dispatch(fetchDepartmentById(departmentId));
@@ -243,74 +241,50 @@ const ManagerDutyScheduleForm = () => {
     const entry = allEntries?.find((e) => formatDatePH(e.date) === dateKey);
     if (!entry) return [];
 
-    const employeesForDate = entry.employeeSchedules
-      .map((es) => {
-        const empId =
-          typeof es.employee === "string" ? es.employee : es.employee?._id;
-        const employee = employees.find((emp) => emp._id === empId);
+    const employeesForDate = entry.employeeSchedules.map((es) => {
+      const empId =
+        typeof es.employee === "string" ? es.employee : es.employee?._id;
+      const employee = employees.find((emp) => emp._id === empId);
 
-        const wsId =
-          typeof es.shiftTemplate === "string"
-            ? es.shiftTemplate
-            : es.shiftTemplate?._id;
+      const wsId =
+        typeof es.workSchedule === "string"
+          ? es.workSchedule
+          : es.workSchedule?._id;
+      const workSchedule = workSchedules.find((ws) => ws._id === wsId);
 
-        const shiftTemplate = shiftTemplates.find((ws) => ws._id === wsId);
+      const shiftName = workSchedule?.name?.toLowerCase() || "unknown";
 
-        const shiftName = shiftTemplate?.name?.toLowerCase() || "unknown";
+      const shiftTime = workSchedule
+        ? workSchedule.type === "Standard"
+          ? `${formatTimeTo12HourPH(
+              workSchedule.morningIn
+            )}-${formatTimeTo12HourPH(
+              workSchedule.morningOut
+            )}, ${formatTimeTo12HourPH(
+              workSchedule.afternoonIn
+            )}-${formatTimeTo12HourPH(workSchedule.afternoonOut)}`
+          : `${formatTimeTo12HourPH(
+              workSchedule.startTime
+            )}-${formatTimeTo12HourPH(workSchedule.endTime)}`
+        : "Unknown";
 
-        const shiftTime = shiftTemplate
-          ? shiftTemplate.status === "off"
-            ? "off"
-            : shiftTemplate.type === "Standard"
-            ? `${formatTimeTo12HourPH(
-                shiftTemplate.morningIn
-              )}-${formatTimeTo12HourPH(
-                shiftTemplate.morningOut
-              )}, ${formatTimeTo12HourPH(
-                shiftTemplate.afternoonIn
-              )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
-            : `${formatTimeTo12HourPH(
-                shiftTemplate.startTime
-              )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`
-          : "";
+      return {
+        id: empId,
+        name: employee
+          ? `${
+              employee.personalInformation.lastName
+            }, ${employee.personalInformation.firstName
+              .charAt(0)
+              .toUpperCase()}`
+          : "Unknown",
+        lastName: employee?.personalInformation?.lastName || "",
+        shiftName,
+        shift: shiftTime,
+        description: es.remarks || "",
+      };
+    });
 
-        const startIn = shiftTemplate
-          ? shiftTemplate.status === "off"
-            ? "off"
-            : shiftTemplate.type === "Standard"
-            ? shiftTemplate.morningIn
-            : shiftTemplate.startTime
-          : "";
-
-        return {
-          id: empId,
-          name: employee
-            ? `${
-                employee.personalInformation.lastName
-              }, ${employee.personalInformation.firstName
-                .charAt(0)
-                .toUpperCase()}`
-            : "Unknown",
-          lastName: employee?.personalInformation?.lastName || "",
-          shiftName,
-          shift: shiftTime,
-          description: es.remarks || "",
-          startIn,
-        };
-      })
-      // Optional: sort flat list by startIn (not required if grouping handles it)
-      .sort((a, b) => {
-        if (a.startIn === "off") return 1;
-        if (b.startIn === "off") return -1;
-        if (!a.startIn) return 1;
-        if (!b.startIn) return -1;
-
-        const [hA, mA] = a.startIn.split(":").map(Number);
-        const [hB, mB] = b.startIn.split(":").map(Number);
-        return hA * 60 + mA - (hB * 60 + mB);
-      });
-
-    // ✅ Group by shift
+    // Group by shift
     const grouped = employeesForDate.reduce((acc, emp) => {
       if (!acc[emp.shift]) {
         acc[emp.shift] = {
@@ -319,25 +293,11 @@ const ManagerDutyScheduleForm = () => {
           employees: [],
         };
       }
-
       acc[emp.shift].employees.push(emp);
       return acc;
     }, {});
 
-    // ✅ Helper to get earliest start time in minutes
-    const getEarliestStart = (group) => {
-      const validTimes = group.employees
-        .filter((emp) => emp.startIn && emp.startIn !== "off")
-        .map((emp) => {
-          const [h, m] = emp.startIn.split(":").map(Number);
-          return h * 60 + m;
-        });
-
-      return validTimes.length ? Math.min(...validTimes) : Infinity;
-    };
-
-    // ✅ Sort each group's employees by last name
-    // ✅ Sort the groups by earliest employee startIn time
+    // Convert to array, sort groups by shift label, and sort each group by lastName
     return Object.values(grouped)
       .map((group) => ({
         ...group,
@@ -345,23 +305,11 @@ const ManagerDutyScheduleForm = () => {
           a.lastName.localeCompare(b.lastName)
         ),
       }))
-      .sort((a, b) => getEarliestStart(a) - getEarliestStart(b));
+      .sort((a, b) => a.shift.localeCompare(b.shift));
   };
 
   const handleEmployeeAdd = () => {
-    let valid = true;
-    setEmployeeError("");
-    setShiftError("");
-    if (!employeeInput) {
-      setEmployeeError("Employee is required.");
-      valid = false;
-    }
-    if (!selectedShift) {
-      setShiftError("Shift is required.");
-      valid = false;
-    }
-    if (!selectedDate) return;
-    if (!valid) return;
+    if (!employeeInput || !selectedShift || !selectedDate) return;
 
     const dateKey = formatDatePH(selectedDate);
 
@@ -373,7 +321,7 @@ const ManagerDutyScheduleForm = () => {
 
     const newSchedule = {
       employee: employeeInput,
-      shiftTemplate: selectedShift,
+      workSchedule: selectedShift,
       remarks: description,
     };
 
@@ -454,7 +402,7 @@ const ManagerDutyScheduleForm = () => {
   };
 
   const getShiftColor = (shiftName) => {
-    const schedule = shiftTemplates.find(
+    const schedule = workSchedules.find(
       (ws) => ws.name.toLowerCase() === shiftName.toLowerCase()
     );
 
@@ -580,7 +528,7 @@ const ManagerDutyScheduleForm = () => {
       return;
     }
 
-    // console.log("Dragged Item:", draggedItem);
+    console.log("Dragged Item:", draggedItem);
     if (draggedItem.type === "employee") {
       // Only add the single employee to the target date
       const emp = draggedItem.data;
@@ -655,32 +603,6 @@ const ManagerDutyScheduleForm = () => {
           typeof sched.employee === "string"
             ? sched.employee
             : sched.employee?._id;
-        // Prevent copying 'Office Friday' shift to non-Friday days
-        const shiftTemplate = shiftTemplates.find(
-          (ws) =>
-            ws._id === sched.shiftTemplate ||
-            ws._id === sched.shiftTemplate?._id
-        );
-        // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "office friday" &&
-          targetDate.getDay() !== 5
-        ) {
-          // Skip copying this shift if not Friday
-          return;
-        }
-        // Prevent copying 'Billing Sat' to non-Saturday days
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "billing sat" &&
-          targetDate.getDay() !== 6
-        ) {
-          // Skip copying this shift if not Saturday
-          return;
-        }
         if (!scheduledEmpIds.has(empId)) {
           targetEntry.employeeSchedules.push({ ...sched });
           scheduledEmpIds.add(empId);
@@ -751,32 +673,6 @@ const ManagerDutyScheduleForm = () => {
           typeof sched.employee === "string"
             ? sched.employee
             : sched.employee?._id;
-        // Prevent copying 'Office Friday' shift to non-Friday days
-        const shiftTemplate = shiftTemplates.find(
-          (ws) =>
-            ws._id === sched.shiftTemplate ||
-            ws._id === sched.shiftTemplate?._id
-        );
-        // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "office friday" &&
-          targetDate.getDay() !== 5
-        ) {
-          // Skip copying this shift if not Friday
-          return;
-        }
-        // Prevent copying 'Billing Sat' to non-Saturday days
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "billing sat" &&
-          targetDate.getDay() !== 6
-        ) {
-          // Skip copying this shift if not Saturday
-          return;
-        }
         if (!scheduledEmpIds.has(empId)) {
           targetEntry.employeeSchedules.push({ ...sched });
           scheduledEmpIds.add(empId);
@@ -787,126 +683,6 @@ const ManagerDutyScheduleForm = () => {
     setShowCopyToModal(false);
     setCopySourceDate(null);
     setCopyTargetDates([]);
-  };
-
-  // Helper: Calculate shift hours
-  const getShiftHours = (shiftTemplate) => {
-    if (!shiftTemplate) return 0;
-    if (shiftTemplate.status === "off") return "off";
-    if (shiftTemplate.type === "Standard") {
-      // Calculate total hours for standard shift (morning + afternoon)
-      const [mh, mm] = shiftTemplate.morningIn.split(":").map(Number);
-      const [moh, mom] = shiftTemplate.morningOut.split(":").map(Number);
-      const [ah, am] = shiftTemplate.afternoonIn.split(":").map(Number);
-      const [aoh, aom] = shiftTemplate.afternoonOut.split(":").map(Number);
-      const morning = moh * 60 + mom - (mh * 60 + mm);
-      const afternoon = aoh * 60 + aom - (ah * 60 + am);
-      return ((morning + afternoon) / 60).toFixed(2);
-    } else {
-      // Non-standard: single block
-      const [sh, sm] = shiftTemplate.startTime.split(":").map(Number);
-      const [eh, em] = shiftTemplate.endTime.split(":").map(Number);
-      const mins = eh * 60 + em - (sh * 60 + sm);
-      return (mins / 60).toFixed(2);
-    }
-  };
-
-  // Helper: Build summary data for the current visible calendar weeks
-  const getWeeklySummary = () => {
-    // Build a map of employees
-    const employeeMap = {};
-    employees.forEach((emp) => {
-      employeeMap[emp._id] = emp;
-    });
-    // Build a map of shiftTemplates
-    const shiftMap = {};
-    shiftTemplates.forEach((st) => {
-      shiftMap[st._id] = st;
-    });
-    // Get all unique employees scheduled in this month
-    const scheduledEmployeeIds = new Set();
-    allEntries.forEach((entry) => {
-      entry.employeeSchedules.forEach((es) => {
-        const empId =
-          typeof es.employee === "string" ? es.employee : es.employee?._id;
-        scheduledEmployeeIds.add(empId);
-      });
-    });
-    // Sort employees by last name
-    const sortedEmployees = [...employees]
-      .filter((e) => scheduledEmployeeIds.has(e._id))
-      .sort((a, b) =>
-        a.personalInformation.lastName.localeCompare(
-          b.personalInformation.lastName
-        )
-      );
-    // Build calendar weeks (array of arrays of dates)
-    const weeks = [];
-    let week = [];
-    days.forEach((date, idx) => {
-      if (week.length === 0 && date.getDay() !== 0) {
-        // Fill empty days at start
-        for (let i = 0; i < date.getDay(); i++) week.push(null);
-      }
-      week.push(date);
-      if (week.length === 7) {
-        weeks.push(week);
-        week = [];
-      }
-    });
-    if (week.length > 0) {
-      while (week.length < 7) week.push(null);
-      weeks.push(week);
-    }
-    // For each week, build summary rows
-    return weeks.map((weekDates) => {
-      // For each employee, build row
-      return sortedEmployees.map((emp) => {
-        let total = 0;
-        const row = {
-          employee: `${emp.personalInformation.lastName}, ${emp.personalInformation.firstName}`,
-          days: [],
-          total: 0,
-        };
-        weekDates.forEach((date) => {
-          if (!date) {
-            row.days.push("");
-            return;
-          }
-          // Find entry for this date
-          const entry = allEntries.find(
-            (e) => formatDatePH(e.date) === formatDatePH(date)
-          );
-          if (!entry) {
-            row.days.push("");
-            return;
-          }
-          // Find employee schedule
-          const es = entry.employeeSchedules.find((es) => {
-            const empId =
-              typeof es.employee === "string" ? es.employee : es.employee?._id;
-            return empId === emp._id;
-          });
-          if (!es) {
-            row.days.push("");
-            return;
-          }
-          const shift =
-            shiftMap[
-              typeof es.shiftTemplate === "string"
-                ? es.shiftTemplate
-                : es.shiftTemplate?._id
-            ];
-          const hours = getShiftHours(shift);
-          row.days.push(hours === "off" ? "off" : hours);
-          if (hours !== "off" && hours !== "" && !isNaN(Number(hours))) {
-            total += Number(hours);
-          }
-        });
-        row.total = total ? total.toFixed(2) : "";
-        return row;
-      });
-    });
   };
 
   return (
@@ -1204,25 +980,7 @@ const ManagerDutyScheduleForm = () => {
                 Deselect All
               </button>
             </div>
-            {/* Calendar-style layout with weekday headers */}
-            <div className="mb-2 grid grid-cols-7 gap-1">
-              {["S", "M", "T", "W", "T", "F", "S"].map((wd, i) => (
-                <div
-                  key={wd}
-                  className={`text-center font-bold text-xs py-1 ${
-                    i === 0 || i === 6 ? "text-red-600" : "text-gray-700"
-                  }`}
-                >
-                  {wd}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1 mb-4">
-              {/* Empty cells for days before the first day of the month */}
-              {Array.from({ length: days[0]?.getDay() || 0 }).map((_, idx) => (
-                <div key={`empty-${idx}`} />
-              ))}
-              {/* Render day buttons in calendar grid */}
+            <div className="grid grid-cols-4 gap-2 mb-4">
               {days.map((date, idx) => {
                 const isSelected = copyTargetDates.some(
                   (d) => formatDatePH(d) === formatDatePH(date)
@@ -1234,15 +992,13 @@ const ManagerDutyScheduleForm = () => {
                     key={idx}
                     disabled={isSource}
                     onClick={() => handleToggleCopyTargetDate(date)}
-                    className={`p-2 rounded border text-center text-sm font-medium transition-colors w-full h-10
-                      ${
-                        isSource
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : isSelected
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-white hover:bg-blue-100 border-gray-300"
-                      }
-                    `}
+                    className={`p-2 rounded border text-center text-sm font-medium transition-colors ${
+                      isSource
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : isSelected
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-white hover:bg-blue-100 border-gray-300"
+                    }`}
                   >
                     {date.getDate()}
                   </button>
@@ -1331,66 +1087,35 @@ const ManagerDutyScheduleForm = () => {
                     </select>
                   );
                 })()}
-                {employeeError && (
-                  <div className="text-red-500 text-xs mt-1">
-                    {employeeError}
-                  </div>
-                )}
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Shift
+                  Work Schedule
                 </label>
                 <select
-                  required
                   value={selectedShift}
                   onChange={(e) => setSelectedShift(e.target.value)}
                   className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm"
                 >
-                  <option value="">-- Select Schedule --</option>
-                  {shiftTemplates &&
-                    [...shiftTemplates]
-                      .sort((a, b) => {
-                        if (a.status === "off") return -1;
-                        if (b.status === "off") return 1;
-                        return 0;
-                      })
-                      .filter((schedule) => {
-                        // If the shift is 'Office Friday', only show if selectedDate is Friday
-                        if (schedule.name.toLowerCase() === "office friday") {
-                          return selectedDate && selectedDate.getDay() === 5; // 5 = Friday
-                        }
-                        // If the shift is 'Billing Sat', only show if selectedDate is Saturday
-                        if (schedule.name.toLowerCase() === "billing sat") {
-                          return selectedDate && selectedDate.getDay() === 6; // 6 = Saturday
-                        }
-                        return true;
-                      })
-                      .map((schedule) => (
-                        <option key={schedule._id} value={schedule._id}>
-                          {schedule.name}
-                          {schedule.status === "off"
-                            ? ""
-                            : schedule.type === "Standard"
-                            ? ` (${formatTimeTo12HourPH(
-                                schedule.morningIn
-                              )}-${formatTimeTo12HourPH(
-                                schedule.morningOut
-                              )}, ${formatTimeTo12HourPH(
-                                schedule.afternoonIn
-                              )}-${formatTimeTo12HourPH(
-                                schedule.afternoonOut
-                              )})`
-                            : ` (${formatTimeTo12HourPH(
-                                schedule.startTime
-                              )}-${formatTimeTo12HourPH(schedule.endTime)})`}
-                        </option>
-                      ))}
+                  <option value="">-- Select Work Schedule --</option>
+                  {workSchedules?.map((schedule) => (
+                    <option key={schedule._id} value={schedule._id}>
+                      {schedule.name}{" "}
+                      {schedule.type === "Standard"
+                        ? `(${formatTimeTo12HourPH(
+                            schedule.morningIn
+                          )}-${formatTimeTo12HourPH(
+                            schedule.morningOut
+                          )}, ${formatTimeTo12HourPH(
+                            schedule.afternoonIn
+                          )}-${formatTimeTo12HourPH(schedule.afternoonOut)})`
+                        : `(${formatTimeTo12HourPH(
+                            schedule.startTime
+                          )}-${formatTimeTo12HourPH(schedule.endTime)})`}
+                    </option>
+                  ))}
                 </select>
-                {shiftError && (
-                  <div className="text-red-500 text-xs mt-1">{shiftError}</div>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -1429,177 +1154,6 @@ const ManagerDutyScheduleForm = () => {
           </div>
         </div>
       )}
-
-      {/* Summary Section */}
-      <div className="overflow-x-auto mb-6">
-        <h2 className="text-lg font-bold mb-2">Weekly Summary</h2>
-        {(() => {
-          const weekDaysShort = ["S", "M", "T", "W", "T", "F", "S"];
-          const summary = getWeeklySummary();
-          // Build a flat map of employeeId to total hours for the month
-          const employeeMonthTotals = {};
-          // Build a map of employees
-          const employeeMap = {};
-          employees.forEach((emp) => {
-            employeeMap[emp._id] = emp;
-          });
-          // Build a map of shiftTemplates
-          const shiftMap = {};
-          shiftTemplates.forEach((st) => {
-            shiftMap[st._id] = st;
-          });
-          // Calculate total per employee for the month
-          allEntries.forEach((entry) => {
-            entry.employeeSchedules.forEach((es) => {
-              const empId =
-                typeof es.employee === "string"
-                  ? es.employee
-                  : es.employee?._id;
-              const shift =
-                shiftMap[
-                  typeof es.shiftTemplate === "string"
-                    ? es.shiftTemplate
-                    : es.shiftTemplate?._id
-                ];
-              const hours = getShiftHours(shift);
-              if (hours !== "off" && hours !== "" && !isNaN(Number(hours))) {
-                if (!employeeMonthTotals[empId]) employeeMonthTotals[empId] = 0;
-                employeeMonthTotals[empId] += Number(hours);
-              }
-            });
-          });
-          // Get all unique employees scheduled in this month, sorted by last name
-          const scheduledEmployeeIds = new Set();
-          allEntries.forEach((entry) => {
-            entry.employeeSchedules.forEach((es) => {
-              const empId =
-                typeof es.employee === "string"
-                  ? es.employee
-                  : es.employee?._id;
-              scheduledEmployeeIds.add(empId);
-            });
-          });
-          const sortedEmployees = [...employees]
-            .filter((e) => scheduledEmployeeIds.has(e._id))
-            .sort((a, b) =>
-              a.personalInformation.lastName.localeCompare(
-                b.personalInformation.lastName
-              )
-            );
-          // Render summary tables per week
-          return (
-            <>
-              {summary.map((rows, weekIdx) => {
-                // Get the weekDates for this week (aligned to calendar)
-                const weekDates = (() => {
-                  // The weeks array in getWeeklySummary uses the same logic as the calendar grid
-                  // So we can reconstruct the weeks array here for header rendering
-                  const weeks = [];
-                  let week = [];
-                  days.forEach((date) => {
-                    if (week.length === 0 && date.getDay() !== 0) {
-                      for (let i = 0; i < date.getDay(); i++) week.push(null);
-                    }
-                    week.push(date);
-                    if (week.length === 7) {
-                      weeks.push(week);
-                      week = [];
-                    }
-                  });
-                  if (week.length > 0) {
-                    while (week.length < 7) week.push(null);
-                    weeks.push(week);
-                  }
-                  return weeks[weekIdx] || [];
-                })();
-                return (
-                  <div key={weekIdx} className="mb-4">
-                    <table className="min-w-full border border-gray-300 rounded-lg">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="px-2 py-1 border text-left">
-                            Employee
-                          </th>
-                          {weekDaysShort.map((d, i) => (
-                            <th
-                              key={i}
-                              className="px-2 py-1 border text-center"
-                            >
-                              <div>{d}</div>
-                              <div className="text-xs text-gray-400">
-                                {weekDates[i] ? weekDates[i].getDate() : ""}
-                              </div>
-                            </th>
-                          ))}
-                          <th className="px-2 py-1 border text-center">
-                            Total
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((row, i) => (
-                          <tr key={i}>
-                            <td className="px-2 py-1 border text-left whitespace-nowrap">
-                              {row.employee}
-                            </td>
-                            {row.days.map((val, j) => (
-                              <td
-                                key={j}
-                                className={`px-2 py-1 border text-center ${
-                                  val === "off" ? "text-red-500" : ""
-                                }`}
-                              >
-                                {val}
-                              </td>
-                            ))}
-                            <td className="px-2 py-1 border text-center font-bold">
-                              {row.total}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })}
-              {/* Monthly total row */}
-              <div className="mb-4">
-                <table className="min-w-full border border-gray-300 rounded-lg">
-                  <thead>
-                    <tr className="bg-blue-100">
-                      <th className="px-2 py-1 border text-left">Employee</th>
-                      <th
-                        className="px-2 py-1 border text-center"
-                        colSpan={weekDaysShort.length}
-                      >
-                        Total Hours for Month
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedEmployees.map((emp) => (
-                      <tr key={emp._id}>
-                        <td className="px-2 py-1 border text-left whitespace-nowrap">
-                          {emp.personalInformation.lastName},{" "}
-                          {emp.personalInformation.firstName}
-                        </td>
-                        <td
-                          className="px-2 py-1 border text-center font-bold"
-                          colSpan={weekDaysShort.length}
-                        >
-                          {employeeMonthTotals[emp._id]
-                            ? employeeMonthTotals[emp._id].toFixed(2)
-                            : "0.00"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          );
-        })()}
-      </div>
     </div>
   );
 };

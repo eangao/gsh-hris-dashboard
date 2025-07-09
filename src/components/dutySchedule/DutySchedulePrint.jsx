@@ -126,34 +126,56 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
     const entry = allEntries?.find((e) => formatDatePH(e.date) === dateKey);
     if (!entry) return [];
 
-    const employeesForDate = entry.employeeSchedules.map((es) => {
-      const shiftTime = es?.workSchedule
-        ? es?.workSchedule.type === "Standard"
-          ? `${formatTimeTo12HourPH(
-              es?.workSchedule.morningIn
-            )}-${formatTimeTo12HourPH(
-              es?.workSchedule.morningOut
-            )}, ${formatTimeTo12HourPH(
-              es?.workSchedule.afternoonIn
-            )}-${formatTimeTo12HourPH(es?.workSchedule.afternoonOut)}`
-          : `${formatTimeTo12HourPH(
-              es?.workSchedule.startTime
-            )}-${formatTimeTo12HourPH(es?.workSchedule.endTime)}`
-        : "";
+    const employeesForDate = entry.employeeSchedules
+      .map((es) => {
+        const shiftTime = es.shiftTemplate
+          ? es.shiftTemplate.status === "off"
+            ? "off"
+            : es.shiftTemplate.type === "Standard"
+            ? `${formatTimeTo12HourPH(
+                es.shiftTemplate.morningIn
+              )}-${formatTimeTo12HourPH(
+                es.shiftTemplate.morningOut
+              )}, ${formatTimeTo12HourPH(
+                es.shiftTemplate.afternoonIn
+              )}-${formatTimeTo12HourPH(es.shiftTemplate.afternoonOut)}`
+            : `${formatTimeTo12HourPH(
+                es.shiftTemplate.startTime
+              )}-${formatTimeTo12HourPH(es.shiftTemplate.endTime)}`
+          : "";
 
-      return {
-        name: `${
-          es?.employee?.personalInformation.lastName
-        }, ${es?.employee?.personalInformation.firstName
-          .charAt(0)
-          .toUpperCase()}.`,
-        lastName: es?.employee?.personalInformation?.lastName || "",
-        shiftName: es?.workSchedule?.name?.toLowerCase() || "",
-        shift: shiftTime,
-        description: es?.remarks || "",
-        shiftColor: es?.workSchedule?.shiftColor || "",
-      };
-    });
+        const startIn = es.shiftTemplate
+          ? es.shiftTemplate.status === "off"
+            ? "off"
+            : es.shiftTemplate.type === "Standard"
+            ? es.shiftTemplate.morningIn
+            : es.shiftTemplate.startTime
+          : "";
+
+        return {
+          name: `${
+            es?.employee?.personalInformation.lastName
+          }, ${es?.employee?.personalInformation.firstName
+            .charAt(0)
+            .toUpperCase()}.`,
+          lastName: es?.employee?.personalInformation?.lastName || "",
+          shiftName: es?.shiftTemplate?.name?.toLowerCase() || "",
+          shift: shiftTime,
+          description: es?.remarks || "",
+          shiftColor: es?.shiftTemplate?.shiftColor || "",
+          startIn,
+        };
+      }) // Optional: sort flat list by startIn (not required if grouping handles it)
+      .sort((a, b) => {
+        if (a.startIn === "off") return 1;
+        if (b.startIn === "off") return -1;
+        if (!a.startIn) return 1;
+        if (!b.startIn) return -1;
+
+        const [hA, mA] = a.startIn.split(":").map(Number);
+        const [hB, mB] = b.startIn.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      });
 
     // Group by shift
     const grouped = employeesForDate.reduce((acc, emp) => {
@@ -170,7 +192,20 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
       return acc;
     }, {});
 
-    // Convert to array, sort groups by shift label, and sort each group by lastName
+    // ✅ Helper to get earliest start time in minutes
+    const getEarliestStart = (group) => {
+      const validTimes = group.employees
+        .filter((emp) => emp.startIn && emp.startIn !== "off")
+        .map((emp) => {
+          const [h, m] = emp.startIn.split(":").map(Number);
+          return h * 60 + m;
+        });
+
+      return validTimes.length ? Math.min(...validTimes) : Infinity;
+    };
+
+    // ✅ Sort each group's employees by last name
+    // ✅ Sort the groups by earliest employee startIn time
     return Object.values(grouped)
       .map((group) => ({
         ...group,
@@ -178,7 +213,7 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
           a.lastName.localeCompare(b.lastName)
         ),
       }))
-      .sort((a, b) => a.shift.localeCompare(b.shift));
+      .sort((a, b) => getEarliestStart(a) - getEarliestStart(b));
   };
 
   const handleCancel = () => {

@@ -1,86 +1,54 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchWorkSchedules,
-  createWorkSchedule,
-  updateWorkSchedule,
-  deleteWorkSchedule,
+  fetchShiftTemplates,
+  createShiftTemplate,
+  updateShiftTemplate,
+  deleteShiftTemplate,
   messageClear,
-} from "./../../../../store/Reducers/workScheduleReducer";
+} from "../../../../store/Reducers/shiftTemplateReducer";
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { PropagateLoader } from "react-spinners";
 import { buttonOverrideStyle } from "./../../../../utils/utils";
 import Search from "./../../../../components/Search";
 import Pagination from "./../../../../components/Pagination";
-import {
-  convertTimePHToUTCISO,
-  convertTimeUTCISOToPH,
-  formatTimeTo12HourPH,
-} from "../../../../utils/phDateUtils";
+import { formatTimeTo12HourPH } from "../../../../utils/phDateUtils";
 
 const shiftColors = [
+  // Already Used — KEEP EXACTLY
   "bg-yellow-100",
+  "bg-red-100",
   "bg-blue-100",
   "bg-purple-100",
-  "bg-green-100",
-  "bg-pink-100",
-  "bg-orange-100",
-  "bg-red-100",
   "bg-teal-100",
+  "bg-green-100",
+  "bg-zinc-100",
+  "bg-orange-100",
+  "bg-lime-100",
+
+  // Other Unique or Differentiated Colors
+  "bg-pink-300",
   "bg-indigo-100",
   "bg-gray-100",
-  "bg-lime-100",
-  "bg-amber-100",
-  "bg-cyan-100",
-  "bg-rose-100",
-  "bg-violet-100",
-  "bg-fuchsia-100",
-  "bg-emerald-100",
-  "bg-sky-100",
-  "bg-slate-100",
-  "bg-zinc-100",
-  "bg-yellow-200",
-  "bg-blue-200",
-  "bg-purple-200",
-  "bg-green-200",
-  "bg-pink-200",
-  "bg-orange-200",
-  "bg-red-200",
-  "bg-teal-200",
-  "bg-indigo-200",
-  "bg-gray-200",
-  "bg-lime-200",
-  "bg-amber-200",
-  "bg-cyan-200",
-  "bg-rose-200",
-  "bg-violet-200",
-  "bg-fuchsia-200",
-  "bg-emerald-200",
-  "bg-sky-200",
-  "bg-slate-200",
-  "bg-zinc-200",
-  "bg-yellow-300",
-  "bg-blue-300",
-  "bg-purple-300",
-  "bg-green-300",
-  "bg-pink-300",
-  "bg-orange-300",
-  "bg-red-300",
-  "bg-teal-300",
-  "bg-indigo-300",
-  "bg-gray-300",
+  "bg-cyan-200", // close to teal → use 200
+  "bg-rose-200", // close to red/pink → use 200
+  "bg-violet-200", // close to purple → use 200
+  "bg-fuchsia-300", // close to violet → use 300
+  "bg-emerald-200", // close to green → use 200
+  "bg-sky-200", // close to blue → use 200
+  "bg-slate-200", // close to zinc/gray → use 200
 ];
 
 const ShiftTemplates = () => {
   const dispatch = useDispatch();
   const {
-    workSchedules,
-    totalWorkSchedule,
+    shiftTemplates,
+    totalShiftTemplate,
     loading,
     errorMessage,
     successMessage,
-  } = useSelector((state) => state.workSchedule);
+  } = useSelector((state) => state.shiftTemplate);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -122,22 +90,22 @@ const ShiftTemplates = () => {
       searchValue,
     };
 
-    dispatch(fetchWorkSchedules(obj));
+    dispatch(fetchShiftTemplates(obj));
   }, [currentPage, perPage, searchValue, dispatch]);
 
-  const getWorkSchedules = () => {
+  const getShiftTemplates = () => {
     const obj = {
       perPage: parseInt(perPage),
       page: parseInt(currentPage),
       searchValue,
     };
-    dispatch(fetchWorkSchedules(obj));
+    dispatch(fetchShiftTemplates(obj));
   };
 
   useEffect(() => {
     if (successMessage) {
       toast.success(successMessage);
-      getWorkSchedules();
+      getShiftTemplates();
       setIsModalOpen(false);
       setDeleteId(null);
       dispatch(messageClear());
@@ -157,67 +125,48 @@ const ShiftTemplates = () => {
   };
 
   const getUniqueShiftColor = () => {
-    const usedColors = workSchedules.map((ws) => ws.shiftColor);
+    const usedColors = shiftTemplates.map((ws) => ws.shiftColor);
+
     const availableColors = shiftColors.filter(
       (color) => !usedColors.includes(color)
     );
     return availableColors.length > 0 ? availableColors[0] : "bg-white";
   };
 
-  // Convert formData times to UTC ISO before submit
   const prepareFormDataForSubmit = (data) => {
     const isStandard = data.type === "Standard";
     if (isStandard) {
       return {
         ...data,
-        morningIn: data.morningIn ? convertTimePHToUTCISO(data.morningIn) : "",
-        morningOut: data.morningOut
-          ? convertTimePHToUTCISO(data.morningOut)
-          : "",
-        afternoonIn: data.afternoonIn
-          ? convertTimePHToUTCISO(data.afternoonIn)
-          : "",
-        afternoonOut: data.afternoonOut
-          ? convertTimePHToUTCISO(data.afternoonOut)
-          : "",
+        morningIn: data.morningIn ? data.morningIn : "",
+        morningOut: data.morningOut ? data.morningOut : "",
+        afternoonIn: data.afternoonIn ? data.afternoonIn : "",
+        afternoonOut: data.afternoonOut ? data.afternoonOut : "",
       };
     } else {
       return {
         ...data,
-        startTime: data.startTime ? convertTimePHToUTCISO(data.startTime) : "",
-        endTime: data.endTime ? convertTimePHToUTCISO(data.endTime) : "",
+        startTime: data.startTime ? data.startTime : "",
+        endTime: data.endTime ? data.endTime : "",
       };
     }
   };
 
-  // Convert UTC ISO times from DB to PH time string for form
-  const mapScheduleForForm = (schedule) => {
-    if (!schedule) return schedule;
-    if (schedule.type === "Standard") {
+  const mapScheduleForForm = (shift) => {
+    if (!shift) return shift;
+    if (shift.type === "Standard") {
       return {
-        ...schedule,
-        morningIn: schedule.morningIn
-          ? convertTimeUTCISOToPH(schedule.morningIn)
-          : "",
-        morningOut: schedule.morningOut
-          ? convertTimeUTCISOToPH(schedule.morningOut)
-          : "",
-        afternoonIn: schedule.afternoonIn
-          ? convertTimeUTCISOToPH(schedule.afternoonIn)
-          : "",
-        afternoonOut: schedule.afternoonOut
-          ? convertTimeUTCISOToPH(schedule.afternoonOut)
-          : "",
+        ...shift,
+        morningIn: shift.morningIn ? shift.morningIn : "",
+        morningOut: shift.morningOut ? shift.morningOut : "",
+        afternoonIn: shift.afternoonIn ? shift.afternoonIn : "",
+        afternoonOut: shift.afternoonOut ? shift.afternoonOut : "",
       };
     } else {
       return {
-        ...schedule,
-        startTime: schedule.startTime
-          ? convertTimeUTCISOToPH(schedule.startTime)
-          : "",
-        endTime: schedule.endTime
-          ? convertTimeUTCISOToPH(schedule.endTime)
-          : "",
+        ...shift,
+        startTime: shift.startTime ? shift.startTime : "",
+        endTime: shift.endTime ? shift.endTime : "",
       };
     }
   };
@@ -227,11 +176,11 @@ const ShiftTemplates = () => {
 
     const submitData = prepareFormDataForSubmit(formData);
     if (formData._id) {
-      dispatch(updateWorkSchedule(submitData));
+      dispatch(updateShiftTemplate(submitData));
     } else {
       const uniqueColor = getUniqueShiftColor();
       const newFormData = { ...submitData, shiftColor: uniqueColor };
-      dispatch(createWorkSchedule(newFormData));
+      dispatch(createShiftTemplate(newFormData));
     }
   };
 
@@ -246,7 +195,7 @@ const ShiftTemplates = () => {
   };
 
   const handleDelete = () => {
-    dispatch(deleteWorkSchedule(deleteId));
+    dispatch(deleteShiftTemplate(deleteId));
   };
 
   const resetForm = () => {
@@ -437,7 +386,7 @@ const ShiftTemplates = () => {
   return (
     <div className="p-3 sm:p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
-        <h1 className="text-2xl font-bold">Work Schedule Management</h1>
+        <h1 className="text-2xl font-bold">Shift Template Management</h1>
         <button
           onClick={() => {
             resetForm();
@@ -455,7 +404,7 @@ const ShiftTemplates = () => {
           setPerpage={setPerpage}
           setSearchValue={setSearchValue}
           searchValue={searchValue}
-          inputPlaceholder="Search Work Schedule..."
+          inputPlaceholder="Search Shift Template..."
         />
       </div>
 
@@ -477,63 +426,80 @@ const ShiftTemplates = () => {
                   <PropagateLoader color="#4B5563" />
                 </td>
               </tr>
-            ) : workSchedules.length === 0 ? (
+            ) : shiftTemplates?.length === 0 ? (
               <tr>
                 <td colSpan="7" className="p-3 text-center text-gray-500">
                   No schedules found.
                 </td>
               </tr>
             ) : (
-              workSchedules?.map((schedule) => (
-                <tr key={schedule._id} className="border-t">
-                  <td className="p-3">{schedule.name}</td>
+              shiftTemplates?.map((shift) => (
+                <tr key={shift._id} className="border-t">
+                  <td className="p-3">{shift.name}</td>
                   <td className="p-3">
                     <span
                       className={`px-2 py-1 rounded ${
-                        schedule.type === "Standard"
+                        shift.status === "off"
+                          ? ""
+                          : shift.type === "Standard"
                           ? "bg-blue-100 text-blue-800"
                           : "bg-purple-100 text-purple-800"
                       }`}
                     >
-                      {schedule.type}
+                      {shift.status === "off" ? "-" : shift.type}
                     </span>
                   </td>
                   <td className="p-3">
-                    {schedule.type === "Standard" ? (
+                    {shift.type === "Standard" ? (
                       <>
                         <div>
-                          Morning: {formatTimeTo12HourPH(schedule.morningIn)} -{" "}
-                          {formatTimeTo12HourPH(schedule.morningOut)}
+                          Morning: {formatTimeTo12HourPH(shift.morningIn)} -{" "}
+                          {formatTimeTo12HourPH(shift.morningOut)}
                         </div>
                         <div>
-                          Afternoon:{" "}
-                          {formatTimeTo12HourPH(schedule.afternoonIn)} -{" "}
-                          {formatTimeTo12HourPH(schedule.afternoonOut)}
+                          Afternoon: {formatTimeTo12HourPH(shift.afternoonIn)} -{" "}
+                          {formatTimeTo12HourPH(shift.afternoonOut)}
                         </div>
                       </>
                     ) : (
                       <>
-                        {formatTimeTo12HourPH(schedule.startTime)} -{" "}
-                        {formatTimeTo12HourPH(schedule.endTime)}
-                        {schedule.isNightDifferential && " (Night)"}
+                        {formatTimeTo12HourPH(shift.startTime)} -{" "}
+                        {formatTimeTo12HourPH(shift.endTime)}
+                        {shift.isNightDifferential && " (Night)"}
                       </>
                     )}
                   </td>
 
                   <td className="p-3 flex justify-center space-x-2">
                     <button
-                      onClick={() => handleEdit(schedule)}
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
-                      disabled={loading}
+                      onClick={() => handleEdit(shift)}
+                      className={`bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 ${
+                        shift.isSystemDefault
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                      disabled={loading || shift.isSystemDefault}
+                      title={
+                        shift.isSystemDefault
+                          ? "System default shifts cannot be edited"
+                          : "Edit"
+                      }
                     >
                       <FaEdit />
                     </button>
                     <button
-                      onClick={() =>
-                        handleDeleteConfirm(schedule._id, schedule.name)
+                      onClick={() => handleDeleteConfirm(shift._id, shift.name)}
+                      className={`bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 ${
+                        shift.isSystemDefault
+                          ? "opacity-50 cursor-not-allowed"
+                          : ""
+                      }`}
+                      disabled={loading || shift.isSystemDefault}
+                      title={
+                        shift.isSystemDefault
+                          ? "System default shifts cannot be deleted"
+                          : "Delete"
                       }
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      disabled={loading}
                     >
                       <FaTrashAlt />
                     </button>
@@ -551,32 +517,48 @@ const ShiftTemplates = () => {
           <div className="text-center py-4">
             <PropagateLoader color="#4B5563" />
           </div>
-        ) : workSchedules.length === 0 ? (
+        ) : shiftTemplates?.length === 0 ? (
           <div className="text-center py-4 text-gray-500">
             No schedules found.
           </div>
         ) : (
-          workSchedules?.map((schedule) => (
+          shiftTemplates?.map((shift) => (
             <div
-              key={schedule._id}
+              key={shift._id}
               className="bg-white rounded-lg shadow p-4 space-y-3"
             >
               <div className="flex justify-between items-start">
-                <h3 className="font-medium">{schedule.name}</h3>
+                <h3 className="font-medium">{shift.name}</h3>
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => handleEdit(schedule)}
-                    className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
-                    disabled={loading}
+                    onClick={() => handleEdit(shift)}
+                    className={`bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 ${
+                      shift.isSystemDefault
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={loading || shift.isSystemDefault}
+                    title={
+                      shift.isSystemDefault
+                        ? "System default shifts cannot be edited"
+                        : "Edit"
+                    }
                   >
                     <FaEdit />
                   </button>
                   <button
-                    onClick={() =>
-                      handleDeleteConfirm(schedule._id, schedule.name)
+                    onClick={() => handleDeleteConfirm(shift._id, shift.name)}
+                    className={`bg-red-500 text-white p-2 rounded hover:bg-red-600 ${
+                      shift.isSystemDefault
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={loading || shift.isSystemDefault}
+                    title={
+                      shift.isSystemDefault
+                        ? "System default shifts cannot be deleted"
+                        : "Delete"
                     }
-                    className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
-                    disabled={loading}
                   >
                     <FaTrashAlt />
                   </button>
@@ -588,37 +570,37 @@ const ShiftTemplates = () => {
                   <span className="text-gray-500">Type:</span>
                   <span
                     className={`ml-2 px-2 py-1 rounded ${
-                      schedule.type === "Standard"
+                      shift.type === "Standard"
                         ? "bg-blue-100 text-blue-800"
                         : "bg-purple-100 text-purple-800"
                     }`}
                   >
-                    {schedule.type}
+                    {shift.type}
                   </span>
                 </div>
               </div>
 
               <div className="text-sm">
-                <div className="text-gray-500 font-medium">Schedule:</div>
+                <div className="text-gray-500 font-medium">Shift:</div>
                 <div className="mt-1 space-y-1">
-                  {schedule.type === "Standard" ? (
+                  {shift.type === "Standard" ? (
                     <>
                       <div>
                         <span className="text-gray-600">Morning: </span>
-                        {formatTimeTo12HourPH(schedule.morningIn)} -{" "}
-                        {formatTimeTo12HourPH(schedule.morningOut)}
+                        {formatTimeTo12HourPH(shift.morningIn)} -{" "}
+                        {formatTimeTo12HourPH(shift.morningOut)}
                       </div>
                       <div>
                         <span className="text-gray-600">Afternoon: </span>
-                        {formatTimeTo12HourPH(schedule.afternoonIn)} -{" "}
-                        {formatTimeTo12HourPH(schedule.afternoonOut)}
+                        {formatTimeTo12HourPH(shift.afternoonIn)} -{" "}
+                        {formatTimeTo12HourPH(shift.afternoonOut)}
                       </div>
                     </>
                   ) : (
                     <div>
-                      {formatTimeTo12HourPH(schedule.startTime)} -{" "}
-                      {formatTimeTo12HourPH(schedule.endTime)}
-                      {schedule.isNightDifferential && (
+                      {formatTimeTo12HourPH(shift.startTime)} -{" "}
+                      {formatTimeTo12HourPH(shift.endTime)}
+                      {shift.isNightDifferential && (
                         <span className="text-blue-600 font-medium">
                           {" "}
                           (Night)
@@ -633,14 +615,14 @@ const ShiftTemplates = () => {
         )}
       </div>
 
-      {totalWorkSchedule > perPage && (
+      {totalShiftTemplate > perPage && (
         <div className="w-full flex justify-end mt-4 bottom-4 right-4">
           <Pagination
             pageNumber={currentPage}
             setPageNumber={setCurrentPage}
-            totalItem={totalWorkSchedule}
+            totalItem={totalShiftTemplate}
             perPage={perPage}
-            showItem={Math.min(5, Math.ceil(totalWorkSchedule / perPage))}
+            showItem={Math.min(5, Math.ceil(totalShiftTemplate / perPage))}
           />
         </div>
       )}
@@ -662,7 +644,9 @@ const ShiftTemplates = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
           <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p>Are you sure you want to delete the schedule "{deleteName}"?</p>
+            <p>
+              Are you sure you want to delete the shift template "{deleteName}"?
+            </p>
             <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
               <button
                 onClick={() => setDeleteId(null)}
