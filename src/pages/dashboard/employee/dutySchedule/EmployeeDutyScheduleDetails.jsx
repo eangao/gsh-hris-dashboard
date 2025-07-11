@@ -2,10 +2,15 @@ import { useParams } from "react-router-dom";
 import DutyScheduleDetails from "../../../../components/dutySchedule/DutySheduleDetails";
 
 const EmployeeDutyScheduleDetails = () => {
-  const { scheduleId, employeeId } = useParams();
+  const { scheduleId, employeeId, departmentId } = useParams();
 
   return (
-    <DutyScheduleDetails scheduleId={scheduleId} employeeId={employeeId} />
+    <DutyScheduleDetails
+      scheduleId={scheduleId}
+      departmentId={departmentId}
+      employeeId={employeeId}
+      forApproval={false}
+    />
   );
 };
 

@@ -21,6 +21,8 @@ import {
   getCalendarDaysInRangePH,
 } from "../../utils/phDateUtils";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
+import { fetchAllShiftTemplates } from "../../store/Reducers/shiftTemplateReducer";
+import { fetchEmployeesByDepartment } from "../../store/Reducers/employeeReducer";
 
 // Holiday data for 2025
 const HOLIDAYS_2025 = [
@@ -47,6 +49,9 @@ const DutyScheduleDetails = ({
 }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const { employees } = useSelector((state) => state.employee);
+  const { shiftTemplates } = useSelector((state) => state.shiftTemplate);
 
   const { dutySchedule, loading, errorMessage, successMessage } = useSelector(
     (state) => state.dutySchedule
@@ -78,6 +83,10 @@ const DutyScheduleDetails = ({
 
   // Load initial data and duty schedule if in edit mode
   useEffect(() => {
+    //for summary
+    dispatch(fetchAllShiftTemplates());
+    dispatch(fetchEmployeesByDepartment(departmentId));
+
     //for duty schedule
     dispatch(fetchDutyScheduleById({ scheduleId, employeeId }));
   }, [dispatch, scheduleId]);
@@ -345,6 +354,104 @@ const DutyScheduleDetails = ({
     return `${m} min`;
   }
 
+  // Helper: Build summary data for the current visible calendar weeks
+  const getWeeklySummary = () => {
+    // Build a map of employees
+    const employeeMap = {};
+    employees.forEach((emp) => {
+      employeeMap[emp._id] = emp;
+    });
+    // Build a map of shiftTemplates
+    const shiftMap = {};
+    shiftTemplates.forEach((st) => {
+      shiftMap[st._id] = st;
+    });
+    // Get all unique employees scheduled in this month
+    const scheduledEmployeeIds = new Set();
+    allEntries.forEach((entry) => {
+      entry.employeeSchedules.forEach((es) => {
+        const empId =
+          typeof es.employee === "string" ? es.employee : es.employee?._id;
+        scheduledEmployeeIds.add(empId);
+      });
+    });
+    // Sort employees by last name
+    const sortedEmployees = [...employees]
+      .filter((e) => scheduledEmployeeIds.has(e._id))
+      .sort((a, b) =>
+        a.personalInformation.lastName.localeCompare(
+          b.personalInformation.lastName
+        )
+      );
+    // Build calendar weeks (array of arrays of dates)
+    const weeks = [];
+    let week = [];
+    days.forEach((date, idx) => {
+      if (week.length === 0 && date.getDay() !== 0) {
+        // Fill empty days at start
+        for (let i = 0; i < date.getDay(); i++) week.push(null);
+      }
+      week.push(date);
+      if (week.length === 7) {
+        weeks.push(week);
+        week = [];
+      }
+    });
+    if (week.length > 0) {
+      while (week.length < 7) week.push(null);
+      weeks.push(week);
+    }
+    // For each week, build summary rows
+    return weeks.map((weekDates) => {
+      // For each employee, build row
+      return sortedEmployees.map((emp) => {
+        let total = 0;
+        const row = {
+          employee: `${emp.personalInformation.lastName}, ${emp.personalInformation.firstName}`,
+          days: [],
+          total: 0,
+        };
+        weekDates.forEach((date) => {
+          if (!date) {
+            row.days.push("");
+            return;
+          }
+          // Find entry for this date
+          const entry = allEntries.find(
+            (e) => formatDatePH(e.date) === formatDatePH(date)
+          );
+          if (!entry) {
+            row.days.push("");
+            return;
+          }
+          // Find employee schedule
+          const es = entry.employeeSchedules.find((es) => {
+            const empId =
+              typeof es.employee === "string" ? es.employee : es.employee?._id;
+            return empId === emp._id;
+          });
+          if (!es) {
+            row.days.push("");
+            return;
+          }
+          const shift =
+            shiftMap[
+              typeof es.shiftTemplate === "string"
+                ? es.shiftTemplate
+                : es.shiftTemplate?._id
+            ];
+          const hours = getShiftHours(shift);
+          row.days.push(hours === "off" ? "off" : hours);
+          if (hours !== "off" && hours !== "" && !isNaN(Number(hours))) {
+            total += Number(hours);
+          }
+        });
+        row.total = total ? total.toFixed(2) : "";
+        return row;
+      });
+    });
+  };
+
   return (
     <div className="p-4">
       <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
@@ -599,31 +706,45 @@ const DutyScheduleDetails = ({
 
           {/* Summary Section */}
           <div className="overflow-x-auto mb-6 mt-6">
-            <h2 className="text-lg font-bold mb-2 text-blue-800">
+            <h2 className="text-lg font-bold mb-2   text-blue-800">
               Weekly Summary
             </h2>
             {(() => {
-              // 1. Get all unique employees from allEntries
-              const employeeMap = {};
-              allEntries.forEach((entry) => {
-                entry.employeeSchedules.forEach((es) => {
-                  const emp = es.employee;
-                  if (emp && emp._id) {
-                    employeeMap[emp._id] = emp;
-                  }
-                });
-              });
-              const sortedEmployees = Object.values(employeeMap).sort((a, b) =>
-                a.personalInformation.lastName.localeCompare(
-                  b.personalInformation.lastName
-                )
-              );
-              // 2. Build a map of employeeId to total hours for the month
+              const weekDaysShort = [
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+              ];
+              const summary = getWeeklySummary();
+              // Build a flat map of employeeId to total hours for the month
               const employeeMonthTotals = {};
+              // Build a map of employees
+              const employeeMap = {};
+              employees.forEach((emp) => {
+                employeeMap[emp._id] = emp;
+              });
+              // Build a map of shiftTemplates
+              const shiftMap = {};
+              shiftTemplates.forEach((st) => {
+                shiftMap[st._id] = st;
+              });
+              // Calculate total per employee for the month
               allEntries.forEach((entry) => {
                 entry.employeeSchedules.forEach((es) => {
-                  const empId = es.employee?._id;
-                  const shift = es.shiftTemplate;
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+                  const shift =
+                    shiftMap[
+                      typeof es.shiftTemplate === "string"
+                        ? es.shiftTemplate
+                        : es.shiftTemplate?._id
+                    ];
                   const hours = getShiftHours(shift);
                   if (
                     hours !== "off" &&
@@ -636,116 +757,107 @@ const DutyScheduleDetails = ({
                   }
                 });
               });
-              // 3. Build calendar weeks (array of arrays of dates)
-              const weekDaysShort = [
-                "Sun",
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-              ];
-              const weeks = [];
-              let week = [];
-              days.forEach((date) => {
-                if (week.length === 0 && date.getDay() !== 0) {
-                  for (let i = 0; i < date.getDay(); i++) week.push(null);
-                }
-                week.push(date);
-                if (week.length === 7) {
-                  weeks.push(week);
-                  week = [];
-                }
+              // Get all unique employees scheduled in this month, sorted by last name
+              const scheduledEmployeeIds = new Set();
+              allEntries.forEach((entry) => {
+                entry.employeeSchedules.forEach((es) => {
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+                  scheduledEmployeeIds.add(empId);
+                });
               });
-              if (week.length > 0) {
-                while (week.length < 7) week.push(null);
-                weeks.push(week);
-              }
-              // 4. For each week, build summary rows
-              const getDayHours = (empId, date) => {
-                if (!date) return "";
-                const entry = allEntries.find(
-                  (e) => formatDatePH(e.date) === formatDatePH(date)
+              const sortedEmployees = [...employees]
+                .filter((e) => scheduledEmployeeIds.has(e._id))
+                .sort((a, b) =>
+                  a.personalInformation.lastName.localeCompare(
+                    b.personalInformation.lastName
+                  )
                 );
-                if (!entry) return "";
-                const es = entry.employeeSchedules.find(
-                  (es) => es.employee?._id === empId
-                );
-                if (!es) return "";
-                const hours = getShiftHours(es.shiftTemplate);
-                return hours;
-              };
+              // Render summary tables per week
               return (
                 <>
-                  {weeks.map((weekDates, weekIdx) => (
-                    <div key={weekIdx} className="mb-4">
-                      <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
-                        <thead>
-                          <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
-                            <th className="px-2 py-2 border text-left font-semibold text-gray-700">
-                              Employee
-                            </th>
-                            {weekDaysShort.map((d, i) => {
-                              const dateObj = weekDates[i];
-                              const isHoliday =
-                                dateObj &&
-                                HOLIDAYS_2025.some(
-                                  (h) => h.date === formatDatePH(dateObj)
-                                );
-                              const isWeekend = i === 0 || i === 6;
-                              return (
-                                <th
-                                  key={i}
-                                  className={`px-2 py-2 border text-center font-semibold ${
-                                    isHoliday || isWeekend
-                                      ? "text-red-600"
-                                      : "text-blue-700"
-                                  }`}
-                                >
-                                  <div>{d}</div>
-                                  <div
-                                    className={`text-xs ${
+                  {summary.map((rows, weekIdx) => {
+                    // Get the weekDates for this week (aligned to calendar)
+                    const weekDates = (() => {
+                      // The weeks array in getWeeklySummary uses the same logic as the calendar grid
+                      // So we can reconstruct the weeks array here for header rendering
+                      const weeks = [];
+                      let week = [];
+                      days.forEach((date) => {
+                        if (week.length === 0 && date.getDay() !== 0) {
+                          for (let i = 0; i < date.getDay(); i++)
+                            week.push(null);
+                        }
+                        week.push(date);
+                        if (week.length === 7) {
+                          weeks.push(week);
+                          week = [];
+                        }
+                      });
+                      if (week.length > 0) {
+                        while (week.length < 7) week.push(null);
+                        weeks.push(week);
+                      }
+                      return weeks[weekIdx] || [];
+                    })();
+                    return (
+                      <div key={weekIdx} className="mb-4">
+                        <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                          <thead>
+                            <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
+                              <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                                Employee
+                              </th>
+                              {weekDaysShort.map((d, i) => {
+                                const dateObj = weekDates[i];
+                                // Check if this date is a holiday
+                                const isHoliday =
+                                  dateObj &&
+                                  HOLIDAYS_2025.some(
+                                    (h) => h.date === formatDatePH(dateObj)
+                                  );
+                                const isWeekend = i === 0 || i === 6;
+                                return (
+                                  <th
+                                    key={i}
+                                    className={`px-2 py-2 border text-center font-semibold ${
                                       isHoliday || isWeekend
                                         ? "text-red-600"
-                                        : "text-blue-600"
+                                        : "text-blue-700"
                                     }`}
                                   >
-                                    {dateObj ? dateObj.getDate() : ""}
-                                  </div>
-                                </th>
-                              );
-                            })}
-                            <th className="px-2 py-2 border text-center font-semibold text-gray-700">
-                              Total
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sortedEmployees.map((emp, i) => {
-                            let total = 0;
-                            const dayVals = weekDates.map((date) => {
-                              const val = getDayHours(emp._id, date);
-                              if (
-                                val !== "off" &&
-                                val !== "" &&
-                                !isNaN(Number(val))
-                              )
-                                total += Number(val);
-                              return val;
-                            });
-                            return (
+                                    <div>{d}</div>
+                                    <div
+                                      className={`text-xs ${
+                                        isHoliday || isWeekend
+                                          ? "text-red-600"
+                                          : "text-blue-400"
+                                      }`}
+                                    >
+                                      {dateObj ? dateObj.getDate() : ""}
+                                    </div>
+                                  </th>
+                                );
+                              })}
+                              <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                                Total
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((row, i) => (
                               <tr
-                                key={emp._id}
+                                key={i}
                                 className={
                                   i % 2 === 0 ? "bg-white" : "bg-slate-100"
                                 }
                               >
                                 <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
-                                  {emp.personalInformation.lastName},{" "}
-                                  {emp.personalInformation.firstName}
+                                  {row.employee}
                                 </td>
-                                {dayVals.map((val, j) => (
+                                {row.days.map((val, j) => (
                                   <td
                                     key={j}
                                     className={`px-2 py-2 border text-center capitalize text-blue-700 ${
@@ -760,17 +872,17 @@ const DutyScheduleDetails = ({
                                   </td>
                                 ))}
                                 <td className="px-2 py-2 border text-center font-bold text-blue-900 capitalize">
-                                  {total === 0
+                                  {row.total === ""
                                     ? ""
-                                    : formatHoursAndMinutes(total)}
+                                    : formatHoursAndMinutes(row.total)}
                                 </td>
                               </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
                   {/* Monthly total row */}
                   <div className="mb-4">
                     <h2 className="text-lg font-bold mb-2 text-blue-800">

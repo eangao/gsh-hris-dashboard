@@ -789,6 +789,7 @@ const ManagerDutyScheduleForm = () => {
     setCopyTargetDates([]);
   };
 
+  // getShiftHours,  getWeeklySummary and formatHoursAndMinutes in dutyScheduleForm are different in dutyScheduleDetails and dutySchedulePrint
   // Helper: Calculate shift hours
   const getShiftHours = (shiftTemplate) => {
     if (!shiftTemplate) return 0;
@@ -806,10 +807,28 @@ const ManagerDutyScheduleForm = () => {
       // Non-standard: single block
       const [sh, sm] = shiftTemplate.startTime.split(":").map(Number);
       const [eh, em] = shiftTemplate.endTime.split(":").map(Number);
-      const mins = eh * 60 + em - (sh * 60 + sm);
+      let startMins = sh * 60 + sm;
+      let endMins = eh * 60 + em;
+      // If end time is less than or equal to start time, it means the shift ends the next day
+      if (endMins <= startMins) {
+        endMins += 24 * 60;
+      }
+      const mins = endMins - startMins;
       return (mins / 60).toFixed(2);
     }
   };
+
+  // Helper: Format hours as "X h Y min"
+  function formatHoursAndMinutes(hoursFloat) {
+    if (hoursFloat === "off" || hoursFloat === "" || hoursFloat == null)
+      return hoursFloat;
+    const totalMinutes = Math.round(Number(hoursFloat) * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h > 0 && m > 0) return `${h} h ${m} min`;
+    if (h > 0) return `${h} h`;
+    return `${m} min`;
+  }
 
   // Helper: Build summary data for the current visible calendar weeks
   const getWeeklySummary = () => {
@@ -823,6 +842,7 @@ const ManagerDutyScheduleForm = () => {
     shiftTemplates.forEach((st) => {
       shiftMap[st._id] = st;
     });
+
     // Get all unique employees scheduled in this month
     const scheduledEmployeeIds = new Set();
     allEntries.forEach((entry) => {
@@ -914,12 +934,10 @@ const ManagerDutyScheduleForm = () => {
       <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
         <h1 className="text-xl font-bold uppercase">
           {isEditMode
-            ? `Edit ${
-                department?.name ? ` ${department?.name}` : ""
-              } Duty Schedule`
-            : `Create ${
-                department?.name ? ` ${department?.name}` : ""
-              } Duty Schedule`}
+            ? `Edit ${dutySchedule?.name} Duty Schedule`
+            : `Create ${department?.name} ${getMonthLabelPH(
+                currentDate
+              )} Duty Schedule`}
         </h1>
 
         {!isEditMode && (
@@ -950,202 +968,449 @@ const ManagerDutyScheduleForm = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <div className="min-w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-2">
-              {weekDays.map(({ day }, index) => (
-                <div
-                  key={day}
-                  className={`p-2 font-semibold text-center hidden lg:block ${
-                    index === 0 || index === 6 ? "text-red-600" : ""
-                  }`}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOverDate(`WEEKDAY-${index}`);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragOverDate(null);
-                    if (!draggedItem || draggedItem.type !== "dateBox") {
-                      setDraggedItem(null);
-                      return;
-                    }
-                    // Find the first date in this column (week day)
-                    const firstDate = days.find(
-                      (d) => d && d.getDay() === index
-                    );
-                    if (firstDate) {
-                      handleDrop(e, firstDate);
-                    } else {
-                      setDraggedItem(null);
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget)) {
+        <>
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-2">
+                {weekDays.map(({ day }, index) => (
+                  <div
+                    key={day}
+                    className={`p-2 font-semibold text-center hidden lg:block ${
+                      index === 0 || index === 6
+                        ? "text-red-600"
+                        : "text-blue-600"
+                    }`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverDate(`WEEKDAY-${index}`);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
                       setDragOverDate(null);
-                    }
-                  }}
-                  style={{
-                    cursor:
-                      draggedItem && draggedItem.type === "dateBox"
-                        ? "copy"
-                        : "default",
-                  }}
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-                {Array.from({ length: days[0]?.getDay() || 0 }).map(
-                  (_, index) => (
-                    <div key={`empty-${index}`} className="lg:block hidden" />
-                  )
-                )}
-
-                {days.map((day, index) => (
-                  <div key={index}>
-                    {day && (
-                      <button
-                        draggable={true}
-                        onDragStart={(e) =>
-                          handleDragStart(e, "dateBox", { date: day })
-                        }
-                        onDragEnd={handleDragEnd}
-                        onDragOver={(e) => handleDragOver(e, day)}
-                        onDrop={(e) => handleDrop(e, day)}
-                        onDragLeave={handleDragLeave}
-                        onClick={() => handleDateClick(day)}
-                        onContextMenu={(e) => handleDateBoxContextMenu(e, day)}
-                        className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left ${
-                          dragOverDate === formatDatePH(day)
-                            ? "ring-4 ring-blue-400"
-                            : ""
-                        }`}
-                      >
-                        <div className="mb-1">
-                          <div className="hidden lg:flex justify-center">
-                            <span
-                              className={`font-medium ${
-                                shouldMarkRed(day) ? "text-red-600" : ""
-                              }`}
-                            >
-                              {day.getDate()}
-                            </span>
-                          </div>
-
-                          <div className="flex lg:hidden justify-between items-start">
-                            <span
-                              className={`font-medium ${
-                                shouldMarkRed(day) ? "text-red-600" : ""
-                              }`}
-                              style={{ marginTop: "-4px" }}
-                            >
-                              {day.getDate()}
-                            </span>
-                            <span
-                              className={`text-xs ${
-                                isWeekend(day) || isHoliday(day)
-                                  ? "text-red-600"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {weekDays[day.getDay()].day}
-                            </span>
-                          </div>
-                        </div>
-                        {isHoliday(day) && (
-                          <div className="text-xs text-red-600 italic mb-1">
-                            {getHolidayName(day)}
-                          </div>
-                        )}
-                        <div className="space-y-1">
-                          {getEmployeesForDate(day).map((group) => (
-                            <div
-                              key={group.shift}
-                              className={`rounded p-1 ${getShiftColor(
-                                group.shiftName
-                              )}`}
-                              // Remove draggable and drag handlers from group
-                            >
-                              <div className="text-xs font-bold mb-1 uppercase text-gray-700">
-                                {group.shift}
-                              </div>
-
-                              {group.employees.map((emp) => (
-                                <div
-                                  key={emp.id}
-                                  className="text-sm mb-1 p-1 rounded bg-white/50"
-                                  // Remove draggable and drag handlers from employee
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <span>{emp.name}</span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEmployeeRemove(day, emp.id);
-                                      }}
-                                      className="text-red-500 hover:text-red-700 flex items-center justify-center"
-                                    >
-                                      <FaTimes />
-                                    </button>
-                                  </div>
-                                  {emp.description && (
-                                    <div className="text-gray-600 mt-1 text-xs italic">
-                                      {emp.description}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      </button>
-                    )}
+                      if (!draggedItem || draggedItem.type !== "dateBox") {
+                        setDraggedItem(null);
+                        return;
+                      }
+                      // Find the first date in this column (week day)
+                      const firstDate = days.find(
+                        (d) => d && d.getDay() === index
+                      );
+                      if (firstDate) {
+                        handleDrop(e, firstDate);
+                      } else {
+                        setDraggedItem(null);
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                        setDragOverDate(null);
+                      }
+                    }}
+                    style={{
+                      cursor:
+                        draggedItem && draggedItem.type === "dateBox"
+                          ? "copy"
+                          : "default",
+                    }}
+                  >
+                    {day}
                   </div>
                 ))}
               </div>
+
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+                  {Array.from({ length: days[0]?.getDay() || 0 }).map(
+                    (_, index) => (
+                      <div key={`empty-${index}`} className="lg:block hidden" />
+                    )
+                  )}
+
+                  {days.map((day, index) => (
+                    <div key={index}>
+                      {day && (
+                        <button
+                          draggable={true}
+                          onDragStart={(e) =>
+                            handleDragStart(e, "dateBox", { date: day })
+                          }
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => handleDragOver(e, day)}
+                          onDrop={(e) => handleDrop(e, day)}
+                          onDragLeave={handleDragLeave}
+                          onClick={() => handleDateClick(day)}
+                          onContextMenu={(e) =>
+                            handleDateBoxContextMenu(e, day)
+                          }
+                          className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left ${
+                            dragOverDate === formatDatePH(day)
+                              ? "ring-4 ring-blue-400"
+                              : ""
+                          }`}
+                        >
+                          <div className="mb-1">
+                            {isHoliday(day) ? (
+                              <div className="flex justify-between items-start">
+                                <span
+                                  className={`font-medium ${
+                                    shouldMarkRed(day)
+                                      ? "text-red-600"
+                                      : "text-blue-600"
+                                  }`}
+                                  style={{ marginTop: "-4px" }}
+                                >
+                                  {day.getDate()}
+                                </span>
+                                <span className="text-xs text-red-600 italic ml-2 whitespace-nowrap">
+                                  {getHolidayName(day)}
+                                </span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="hidden lg:flex justify-center">
+                                  <span
+                                    className={`font-medium ${
+                                      shouldMarkRed(day)
+                                        ? "text-red-600"
+                                        : "text-blue-600"
+                                    }`}
+                                  >
+                                    {day.getDate()}
+                                  </span>
+                                </div>
+                                <div className="flex lg:hidden justify-between items-start">
+                                  <span
+                                    className={`font-medium ${
+                                      shouldMarkRed(day)
+                                        ? "text-red-600"
+                                        : "text-blue-600"
+                                    }`}
+                                    style={{ marginTop: "-4px" }}
+                                  >
+                                    {day.getDate()}
+                                  </span>
+                                  <span
+                                    className={`text-xs ${
+                                      day.getDay() === 0 || day.getDay() === 6
+                                        ? "text-red-600"
+                                        : "text-blue-600"
+                                    }`}
+                                  >
+                                    {weekDays[day.getDay()].day}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="space-y-1">
+                            {getEmployeesForDate(day).map((group) => (
+                              <div
+                                key={group.shift}
+                                className={`rounded p-1 ${getShiftColor(
+                                  group.shiftName
+                                )}`}
+                                // Remove draggable and drag handlers from group
+                              >
+                                <div className="text-xs font-bold mb-1 uppercase text-gray-700">
+                                  {group.shift}
+                                </div>
+
+                                {group.employees.map((emp) => (
+                                  <div
+                                    key={emp.id}
+                                    className="text-sm mb-1 p-1 rounded bg-white/50"
+                                    // Remove draggable and drag handlers from employee
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span>{emp.name}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEmployeeRemove(day, emp.id);
+                                        }}
+                                        className="text-red-500 hover:text-red-700 flex items-center justify-center"
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </div>
+                                    {emp.description && (
+                                      <div className="text-gray-600 mt-1 text-xs italic">
+                                        {emp.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Section Save Buttons */}
-      <div className="flex justify-between items-center mt-6">
-        <div className="flex space-x-2">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-            disabled={loading}
-          >
-            Cancel
-          </button>
+          {/* Summary Section */}
+          <div className="overflow-x-auto mb-6 mt-6">
+            <h2 className="text-lg font-bold mb-2   text-blue-800">
+              Weekly Summary
+            </h2>
+            {(() => {
+              const weekDaysShort = [
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+              ];
+              const summary = getWeeklySummary();
+              // Build a flat map of employeeId to total hours for the month
+              const employeeMonthTotals = {};
+              // Build a map of employees
+              const employeeMap = {};
+              employees.forEach((emp) => {
+                employeeMap[emp._id] = emp;
+              });
+              // Build a map of shiftTemplates
+              const shiftMap = {};
+              shiftTemplates.forEach((st) => {
+                shiftMap[st._id] = st;
+              });
+              // Calculate total per employee for the month
+              allEntries.forEach((entry) => {
+                entry.employeeSchedules.forEach((es) => {
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+                  const shift =
+                    shiftMap[
+                      typeof es.shiftTemplate === "string"
+                        ? es.shiftTemplate
+                        : es.shiftTemplate?._id
+                    ];
+                  const hours = getShiftHours(shift);
+                  if (
+                    hours !== "off" &&
+                    hours !== "" &&
+                    !isNaN(Number(hours))
+                  ) {
+                    if (!employeeMonthTotals[empId])
+                      employeeMonthTotals[empId] = 0;
+                    employeeMonthTotals[empId] += Number(hours);
+                  }
+                });
+              });
+              // Get all unique employees scheduled in this month, sorted by last name
+              const scheduledEmployeeIds = new Set();
+              allEntries.forEach((entry) => {
+                entry.employeeSchedules.forEach((es) => {
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+                  scheduledEmployeeIds.add(empId);
+                });
+              });
+              const sortedEmployees = [...employees]
+                .filter((e) => scheduledEmployeeIds.has(e._id))
+                .sort((a, b) =>
+                  a.personalInformation.lastName.localeCompare(
+                    b.personalInformation.lastName
+                  )
+                );
+              // Render summary tables per week
+              return (
+                <>
+                  {summary.map((rows, weekIdx) => {
+                    // Get the weekDates for this week (aligned to calendar)
+                    const weekDates = (() => {
+                      // The weeks array in getWeeklySummary uses the same logic as the calendar grid
+                      // So we can reconstruct the weeks array here for header rendering
+                      const weeks = [];
+                      let week = [];
+                      days.forEach((date) => {
+                        if (week.length === 0 && date.getDay() !== 0) {
+                          for (let i = 0; i < date.getDay(); i++)
+                            week.push(null);
+                        }
+                        week.push(date);
+                        if (week.length === 7) {
+                          weeks.push(week);
+                          week = [];
+                        }
+                      });
+                      if (week.length > 0) {
+                        while (week.length < 7) week.push(null);
+                        weeks.push(week);
+                      }
+                      return weeks[weekIdx] || [];
+                    })();
+                    return (
+                      <div key={weekIdx} className="mb-4">
+                        <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                          <thead>
+                            <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
+                              <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                                Employee
+                              </th>
+                              {weekDaysShort.map((d, i) => {
+                                const dateObj = weekDates[i];
+                                // Check if this date is a holiday
+                                const isHoliday =
+                                  dateObj &&
+                                  HOLIDAYS_2025.some(
+                                    (h) => h.date === formatDatePH(dateObj)
+                                  );
+                                const isWeekend = i === 0 || i === 6;
+                                return (
+                                  <th
+                                    key={i}
+                                    className={`px-2 py-2 border text-center font-semibold ${
+                                      isHoliday || isWeekend
+                                        ? "text-red-600"
+                                        : "text-blue-700"
+                                    }`}
+                                  >
+                                    <div>{d}</div>
+                                    <div
+                                      className={`text-xs ${
+                                        isHoliday || isWeekend
+                                          ? "text-red-600"
+                                          : "text-blue-400"
+                                      }`}
+                                    >
+                                      {dateObj ? dateObj.getDate() : ""}
+                                    </div>
+                                  </th>
+                                );
+                              })}
+                              <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                                Total
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((row, i) => (
+                              <tr
+                                key={i}
+                                className={
+                                  i % 2 === 0 ? "bg-white" : "bg-slate-100"
+                                }
+                              >
+                                <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                                  {row.employee}
+                                </td>
+                                {row.days.map((val, j) => (
+                                  <td
+                                    key={j}
+                                    className={`px-2 py-2 border text-center capitalize text-blue-700 ${
+                                      val === "off"
+                                        ? "bg-gray-200 text-gray-500 font-semibold"
+                                        : ""
+                                    }`}
+                                  >
+                                    {val === "off" || val === ""
+                                      ? val
+                                      : formatHoursAndMinutes(val)}
+                                  </td>
+                                ))}
+                                <td className="px-2 py-2 border text-center font-bold text-blue-900 capitalize">
+                                  {row.total === ""
+                                    ? ""
+                                    : formatHoursAndMinutes(row.total)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                  {/* Monthly total row */}
+                  <div className="mb-4">
+                    <h2 className="text-lg font-bold mb-2 text-blue-800">
+                      Summary for this Month
+                    </h2>
+                    <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-blue-200 to-blue-300">
+                          <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                            Employee
+                          </th>
+                          <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedEmployees.map((emp, i) => (
+                          <tr
+                            key={emp._id}
+                            className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                          >
+                            <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                              {emp.personalInformation.lastName},{" "}
+                              {emp.personalInformation.firstName}
+                            </td>
+                            <td className="px-2 py-2 border text-center font-bold text-blue-900">
+                              {employeeMonthTotals[emp._id]
+                                ? formatHoursAndMinutes(
+                                    employeeMonthTotals[emp._id]
+                                  )
+                                : "0 min"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
 
-          {allEntries?.length !== 0 && (
-            <button
-              onClick={handleSaveAsDraft}
-              disabled={loading ? true : false}
-              className={`bg-blue-500  text-white px-4 py-2 rounded ${
-                loading ? "" : " hover:bg-blue-600"
-              } overflow-hidden`}
-            >
-              {loading ? (
-                <PropagateLoader
-                  color="#fff"
-                  cssOverride={buttonOverrideStyle}
-                />
-              ) : isEditMode ? (
-                "Update As Draft"
-              ) : (
-                "Save As Draft"
+          {/* Section Save Buttons */}
+          <div className="flex justify-between items-center mt-6">
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+
+              {allEntries?.length !== 0 && (
+                <button
+                  onClick={handleSaveAsDraft}
+                  disabled={loading ? true : false}
+                  className={`bg-blue-500  text-white px-4 py-2 rounded ${
+                    loading ? "" : " hover:bg-blue-600"
+                  } overflow-hidden`}
+                >
+                  {loading ? (
+                    <PropagateLoader
+                      color="#fff"
+                      cssOverride={buttonOverrideStyle}
+                    />
+                  ) : isEditMode ? (
+                    "Update As Draft"
+                  ) : (
+                    "Save As Draft"
+                  )}
+                </button>
               )}
-            </button>
-          )}
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
@@ -1210,7 +1475,7 @@ const ManagerDutyScheduleForm = () => {
                 <div
                   key={wd}
                   className={`text-center font-bold text-xs py-1 ${
-                    i === 0 || i === 6 ? "text-red-600" : "text-gray-700"
+                    i === 0 || i === 6 ? "text-red-600" : "text-blue-700"
                   }`}
                 >
                   {wd}
@@ -1229,6 +1494,11 @@ const ManagerDutyScheduleForm = () => {
                 );
                 const isSource =
                   formatDatePH(date) === formatDatePH(copySourceDate);
+                // Check if this date is a holiday
+                const isHoliday = HOLIDAYS_2025.some(
+                  (h) => h.date === formatDatePH(date)
+                );
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 return (
                   <button
                     key={idx}
@@ -1244,7 +1514,15 @@ const ManagerDutyScheduleForm = () => {
                       }
                     `}
                   >
-                    {date.getDate()}
+                    <span
+                      className={
+                        isHoliday || isWeekend
+                          ? "text-red-600 font-bold"
+                          : "text-blue-700 font-bold"
+                      }
+                    >
+                      {date.getDate()}
+                    </span>
                   </button>
                 );
               })}
@@ -1429,177 +1707,6 @@ const ManagerDutyScheduleForm = () => {
           </div>
         </div>
       )}
-
-      {/* Summary Section */}
-      <div className="overflow-x-auto mb-6">
-        <h2 className="text-lg font-bold mb-2">Weekly Summary</h2>
-        {(() => {
-          const weekDaysShort = ["S", "M", "T", "W", "T", "F", "S"];
-          const summary = getWeeklySummary();
-          // Build a flat map of employeeId to total hours for the month
-          const employeeMonthTotals = {};
-          // Build a map of employees
-          const employeeMap = {};
-          employees.forEach((emp) => {
-            employeeMap[emp._id] = emp;
-          });
-          // Build a map of shiftTemplates
-          const shiftMap = {};
-          shiftTemplates.forEach((st) => {
-            shiftMap[st._id] = st;
-          });
-          // Calculate total per employee for the month
-          allEntries.forEach((entry) => {
-            entry.employeeSchedules.forEach((es) => {
-              const empId =
-                typeof es.employee === "string"
-                  ? es.employee
-                  : es.employee?._id;
-              const shift =
-                shiftMap[
-                  typeof es.shiftTemplate === "string"
-                    ? es.shiftTemplate
-                    : es.shiftTemplate?._id
-                ];
-              const hours = getShiftHours(shift);
-              if (hours !== "off" && hours !== "" && !isNaN(Number(hours))) {
-                if (!employeeMonthTotals[empId]) employeeMonthTotals[empId] = 0;
-                employeeMonthTotals[empId] += Number(hours);
-              }
-            });
-          });
-          // Get all unique employees scheduled in this month, sorted by last name
-          const scheduledEmployeeIds = new Set();
-          allEntries.forEach((entry) => {
-            entry.employeeSchedules.forEach((es) => {
-              const empId =
-                typeof es.employee === "string"
-                  ? es.employee
-                  : es.employee?._id;
-              scheduledEmployeeIds.add(empId);
-            });
-          });
-          const sortedEmployees = [...employees]
-            .filter((e) => scheduledEmployeeIds.has(e._id))
-            .sort((a, b) =>
-              a.personalInformation.lastName.localeCompare(
-                b.personalInformation.lastName
-              )
-            );
-          // Render summary tables per week
-          return (
-            <>
-              {summary.map((rows, weekIdx) => {
-                // Get the weekDates for this week (aligned to calendar)
-                const weekDates = (() => {
-                  // The weeks array in getWeeklySummary uses the same logic as the calendar grid
-                  // So we can reconstruct the weeks array here for header rendering
-                  const weeks = [];
-                  let week = [];
-                  days.forEach((date) => {
-                    if (week.length === 0 && date.getDay() !== 0) {
-                      for (let i = 0; i < date.getDay(); i++) week.push(null);
-                    }
-                    week.push(date);
-                    if (week.length === 7) {
-                      weeks.push(week);
-                      week = [];
-                    }
-                  });
-                  if (week.length > 0) {
-                    while (week.length < 7) week.push(null);
-                    weeks.push(week);
-                  }
-                  return weeks[weekIdx] || [];
-                })();
-                return (
-                  <div key={weekIdx} className="mb-4">
-                    <table className="min-w-full border border-gray-300 rounded-lg">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="px-2 py-1 border text-left">
-                            Employee
-                          </th>
-                          {weekDaysShort.map((d, i) => (
-                            <th
-                              key={i}
-                              className="px-2 py-1 border text-center"
-                            >
-                              <div>{d}</div>
-                              <div className="text-xs text-gray-400">
-                                {weekDates[i] ? weekDates[i].getDate() : ""}
-                              </div>
-                            </th>
-                          ))}
-                          <th className="px-2 py-1 border text-center">
-                            Total
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {rows.map((row, i) => (
-                          <tr key={i}>
-                            <td className="px-2 py-1 border text-left whitespace-nowrap">
-                              {row.employee}
-                            </td>
-                            {row.days.map((val, j) => (
-                              <td
-                                key={j}
-                                className={`px-2 py-1 border text-center ${
-                                  val === "off" ? "text-red-500" : ""
-                                }`}
-                              >
-                                {val}
-                              </td>
-                            ))}
-                            <td className="px-2 py-1 border text-center font-bold">
-                              {row.total}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })}
-              {/* Monthly total row */}
-              <div className="mb-4">
-                <table className="min-w-full border border-gray-300 rounded-lg">
-                  <thead>
-                    <tr className="bg-blue-100">
-                      <th className="px-2 py-1 border text-left">Employee</th>
-                      <th
-                        className="px-2 py-1 border text-center"
-                        colSpan={weekDaysShort.length}
-                      >
-                        Total Hours for Month
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedEmployees.map((emp) => (
-                      <tr key={emp._id}>
-                        <td className="px-2 py-1 border text-left whitespace-nowrap">
-                          {emp.personalInformation.lastName},{" "}
-                          {emp.personalInformation.firstName}
-                        </td>
-                        <td
-                          className="px-2 py-1 border text-center font-bold"
-                          colSpan={weekDaysShort.length}
-                        >
-                          {employeeMonthTotals[emp._id]
-                            ? employeeMonthTotals[emp._id].toFixed(2)
-                            : "0.00"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          );
-        })()}
-      </div>
     </div>
   );
 };

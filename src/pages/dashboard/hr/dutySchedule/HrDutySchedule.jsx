@@ -46,9 +46,15 @@ const HrDutySchedule = () => {
   };
 
   // Handler for viewing a duty schedule (implement navigation or modal as needed)
-  const handleViewDutySchedule = (departmentId, scheduleId) => {
+  const handleViewDutySchedule = (
+    departmentId,
+    scheduleId,
+    forApproval = false
+  ) => {
     // Pass both departmentId and scheduleId in path param
-    navigate(`/hr/duty-schedule/${departmentId}/view/${scheduleId}`);
+    navigate(
+      `/hr/duty-schedule/${departmentId}/view/${scheduleId}?forApproval=${forApproval}`
+    );
   };
 
   const handlePrintDutySchedule = (departmentId, scheduleId) => {
@@ -138,21 +144,19 @@ const HrDutySchedule = () => {
                     {/* Print Button: Opens print-optimized view in new tab */}
 
                     {schedule?.status === "hr_approved" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handlePrintDutySchedule(
-                              schedule.department?._id,
-                              schedule?._id
-                            )
-                          }
-                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
-                          disabled={loading}
-                        >
-                          Print
-                        </button>
-                      </>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handlePrintDutySchedule(
+                            schedule.department?._id,
+                            schedule?._id
+                          )
+                        }
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
+                        disabled={loading}
+                      >
+                        Print
+                      </button>
                     )}
 
                     {schedule?.status === "director_approved" && (
@@ -161,7 +165,8 @@ const HrDutySchedule = () => {
                           onClick={() =>
                             handleViewDutySchedule(
                               schedule.department?._id,
-                              schedule?._id
+                              schedule?._id,
+                              true
                             )
                           }
                           className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"

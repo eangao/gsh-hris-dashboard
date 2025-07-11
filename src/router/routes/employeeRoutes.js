@@ -103,7 +103,7 @@ const employeeRoutes = [
     ], // ✅ whoever needs personal dashboard
   },
   {
-    path: "/employee/duty-schedule/:employeeId/view/:scheduleId",
+    path: "/employee/duty-schedule/view/employee/:employeeId/department/:departmentId/schedule/:scheduleId",
     element: <EmployeeDutyScheduleDetails />,
     role: [
       "EMPLOYEE",

@@ -7,8 +7,7 @@ import {
   updateDutySchedule,
   messageClear,
 } from "../../../../store/Reducers/dutyScheduleReducer";
-
-import { fetchAllWorkSchedules } from "../../../../store/Reducers/workScheduleReducer";
+import { fetchAllShiftTemplates } from "../../../../store/Reducers/shiftTemplateReducer";
 import { fetchEmployeesByDepartment } from "../../../../store/Reducers/employeeReducer";
 import { fetchDepartmentById } from "../../../../store/Reducers/departmentReducer";
 
@@ -67,7 +66,7 @@ const ManagerDutyScheduleForm = () => {
   );
 
   const { employees } = useSelector((state) => state.employee);
-  const { workSchedules } = useSelector((state) => state.workSchedule);
+  const { shiftTemplates } = useSelector((state) => state.shiftTemplate);
   const { department } = useSelector((state) => state.department);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
@@ -91,6 +90,9 @@ const ManagerDutyScheduleForm = () => {
 
   const [showCancelModal, setShowCancelModal] = useState(false);
 
+  const [shiftError, setShiftError] = useState("");
+  const [employeeError, setEmployeeError] = useState("");
+
   const weekDays = [
     { day: "Sun", isWeekend: true },
     { day: "Mon", isWeekend: false },
@@ -103,7 +105,7 @@ const ManagerDutyScheduleForm = () => {
 
   // Load initial data and duty schedule if in edit mode
   useEffect(() => {
-    dispatch(fetchAllWorkSchedules());
+    dispatch(fetchAllShiftTemplates());
     if (departmentId) {
       dispatch(fetchEmployeesByDepartment(departmentId));
       dispatch(fetchDepartmentById(departmentId));
@@ -241,50 +243,74 @@ const ManagerDutyScheduleForm = () => {
     const entry = allEntries?.find((e) => formatDatePH(e.date) === dateKey);
     if (!entry) return [];
 
-    const employeesForDate = entry.employeeSchedules.map((es) => {
-      const empId =
-        typeof es.employee === "string" ? es.employee : es.employee?._id;
-      const employee = employees.find((emp) => emp._id === empId);
+    const employeesForDate = entry.employeeSchedules
+      .map((es) => {
+        const empId =
+          typeof es.employee === "string" ? es.employee : es.employee?._id;
+        const employee = employees.find((emp) => emp._id === empId);
 
-      const wsId =
-        typeof es.workSchedule === "string"
-          ? es.workSchedule
-          : es.workSchedule?._id;
-      const workSchedule = workSchedules.find((ws) => ws._id === wsId);
+        const wsId =
+          typeof es.shiftTemplate === "string"
+            ? es.shiftTemplate
+            : es.shiftTemplate?._id;
 
-      const shiftName = workSchedule?.name?.toLowerCase() || "unknown";
+        const shiftTemplate = shiftTemplates.find((ws) => ws._id === wsId);
 
-      const shiftTime = workSchedule
-        ? workSchedule.type === "Standard"
-          ? `${formatTimeTo12HourPH(
-              workSchedule.morningIn
-            )}-${formatTimeTo12HourPH(
-              workSchedule.morningOut
-            )}, ${formatTimeTo12HourPH(
-              workSchedule.afternoonIn
-            )}-${formatTimeTo12HourPH(workSchedule.afternoonOut)}`
-          : `${formatTimeTo12HourPH(
-              workSchedule.startTime
-            )}-${formatTimeTo12HourPH(workSchedule.endTime)}`
-        : "Unknown";
+        const shiftName = shiftTemplate?.name?.toLowerCase() || "unknown";
 
-      return {
-        id: empId,
-        name: employee
-          ? `${
-              employee.personalInformation.lastName
-            }, ${employee.personalInformation.firstName
-              .charAt(0)
-              .toUpperCase()}`
-          : "Unknown",
-        lastName: employee?.personalInformation?.lastName || "",
-        shiftName,
-        shift: shiftTime,
-        description: es.remarks || "",
-      };
-    });
+        const shiftTime = shiftTemplate
+          ? shiftTemplate.status === "off"
+            ? "off"
+            : shiftTemplate.type === "Standard"
+            ? `${formatTimeTo12HourPH(
+                shiftTemplate.morningIn
+              )}-${formatTimeTo12HourPH(
+                shiftTemplate.morningOut
+              )}, ${formatTimeTo12HourPH(
+                shiftTemplate.afternoonIn
+              )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
+            : `${formatTimeTo12HourPH(
+                shiftTemplate.startTime
+              )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`
+          : "";
 
-    // Group by shift
+        const startIn = shiftTemplate
+          ? shiftTemplate.status === "off"
+            ? "off"
+            : shiftTemplate.type === "Standard"
+            ? shiftTemplate.morningIn
+            : shiftTemplate.startTime
+          : "";
+
+        return {
+          id: empId,
+          name: employee
+            ? `${
+                employee.personalInformation.lastName
+              }, ${employee.personalInformation.firstName
+                .charAt(0)
+                .toUpperCase()}`
+            : "Unknown",
+          lastName: employee?.personalInformation?.lastName || "",
+          shiftName,
+          shift: shiftTime,
+          description: es.remarks || "",
+          startIn,
+        };
+      })
+      // Optional: sort flat list by startIn (not required if grouping handles it)
+      .sort((a, b) => {
+        if (a.startIn === "off") return 1;
+        if (b.startIn === "off") return -1;
+        if (!a.startIn) return 1;
+        if (!b.startIn) return -1;
+
+        const [hA, mA] = a.startIn.split(":").map(Number);
+        const [hB, mB] = b.startIn.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      });
+
+    // ✅ Group by shift
     const grouped = employeesForDate.reduce((acc, emp) => {
       if (!acc[emp.shift]) {
         acc[emp.shift] = {
@@ -293,11 +319,25 @@ const ManagerDutyScheduleForm = () => {
           employees: [],
         };
       }
+
       acc[emp.shift].employees.push(emp);
       return acc;
     }, {});
 
-    // Convert to array, sort groups by shift label, and sort each group by lastName
+    // ✅ Helper to get earliest start time in minutes
+    const getEarliestStart = (group) => {
+      const validTimes = group.employees
+        .filter((emp) => emp.startIn && emp.startIn !== "off")
+        .map((emp) => {
+          const [h, m] = emp.startIn.split(":").map(Number);
+          return h * 60 + m;
+        });
+
+      return validTimes.length ? Math.min(...validTimes) : Infinity;
+    };
+
+    // ✅ Sort each group's employees by last name
+    // ✅ Sort the groups by earliest employee startIn time
     return Object.values(grouped)
       .map((group) => ({
         ...group,
@@ -305,11 +345,23 @@ const ManagerDutyScheduleForm = () => {
           a.lastName.localeCompare(b.lastName)
         ),
       }))
-      .sort((a, b) => a.shift.localeCompare(b.shift));
+      .sort((a, b) => getEarliestStart(a) - getEarliestStart(b));
   };
 
   const handleEmployeeAdd = () => {
-    if (!employeeInput || !selectedShift || !selectedDate) return;
+    let valid = true;
+    setEmployeeError("");
+    setShiftError("");
+    if (!employeeInput) {
+      setEmployeeError("Employee is required.");
+      valid = false;
+    }
+    if (!selectedShift) {
+      setShiftError("Shift is required.");
+      valid = false;
+    }
+    if (!selectedDate) return;
+    if (!valid) return;
 
     const dateKey = formatDatePH(selectedDate);
 
@@ -321,7 +373,7 @@ const ManagerDutyScheduleForm = () => {
 
     const newSchedule = {
       employee: employeeInput,
-      workSchedule: selectedShift,
+      shiftTemplate: selectedShift,
       remarks: description,
     };
 
@@ -402,7 +454,7 @@ const ManagerDutyScheduleForm = () => {
   };
 
   const getShiftColor = (shiftName) => {
-    const schedule = workSchedules.find(
+    const schedule = shiftTemplates.find(
       (ws) => ws.name.toLowerCase() === shiftName.toLowerCase()
     );
 
@@ -528,7 +580,7 @@ const ManagerDutyScheduleForm = () => {
       return;
     }
 
-    console.log("Dragged Item:", draggedItem);
+    // console.log("Dragged Item:", draggedItem);
     if (draggedItem.type === "employee") {
       // Only add the single employee to the target date
       const emp = draggedItem.data;
@@ -603,6 +655,32 @@ const ManagerDutyScheduleForm = () => {
           typeof sched.employee === "string"
             ? sched.employee
             : sched.employee?._id;
+        // Prevent copying 'Office Friday' shift to non-Friday days
+        const shiftTemplate = shiftTemplates.find(
+          (ws) =>
+            ws._id === sched.shiftTemplate ||
+            ws._id === sched.shiftTemplate?._id
+        );
+        // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
+        if (
+          shiftTemplate &&
+          shiftTemplate.name &&
+          shiftTemplate.name.toLowerCase() === "office friday" &&
+          targetDate.getDay() !== 5
+        ) {
+          // Skip copying this shift if not Friday
+          return;
+        }
+        // Prevent copying 'Billing Sat' to non-Saturday days
+        if (
+          shiftTemplate &&
+          shiftTemplate.name &&
+          shiftTemplate.name.toLowerCase() === "billing sat" &&
+          targetDate.getDay() !== 6
+        ) {
+          // Skip copying this shift if not Saturday
+          return;
+        }
         if (!scheduledEmpIds.has(empId)) {
           targetEntry.employeeSchedules.push({ ...sched });
           scheduledEmpIds.add(empId);
@@ -673,6 +751,32 @@ const ManagerDutyScheduleForm = () => {
           typeof sched.employee === "string"
             ? sched.employee
             : sched.employee?._id;
+        // Prevent copying 'Office Friday' shift to non-Friday days
+        const shiftTemplate = shiftTemplates.find(
+          (ws) =>
+            ws._id === sched.shiftTemplate ||
+            ws._id === sched.shiftTemplate?._id
+        );
+        // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
+        if (
+          shiftTemplate &&
+          shiftTemplate.name &&
+          shiftTemplate.name.toLowerCase() === "office friday" &&
+          targetDate.getDay() !== 5
+        ) {
+          // Skip copying this shift if not Friday
+          return;
+        }
+        // Prevent copying 'Billing Sat' to non-Saturday days
+        if (
+          shiftTemplate &&
+          shiftTemplate.name &&
+          shiftTemplate.name.toLowerCase() === "billing sat" &&
+          targetDate.getDay() !== 6
+        ) {
+          // Skip copying this shift if not Saturday
+          return;
+        }
         if (!scheduledEmpIds.has(empId)) {
           targetEntry.employeeSchedules.push({ ...sched });
           scheduledEmpIds.add(empId);
@@ -685,17 +789,154 @@ const ManagerDutyScheduleForm = () => {
     setCopyTargetDates([]);
   };
 
+  // Helper: Calculate shift hours
+  const getShiftHours = (shiftTemplate) => {
+    if (!shiftTemplate) return 0;
+    if (shiftTemplate.status === "off") return "off";
+    if (shiftTemplate.type === "Standard") {
+      // Calculate total hours for standard shift (morning + afternoon)
+      const [mh, mm] = shiftTemplate.morningIn.split(":").map(Number);
+      const [moh, mom] = shiftTemplate.morningOut.split(":").map(Number);
+      const [ah, am] = shiftTemplate.afternoonIn.split(":").map(Number);
+      const [aoh, aom] = shiftTemplate.afternoonOut.split(":").map(Number);
+      const morning = moh * 60 + mom - (mh * 60 + mm);
+      const afternoon = aoh * 60 + aom - (ah * 60 + am);
+      return ((morning + afternoon) / 60).toFixed(2);
+    } else {
+      // Non-standard: single block
+      const [sh, sm] = shiftTemplate.startTime.split(":").map(Number);
+      const [eh, em] = shiftTemplate.endTime.split(":").map(Number);
+      let startMins = sh * 60 + sm;
+      let endMins = eh * 60 + em;
+      // If end time is less than or equal to start time, it means the shift ends the next day
+      if (endMins <= startMins) {
+        endMins += 24 * 60;
+      }
+      const mins = endMins - startMins;
+      return (mins / 60).toFixed(2);
+    }
+  };
+
+  // Helper: Format hours as "X h Y min"
+  function formatHoursAndMinutes(hoursFloat) {
+    if (hoursFloat === "off" || hoursFloat === "" || hoursFloat == null)
+      return hoursFloat;
+    const totalMinutes = Math.round(Number(hoursFloat) * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h > 0 && m > 0) return `${h} h ${m} min`;
+    if (h > 0) return `${h} h`;
+    return `${m} min`;
+  }
+
+  // Helper: Build summary data for the current visible calendar weeks
+  const getWeeklySummary = () => {
+    // Build a map of employees
+    const employeeMap = {};
+    employees.forEach((emp) => {
+      employeeMap[emp._id] = emp;
+    });
+    // Build a map of shiftTemplates
+    const shiftMap = {};
+    shiftTemplates.forEach((st) => {
+      shiftMap[st._id] = st;
+    });
+
+    // Get all unique employees scheduled in this month
+    const scheduledEmployeeIds = new Set();
+    allEntries.forEach((entry) => {
+      entry.employeeSchedules.forEach((es) => {
+        const empId =
+          typeof es.employee === "string" ? es.employee : es.employee?._id;
+        scheduledEmployeeIds.add(empId);
+      });
+    });
+    // Sort employees by last name
+    const sortedEmployees = [...employees]
+      .filter((e) => scheduledEmployeeIds.has(e._id))
+      .sort((a, b) =>
+        a.personalInformation.lastName.localeCompare(
+          b.personalInformation.lastName
+        )
+      );
+    // Build calendar weeks (array of arrays of dates)
+    const weeks = [];
+    let week = [];
+    days.forEach((date, idx) => {
+      if (week.length === 0 && date.getDay() !== 0) {
+        // Fill empty days at start
+        for (let i = 0; i < date.getDay(); i++) week.push(null);
+      }
+      week.push(date);
+      if (week.length === 7) {
+        weeks.push(week);
+        week = [];
+      }
+    });
+    if (week.length > 0) {
+      while (week.length < 7) week.push(null);
+      weeks.push(week);
+    }
+    // For each week, build summary rows
+    return weeks.map((weekDates) => {
+      // For each employee, build row
+      return sortedEmployees.map((emp) => {
+        let total = 0;
+        const row = {
+          employee: `${emp.personalInformation.lastName}, ${emp.personalInformation.firstName}`,
+          days: [],
+          total: 0,
+        };
+        weekDates.forEach((date) => {
+          if (!date) {
+            row.days.push("");
+            return;
+          }
+          // Find entry for this date
+          const entry = allEntries.find(
+            (e) => formatDatePH(e.date) === formatDatePH(date)
+          );
+          if (!entry) {
+            row.days.push("");
+            return;
+          }
+          // Find employee schedule
+          const es = entry.employeeSchedules.find((es) => {
+            const empId =
+              typeof es.employee === "string" ? es.employee : es.employee?._id;
+            return empId === emp._id;
+          });
+          if (!es) {
+            row.days.push("");
+            return;
+          }
+          const shift =
+            shiftMap[
+              typeof es.shiftTemplate === "string"
+                ? es.shiftTemplate
+                : es.shiftTemplate?._id
+            ];
+          const hours = getShiftHours(shift);
+          row.days.push(hours === "off" ? "off" : hours);
+          if (hours !== "off" && hours !== "" && !isNaN(Number(hours))) {
+            total += Number(hours);
+          }
+        });
+        row.total = total ? total.toFixed(2) : "";
+        return row;
+      });
+    });
+  };
+
   return (
     <div className="p-4">
       <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
         <h1 className="text-xl font-bold uppercase">
           {isEditMode
-            ? `Edit ${
-                department?.name ? ` ${department?.name}` : ""
-              } Duty Schedule`
-            : `Create ${
-                department?.name ? ` ${department?.name}` : ""
-              } Duty Schedule`}
+            ? `Edit ${dutySchedule?.name} Duty Schedule`
+            : `Create ${department?.name} ${getMonthLabelPH(
+                currentDate
+              )} Duty Schedule`}
         </h1>
 
         {!isEditMode && (
@@ -726,202 +967,429 @@ const ManagerDutyScheduleForm = () => {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <div className="min-w-full">
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-2">
-              {weekDays.map(({ day }, index) => (
-                <div
-                  key={day}
-                  className={`p-2 font-semibold text-center hidden lg:block ${
-                    index === 0 || index === 6 ? "text-red-600" : ""
-                  }`}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOverDate(`WEEKDAY-${index}`);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setDragOverDate(null);
-                    if (!draggedItem || draggedItem.type !== "dateBox") {
-                      setDraggedItem(null);
-                      return;
-                    }
-                    // Find the first date in this column (week day)
-                    const firstDate = days.find(
-                      (d) => d && d.getDay() === index
-                    );
-                    if (firstDate) {
-                      handleDrop(e, firstDate);
-                    } else {
-                      setDraggedItem(null);
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget)) {
+        <>
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-2">
+                {weekDays.map(({ day }, index) => (
+                  <div
+                    key={day}
+                    className={`p-2 font-semibold text-center hidden lg:block ${
+                      index === 0 || index === 6 ? "text-red-600" : ""
+                    }`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOverDate(`WEEKDAY-${index}`);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
                       setDragOverDate(null);
-                    }
-                  }}
-                  style={{
-                    cursor:
-                      draggedItem && draggedItem.type === "dateBox"
-                        ? "copy"
-                        : "default",
-                  }}
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-                {Array.from({ length: days[0]?.getDay() || 0 }).map(
-                  (_, index) => (
-                    <div key={`empty-${index}`} className="lg:block hidden" />
-                  )
-                )}
-
-                {days.map((day, index) => (
-                  <div key={index}>
-                    {day && (
-                      <button
-                        draggable={true}
-                        onDragStart={(e) =>
-                          handleDragStart(e, "dateBox", { date: day })
-                        }
-                        onDragEnd={handleDragEnd}
-                        onDragOver={(e) => handleDragOver(e, day)}
-                        onDrop={(e) => handleDrop(e, day)}
-                        onDragLeave={handleDragLeave}
-                        onClick={() => handleDateClick(day)}
-                        onContextMenu={(e) => handleDateBoxContextMenu(e, day)}
-                        className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left ${
-                          dragOverDate === formatDatePH(day)
-                            ? "ring-4 ring-blue-400"
-                            : ""
-                        }`}
-                      >
-                        <div className="mb-1">
-                          <div className="hidden lg:flex justify-center">
-                            <span
-                              className={`font-medium ${
-                                shouldMarkRed(day) ? "text-red-600" : ""
-                              }`}
-                            >
-                              {day.getDate()}
-                            </span>
-                          </div>
-
-                          <div className="flex lg:hidden justify-between items-start">
-                            <span
-                              className={`font-medium ${
-                                shouldMarkRed(day) ? "text-red-600" : ""
-                              }`}
-                              style={{ marginTop: "-4px" }}
-                            >
-                              {day.getDate()}
-                            </span>
-                            <span
-                              className={`text-xs ${
-                                isWeekend(day) || isHoliday(day)
-                                  ? "text-red-600"
-                                  : "text-gray-500"
-                              }`}
-                            >
-                              {weekDays[day.getDay()].day}
-                            </span>
-                          </div>
-                        </div>
-                        {isHoliday(day) && (
-                          <div className="text-xs text-red-600 italic mb-1">
-                            {getHolidayName(day)}
-                          </div>
-                        )}
-                        <div className="space-y-1">
-                          {getEmployeesForDate(day).map((group) => (
-                            <div
-                              key={group.shift}
-                              className={`rounded p-1 ${getShiftColor(
-                                group.shiftName
-                              )}`}
-                              // Remove draggable and drag handlers from group
-                            >
-                              <div className="text-xs font-bold mb-1 uppercase text-gray-700">
-                                {group.shift}
-                              </div>
-
-                              {group.employees.map((emp) => (
-                                <div
-                                  key={emp.id}
-                                  className="text-sm mb-1 p-1 rounded bg-white/50"
-                                  // Remove draggable and drag handlers from employee
-                                >
-                                  <div className="flex justify-between items-center">
-                                    <span>{emp.name}</span>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEmployeeRemove(day, emp.id);
-                                      }}
-                                      className="text-red-500 hover:text-red-700 flex items-center justify-center"
-                                    >
-                                      <FaTimes />
-                                    </button>
-                                  </div>
-                                  {emp.description && (
-                                    <div className="text-gray-600 mt-1 text-xs italic">
-                                      {emp.description}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      </button>
-                    )}
+                      if (!draggedItem || draggedItem.type !== "dateBox") {
+                        setDraggedItem(null);
+                        return;
+                      }
+                      // Find the first date in this column (week day)
+                      const firstDate = days.find(
+                        (d) => d && d.getDay() === index
+                      );
+                      if (firstDate) {
+                        handleDrop(e, firstDate);
+                      } else {
+                        setDraggedItem(null);
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget)) {
+                        setDragOverDate(null);
+                      }
+                    }}
+                    style={{
+                      cursor:
+                        draggedItem && draggedItem.type === "dateBox"
+                          ? "copy"
+                          : "default",
+                    }}
+                  >
+                    {day}
                   </div>
                 ))}
               </div>
+
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+                  {Array.from({ length: days[0]?.getDay() || 0 }).map(
+                    (_, index) => (
+                      <div key={`empty-${index}`} className="lg:block hidden" />
+                    )
+                  )}
+
+                  {days.map((day, index) => (
+                    <div key={index}>
+                      {day && (
+                        <button
+                          draggable={true}
+                          onDragStart={(e) =>
+                            handleDragStart(e, "dateBox", { date: day })
+                          }
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => handleDragOver(e, day)}
+                          onDrop={(e) => handleDrop(e, day)}
+                          onDragLeave={handleDragLeave}
+                          onClick={() => handleDateClick(day)}
+                          onContextMenu={(e) =>
+                            handleDateBoxContextMenu(e, day)
+                          }
+                          className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left ${
+                            dragOverDate === formatDatePH(day)
+                              ? "ring-4 ring-blue-400"
+                              : ""
+                          }`}
+                        >
+                          <div className="mb-1">
+                            <div className="hidden lg:flex justify-center">
+                              <span
+                                className={`font-medium ${
+                                  shouldMarkRed(day) ? "text-red-600" : ""
+                                }`}
+                              >
+                                {day.getDate()}
+                              </span>
+                            </div>
+
+                            <div className="flex lg:hidden justify-between items-start">
+                              <span
+                                className={`font-medium ${
+                                  shouldMarkRed(day) ? "text-red-600" : ""
+                                }`}
+                                style={{ marginTop: "-4px" }}
+                              >
+                                {day.getDate()}
+                              </span>
+                              <span
+                                className={`text-xs ${
+                                  isWeekend(day) || isHoliday(day)
+                                    ? "text-red-600"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {weekDays[day.getDay()].day}
+                              </span>
+                            </div>
+                          </div>
+                          {isHoliday(day) && (
+                            <div className="text-xs text-red-600 italic mb-1">
+                              {getHolidayName(day)}
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            {getEmployeesForDate(day).map((group) => (
+                              <div
+                                key={group.shift}
+                                className={`rounded p-1 ${getShiftColor(
+                                  group.shiftName
+                                )}`}
+                                // Remove draggable and drag handlers from group
+                              >
+                                <div className="text-xs font-bold mb-1 uppercase text-gray-700">
+                                  {group.shift}
+                                </div>
+
+                                {group.employees.map((emp) => (
+                                  <div
+                                    key={emp.id}
+                                    className="text-sm mb-1 p-1 rounded bg-white/50"
+                                    // Remove draggable and drag handlers from employee
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span>{emp.name}</span>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEmployeeRemove(day, emp.id);
+                                        }}
+                                        className="text-red-500 hover:text-red-700 flex items-center justify-center"
+                                      >
+                                        <FaTimes />
+                                      </button>
+                                    </div>
+                                    {emp.description && (
+                                      <div className="text-gray-600 mt-1 text-xs italic">
+                                        {emp.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Section Save Buttons */}
-      <div className="flex justify-between items-center mt-6">
-        <div className="flex space-x-2">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-            disabled={loading}
-          >
-            Cancel
-          </button>
+          {/* Summary Section */}
+          <div className="overflow-x-auto mb-6 mt-6">
+            <h2 className="text-lg font-bold mb-2   text-blue-800">
+              Weekly Summary
+            </h2>
+            {(() => {
+              const weekDaysShort = [
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+              ];
+              const summary = getWeeklySummary();
+              // Build a flat map of employeeId to total hours for the month
+              const employeeMonthTotals = {};
+              // Build a map of employees
+              const employeeMap = {};
+              employees.forEach((emp) => {
+                employeeMap[emp._id] = emp;
+              });
+              // Build a map of shiftTemplates
+              const shiftMap = {};
+              shiftTemplates.forEach((st) => {
+                shiftMap[st._id] = st;
+              });
+              // Calculate total per employee for the month
+              allEntries.forEach((entry) => {
+                entry.employeeSchedules.forEach((es) => {
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+                  const shift =
+                    shiftMap[
+                      typeof es.shiftTemplate === "string"
+                        ? es.shiftTemplate
+                        : es.shiftTemplate?._id
+                    ];
+                  const hours = getShiftHours(shift);
+                  if (
+                    hours !== "off" &&
+                    hours !== "" &&
+                    !isNaN(Number(hours))
+                  ) {
+                    if (!employeeMonthTotals[empId])
+                      employeeMonthTotals[empId] = 0;
+                    employeeMonthTotals[empId] += Number(hours);
+                  }
+                });
+              });
+              // Get all unique employees scheduled in this month, sorted by last name
+              const scheduledEmployeeIds = new Set();
+              allEntries.forEach((entry) => {
+                entry.employeeSchedules.forEach((es) => {
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+                  scheduledEmployeeIds.add(empId);
+                });
+              });
+              const sortedEmployees = [...employees]
+                .filter((e) => scheduledEmployeeIds.has(e._id))
+                .sort((a, b) =>
+                  a.personalInformation.lastName.localeCompare(
+                    b.personalInformation.lastName
+                  )
+                );
+              // Render summary tables per week
+              return (
+                <>
+                  {summary.map((rows, weekIdx) => {
+                    // Get the weekDates for this week (aligned to calendar)
+                    const weekDates = (() => {
+                      // The weeks array in getWeeklySummary uses the same logic as the calendar grid
+                      // So we can reconstruct the weeks array here for header rendering
+                      const weeks = [];
+                      let week = [];
+                      days.forEach((date) => {
+                        if (week.length === 0 && date.getDay() !== 0) {
+                          for (let i = 0; i < date.getDay(); i++)
+                            week.push(null);
+                        }
+                        week.push(date);
+                        if (week.length === 7) {
+                          weeks.push(week);
+                          week = [];
+                        }
+                      });
+                      if (week.length > 0) {
+                        while (week.length < 7) week.push(null);
+                        weeks.push(week);
+                      }
+                      return weeks[weekIdx] || [];
+                    })();
+                    return (
+                      <div key={weekIdx} className="mb-4">
+                        <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                          <thead>
+                            <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
+                              <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                                Employee
+                              </th>
+                              {weekDaysShort.map((d, i) => {
+                                const dateObj = weekDates[i];
+                                // Check if this date is a holiday
+                                const isHoliday =
+                                  dateObj &&
+                                  HOLIDAYS_2025.some(
+                                    (h) => h.date === formatDatePH(dateObj)
+                                  );
+                                const isWeekend = i === 0 || i === 6;
+                                return (
+                                  <th
+                                    key={i}
+                                    className={`px-2 py-2 border text-center font-semibold ${
+                                      isHoliday || isWeekend
+                                        ? "text-red-600"
+                                        : "text-blue-700"
+                                    }`}
+                                  >
+                                    <div>{d}</div>
+                                    <div
+                                      className={`text-xs ${
+                                        isHoliday || isWeekend
+                                          ? "text-red-600"
+                                          : "text-blue-400"
+                                      }`}
+                                    >
+                                      {dateObj ? dateObj.getDate() : ""}
+                                    </div>
+                                  </th>
+                                );
+                              })}
+                              <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                                Total
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((row, i) => (
+                              <tr
+                                key={i}
+                                className={
+                                  i % 2 === 0 ? "bg-white" : "bg-slate-100"
+                                }
+                              >
+                                <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                                  {row.employee}
+                                </td>
+                                {row.days.map((val, j) => (
+                                  <td
+                                    key={j}
+                                    className={`px-2 py-2 border text-center capitalize text-blue-700 ${
+                                      val === "off"
+                                        ? "bg-gray-200 text-gray-500 font-semibold"
+                                        : ""
+                                    }`}
+                                  >
+                                    {val === "off" || val === ""
+                                      ? val
+                                      : formatHoursAndMinutes(val)}
+                                  </td>
+                                ))}
+                                <td className="px-2 py-2 border text-center font-bold text-blue-900 capitalize">
+                                  {row.total === ""
+                                    ? ""
+                                    : formatHoursAndMinutes(row.total)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })}
+                  {/* Monthly total row */}
+                  <div className="mb-4">
+                    <h2 className="text-lg font-bold mb-2 text-blue-800">
+                      Summary for this Month
+                    </h2>
+                    <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-blue-200 to-blue-300">
+                          <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                            Employee
+                          </th>
+                          <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedEmployees.map((emp, i) => (
+                          <tr
+                            key={emp._id}
+                            className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                          >
+                            <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                              {emp.personalInformation.lastName},{" "}
+                              {emp.personalInformation.firstName}
+                            </td>
+                            <td className="px-2 py-2 border text-center font-bold text-blue-900">
+                              {employeeMonthTotals[emp._id]
+                                ? formatHoursAndMinutes(
+                                    employeeMonthTotals[emp._id]
+                                  )
+                                : "0 min"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
 
-          {allEntries?.length !== 0 && (
-            <button
-              onClick={handleSaveAsDraft}
-              disabled={loading ? true : false}
-              className={`bg-blue-500  text-white px-4 py-2 rounded ${
-                loading ? "" : " hover:bg-blue-600"
-              } overflow-hidden`}
-            >
-              {loading ? (
-                <PropagateLoader
-                  color="#fff"
-                  cssOverride={buttonOverrideStyle}
-                />
-              ) : isEditMode ? (
-                "Update As Draft"
-              ) : (
-                "Save As Draft"
+          {/* Section Save Buttons */}
+          <div className="flex justify-between items-center mt-6">
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+
+              {allEntries?.length !== 0 && (
+                <button
+                  onClick={handleSaveAsDraft}
+                  disabled={loading ? true : false}
+                  className={`bg-blue-500  text-white px-4 py-2 rounded ${
+                    loading ? "" : " hover:bg-blue-600"
+                  } overflow-hidden`}
+                >
+                  {loading ? (
+                    <PropagateLoader
+                      color="#fff"
+                      cssOverride={buttonOverrideStyle}
+                    />
+                  ) : isEditMode ? (
+                    "Update As Draft"
+                  ) : (
+                    "Save As Draft"
+                  )}
+                </button>
               )}
-            </button>
-          )}
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && (
@@ -980,27 +1448,60 @@ const ManagerDutyScheduleForm = () => {
                 Deselect All
               </button>
             </div>
-            <div className="grid grid-cols-4 gap-2 mb-4">
+            {/* Calendar-style layout with weekday headers */}
+            <div className="mb-2 grid grid-cols-7 gap-1">
+              {["S", "M", "T", "W", "T", "F", "S"].map((wd, i) => (
+                <div
+                  key={wd}
+                  className={`text-center font-bold text-xs py-1 ${
+                    i === 0 || i === 6 ? "text-red-600" : "text-blue-700"
+                  }`}
+                >
+                  {wd}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1 mb-4">
+              {/* Empty cells for days before the first day of the month */}
+              {Array.from({ length: days[0]?.getDay() || 0 }).map((_, idx) => (
+                <div key={`empty-${idx}`} />
+              ))}
+              {/* Render day buttons in calendar grid */}
               {days.map((date, idx) => {
                 const isSelected = copyTargetDates.some(
                   (d) => formatDatePH(d) === formatDatePH(date)
                 );
                 const isSource =
                   formatDatePH(date) === formatDatePH(copySourceDate);
+                // Check if this date is a holiday
+                const isHoliday = HOLIDAYS_2025.some(
+                  (h) => h.date === formatDatePH(date)
+                );
+                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 return (
                   <button
                     key={idx}
                     disabled={isSource}
                     onClick={() => handleToggleCopyTargetDate(date)}
-                    className={`p-2 rounded border text-center text-sm font-medium transition-colors ${
-                      isSource
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : isSelected
-                        ? "bg-blue-500 text-white border-blue-500"
-                        : "bg-white hover:bg-blue-100 border-gray-300"
-                    }`}
+                    className={`p-2 rounded border text-center text-sm font-medium transition-colors w-full h-10
+                      ${
+                        isSource
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : isSelected
+                          ? "bg-blue-500 text-white border-blue-500"
+                          : "bg-white hover:bg-blue-100 border-gray-300"
+                      }
+                    `}
                   >
-                    {date.getDate()}
+                    <span
+                      className={
+                        isHoliday || isWeekend
+                          ? "text-red-600 font-bold"
+                          : "text-blue-700 font-bold"
+                      }
+                    >
+                      {date.getDate()}
+                    </span>
                   </button>
                 );
               })}
@@ -1087,35 +1588,66 @@ const ManagerDutyScheduleForm = () => {
                     </select>
                   );
                 })()}
+                {employeeError && (
+                  <div className="text-red-500 text-xs mt-1">
+                    {employeeError}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Work Schedule
+                  Shift
                 </label>
                 <select
+                  required
                   value={selectedShift}
                   onChange={(e) => setSelectedShift(e.target.value)}
                   className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm"
                 >
-                  <option value="">-- Select Work Schedule --</option>
-                  {workSchedules?.map((schedule) => (
-                    <option key={schedule._id} value={schedule._id}>
-                      {schedule.name}{" "}
-                      {schedule.type === "Standard"
-                        ? `(${formatTimeTo12HourPH(
-                            schedule.morningIn
-                          )}-${formatTimeTo12HourPH(
-                            schedule.morningOut
-                          )}, ${formatTimeTo12HourPH(
-                            schedule.afternoonIn
-                          )}-${formatTimeTo12HourPH(schedule.afternoonOut)})`
-                        : `(${formatTimeTo12HourPH(
-                            schedule.startTime
-                          )}-${formatTimeTo12HourPH(schedule.endTime)})`}
-                    </option>
-                  ))}
+                  <option value="">-- Select Schedule --</option>
+                  {shiftTemplates &&
+                    [...shiftTemplates]
+                      .sort((a, b) => {
+                        if (a.status === "off") return -1;
+                        if (b.status === "off") return 1;
+                        return 0;
+                      })
+                      .filter((schedule) => {
+                        // If the shift is 'Office Friday', only show if selectedDate is Friday
+                        if (schedule.name.toLowerCase() === "office friday") {
+                          return selectedDate && selectedDate.getDay() === 5; // 5 = Friday
+                        }
+                        // If the shift is 'Billing Sat', only show if selectedDate is Saturday
+                        if (schedule.name.toLowerCase() === "billing sat") {
+                          return selectedDate && selectedDate.getDay() === 6; // 6 = Saturday
+                        }
+                        return true;
+                      })
+                      .map((schedule) => (
+                        <option key={schedule._id} value={schedule._id}>
+                          {schedule.name}
+                          {schedule.status === "off"
+                            ? ""
+                            : schedule.type === "Standard"
+                            ? ` (${formatTimeTo12HourPH(
+                                schedule.morningIn
+                              )}-${formatTimeTo12HourPH(
+                                schedule.morningOut
+                              )}, ${formatTimeTo12HourPH(
+                                schedule.afternoonIn
+                              )}-${formatTimeTo12HourPH(
+                                schedule.afternoonOut
+                              )})`
+                            : ` (${formatTimeTo12HourPH(
+                                schedule.startTime
+                              )}-${formatTimeTo12HourPH(schedule.endTime)})`}
+                        </option>
+                      ))}
                 </select>
+                {shiftError && (
+                  <div className="text-red-500 text-xs mt-1">{shiftError}</div>
+                )}
               </div>
 
               <div className="space-y-2">

@@ -65,9 +65,15 @@ const DirectorDutySchedule = () => {
     setCurrentPage(1); // Reset to first page on tab change
   };
 
-  const handleViewDutySchedule = (departmentId, scheduleId) => {
+  const handleViewDutySchedule = (
+    departmentId,
+    scheduleId,
+    forApproval = false
+  ) => {
     // Pass both departmentId and scheduleId in path param
-    navigate(`/director/duty-schedule/${departmentId}/view/${scheduleId}`);
+    navigate(
+      `/director/duty-schedule/${departmentId}/view/${scheduleId}?forApproval=${forApproval}`
+    );
   };
 
   const handlePrintDutySchedule = (departmentId, scheduleId) => {
@@ -181,37 +187,49 @@ const DirectorDutySchedule = () => {
                   </td>
                   <td className="p-3 capitalize text-right">
                     {schedule?.status === "submitted" && (
-                      <>
-                        <button
-                          onClick={() =>
-                            handleViewDutySchedule(
-                              schedule.department?._id,
-                              schedule?._id
-                            )
-                          }
-                          className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                        >
-                          View
-                        </button>
-                      </>
+                      <button
+                        onClick={() =>
+                          handleViewDutySchedule(
+                            schedule.department?._id,
+                            schedule?._id,
+                            true
+                          )
+                        }
+                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      >
+                        View
+                      </button>
                     )}
 
                     {schedule?.status === "hr_approved" && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handlePrintDutySchedule(
-                              schedule.department?._id,
-                              schedule?._id
-                            )
-                          }
-                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
-                          disabled={loading}
-                        >
-                          Print
-                        </button>
-                      </>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handlePrintDutySchedule(
+                            schedule.department?._id,
+                            schedule?._id
+                          )
+                        }
+                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-2"
+                        disabled={loading}
+                      >
+                        Print
+                      </button>
+                    )}
+
+                    {schedule?.status === "director_approved" && (
+                      <button
+                        onClick={() =>
+                          handleViewDutySchedule(
+                            schedule.department?._id,
+                            schedule?._id,
+                            false
+                          )
+                        }
+                        className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      >
+                        View
+                      </button>
                     )}
                   </td>
                 </tr>

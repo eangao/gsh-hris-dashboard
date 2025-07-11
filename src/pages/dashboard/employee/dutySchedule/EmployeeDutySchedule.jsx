@@ -40,9 +40,11 @@ const EmployeeDutySchedule = () => {
     );
   }, [dispatch, employeeId, perPage, currentPage, searchValue]);
 
-  const handleViewDutyScheduleForApproval = (departmentId, scheduleId) => {
+  const handleViewDutySchedule = (departmentId, scheduleId) => {
     // Pass both departmentId and scheduleId in path param
-    navigate(`/employee/duty-schedule/${employeeId}/view/${scheduleId}`);
+    navigate(
+      `/employee/duty-schedule/view/employee/${employeeId}/department/${departmentId}/schedule/${scheduleId}`
+    );
   };
 
   const handlePrintDutySchedule = (departmentId, scheduleId) => {
@@ -133,9 +135,10 @@ const EmployeeDutySchedule = () => {
                     <td className="p-3 flex space-x-2 justify-end">
                       <button
                         onClick={() =>
-                          handleViewDutyScheduleForApproval(
+                          handleViewDutySchedule(
                             schedule.department?._id,
-                            schedule?._id
+                            schedule?._id,
+                            false
                           )
                         }
                         className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
