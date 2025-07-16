@@ -62,8 +62,8 @@ const ManagerDutyScheduleForm = () => {
     (state) => state.dutySchedule
   );
 
-  const { employees } = useSelector((state) => state.employee); // Only for select options
-  const { shiftTemplates } = useSelector((state) => state.shiftTemplate); // Only for select options
+  const { employees } = useSelector((state) => state.employee);
+  const { shiftTemplates } = useSelector((state) => state.shiftTemplate);
   const { department } = useSelector((state) => state.department);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
@@ -244,23 +244,14 @@ const ManagerDutyScheduleForm = () => {
       .map((es) => {
         const empId =
           typeof es.employee === "string" ? es.employee : es.employee?._id;
-
-        // Try to get employee from the entry first (if it's populated)
-        const employee =
-          typeof es.employee === "object" && es.employee?._id
-            ? es.employee
-            : employees.find((emp) => emp._id === empId); // Fallback to Redux store for select options compatibility
+        const employee = employees.find((emp) => emp._id === empId);
 
         const wsId =
           typeof es.shiftTemplate === "string"
             ? es.shiftTemplate
             : es.shiftTemplate?._id;
 
-        // Try to get shift template from the entry first (if it's populated)
-        const shiftTemplate =
-          typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
-            ? es.shiftTemplate
-            : shiftTemplates.find((ws) => ws._id === wsId); // Fallback to Redux store for select options compatibility
+        const shiftTemplate = shiftTemplates.find((ws) => ws._id === wsId);
 
         const shiftName = shiftTemplate?.name?.toLowerCase() || "unknown";
 
@@ -296,8 +287,8 @@ const ManagerDutyScheduleForm = () => {
               }, ${employee.personalInformation.firstName
                 .charAt(0)
                 .toUpperCase()}`
-            : "Unknown Employee",
-          lastName: employee?.personalInformation?.lastName || "Unknown",
+            : "Unknown",
+          lastName: employee?.personalInformation?.lastName || "",
           shiftName,
           shift: shiftTime,
           description: es.remarks || "",
@@ -405,20 +396,16 @@ const ManagerDutyScheduleForm = () => {
 
       // Optional: sort by last name (optional but good for consistency in data)
       employeeSchedules.sort((a, b) => {
-        const getEmployeeData = (empSched) => {
-          const empId =
-            typeof empSched.employee === "string"
-              ? empSched.employee
-              : empSched.employee?._id;
-          // Try to get from entry first, then fallback to Redux store
-          return typeof empSched.employee === "object" && empSched.employee?._id
-            ? empSched.employee
-            : employees.find((e) => e._id === empId);
-        };
-
-        const empA = getEmployeeData(a);
-        const empB = getEmployeeData(b);
-
+        const empA = employees.find(
+          (e) =>
+            e._id ===
+            (typeof a.employee === "string" ? a.employee : a.employee?._id)
+        );
+        const empB = employees.find(
+          (e) =>
+            e._id ===
+            (typeof b.employee === "string" ? b.employee : b.employee?._id)
+        );
         const lastA = empA?.personalInformation?.lastName?.toLowerCase() || "";
         const lastB = empB?.personalInformation?.lastName?.toLowerCase() || "";
         return lastA.localeCompare(lastB);
@@ -464,31 +451,9 @@ const ManagerDutyScheduleForm = () => {
   };
 
   const getShiftColor = (shiftName) => {
-    // First try to find the shift template in entries
-    let schedule = null;
-    for (const entry of allEntries) {
-      for (const es of entry.employeeSchedules) {
-        const shiftTemplate =
-          typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
-            ? es.shiftTemplate
-            : null;
-        if (
-          shiftTemplate &&
-          shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
-        ) {
-          schedule = shiftTemplate;
-          break;
-        }
-      }
-      if (schedule) break;
-    }
-
-    // Fallback to Redux store
-    if (!schedule) {
-      schedule = shiftTemplates.find(
-        (ws) => ws.name.toLowerCase() === shiftName.toLowerCase()
-      );
-    }
+    const schedule = shiftTemplates.find(
+      (ws) => ws.name.toLowerCase() === shiftName.toLowerCase()
+    );
 
     return schedule?.shiftColor || "bg-white"; // fallback to white if not found or no color set
   };
@@ -692,14 +657,11 @@ const ManagerDutyScheduleForm = () => {
             ? sched.employee
             : sched.employee?._id;
         // Prevent copying 'Office Friday' shift to non-Friday days
-        const shiftTemplate =
-          typeof sched.shiftTemplate === "object" && sched.shiftTemplate?._id
-            ? sched.shiftTemplate
-            : shiftTemplates.find(
-                (ws) =>
-                  ws._id === sched.shiftTemplate ||
-                  ws._id === sched.shiftTemplate?._id
-              );
+        const shiftTemplate = shiftTemplates.find(
+          (ws) =>
+            ws._id === sched.shiftTemplate ||
+            ws._id === sched.shiftTemplate?._id
+        );
         // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
         if (
           shiftTemplate &&
@@ -791,14 +753,11 @@ const ManagerDutyScheduleForm = () => {
             ? sched.employee
             : sched.employee?._id;
         // Prevent copying 'Office Friday' shift to non-Friday days
-        const shiftTemplate =
-          typeof sched.shiftTemplate === "object" && sched.shiftTemplate?._id
-            ? sched.shiftTemplate
-            : shiftTemplates.find(
-                (ws) =>
-                  ws._id === sched.shiftTemplate ||
-                  ws._id === sched.shiftTemplate?._id
-              );
+        const shiftTemplate = shiftTemplates.find(
+          (ws) =>
+            ws._id === sched.shiftTemplate ||
+            ws._id === sched.shiftTemplate?._id
+        );
         // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
         if (
           shiftTemplate &&
@@ -874,62 +833,15 @@ const ManagerDutyScheduleForm = () => {
 
   // Helper: Build summary data for the current visible calendar weeks
   const getWeeklySummary = () => {
-    // Build a map of employees from entries (prioritize entry data)
+    // Build a map of employees
     const employeeMap = {};
-
-    // First, collect all unique employees from entries
-    const entryEmployees = new Set();
-    allEntries.forEach((entry) => {
-      entry.employeeSchedules.forEach((es) => {
-        const empId =
-          typeof es.employee === "string" ? es.employee : es.employee?._id;
-        entryEmployees.add(empId);
-
-        // If employee data is populated in entry, use it
-        if (typeof es.employee === "object" && es.employee?._id) {
-          employeeMap[empId] = es.employee;
-        }
-      });
+    employees.forEach((emp) => {
+      employeeMap[emp._id] = emp;
     });
-
-    // Fill in missing employee data from Redux store (for select options compatibility)
-    entryEmployees.forEach((empId) => {
-      if (!employeeMap[empId]) {
-        const empFromStore = employees.find((emp) => emp._id === empId);
-        if (empFromStore) {
-          employeeMap[empId] = empFromStore;
-        }
-      }
-    });
-
-    // Build a map of shiftTemplates from entries (prioritize entry data)
+    // Build a map of shiftTemplates
     const shiftMap = {};
-
-    // First, collect all unique shift templates from entries
-    const entryShiftTemplates = new Set();
-    allEntries.forEach((entry) => {
-      entry.employeeSchedules.forEach((es) => {
-        const shiftId =
-          typeof es.shiftTemplate === "string"
-            ? es.shiftTemplate
-            : es.shiftTemplate?._id;
-        entryShiftTemplates.add(shiftId);
-
-        // If shift template data is populated in entry, use it
-        if (typeof es.shiftTemplate === "object" && es.shiftTemplate?._id) {
-          shiftMap[shiftId] = es.shiftTemplate;
-        }
-      });
-    });
-
-    // Fill in missing shift template data from Redux store (for select options compatibility)
-    entryShiftTemplates.forEach((shiftId) => {
-      if (!shiftMap[shiftId]) {
-        const shiftFromStore = shiftTemplates.find((st) => st._id === shiftId);
-        if (shiftFromStore) {
-          shiftMap[shiftId] = shiftFromStore;
-        }
-      }
+    shiftTemplates.forEach((st) => {
+      shiftMap[st._id] = st;
     });
 
     // Get all unique employees scheduled in this month
@@ -941,17 +853,14 @@ const ManagerDutyScheduleForm = () => {
         scheduledEmployeeIds.add(empId);
       });
     });
-
-    // Sort employees by last name using the employeeMap
-    const sortedEmployees = Array.from(scheduledEmployeeIds)
-      .map((id) => employeeMap[id])
-      .filter((emp) => emp) // Remove null/undefined entries
+    // Sort employees by last name
+    const sortedEmployees = [...employees]
+      .filter((e) => scheduledEmployeeIds.has(e._id))
       .sort((a, b) =>
         a.personalInformation.lastName.localeCompare(
           b.personalInformation.lastName
         )
       );
-
     // Build calendar weeks (array of arrays of dates)
     const weeks = [];
     let week = [];
@@ -1020,23 +929,6 @@ const ManagerDutyScheduleForm = () => {
       });
     });
   };
-
-  /*
-   * EMPLOYEE & SHIFT TEMPLATE DATA USAGE APPROACH:
-   *
-   * This component uses a hybrid approach for both employee and shift template data:
-   * 1. employees (from Redux store) - Used ONLY for select options in the modal
-   * 2. shiftTemplates (from Redux store) - Used ONLY for select options in the modal
-   * 3. allEntries (from duty schedule entries) - Used for all other data processing
-   *
-   * The reason for this approach is to prioritize data from entries while
-   * maintaining compatibility with the select dropdowns that require the full lists.
-   *
-   * When processing scheduled data (display, sorting, summaries), the component:
-   * - First tries to use employee/shift data from the entry (if populated)
-   * - Falls back to Redux store data for backwards compatibility
-   * - This ensures the component works with both populated and non-populated data in entries
-   */
 
   return (
     <div className="p-4">
@@ -1138,7 +1030,7 @@ const ManagerDutyScheduleForm = () => {
                   {days.map((day, index) => (
                     <div key={index}>
                       {day && (
-                        <div
+                        <button
                           draggable={true}
                           onDragStart={(e) =>
                             handleDragStart(e, "dateBox", { date: day })
@@ -1151,7 +1043,7 @@ const ManagerDutyScheduleForm = () => {
                           onContextMenu={(e) =>
                             handleDateBoxContextMenu(e, day)
                           }
-                          className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left cursor-pointer ${
+                          className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left ${
                             dragOverDate === formatDatePH(day)
                               ? "ring-4 ring-blue-400"
                               : ""
@@ -1238,8 +1130,7 @@ const ManagerDutyScheduleForm = () => {
                                           e.stopPropagation();
                                           handleEmployeeRemove(day, emp.id);
                                         }}
-                                        className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
-                                        type="button"
+                                        className="text-red-500 hover:text-red-700 flex items-center justify-center"
                                       >
                                         <FaTimes />
                                       </button>
@@ -1254,7 +1145,7 @@ const ManagerDutyScheduleForm = () => {
                               </div>
                             ))}
                           </div>
-                        </div>
+                        </button>
                       )}
                     </div>
                   ))}
@@ -1281,74 +1172,16 @@ const ManagerDutyScheduleForm = () => {
               const summary = getWeeklySummary();
               // Build a flat map of employeeId to total hours for the month
               const employeeMonthTotals = {};
-
-              // Build a map of employees from entries (prioritize entry data)
+              // Build a map of employees
               const employeeMap = {};
-
-              // First, collect all unique employees from entries
-              const entryEmployees = new Set();
-              allEntries.forEach((entry) => {
-                entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-                  entryEmployees.add(empId);
-
-                  // If employee data is populated in entry, use it
-                  if (typeof es.employee === "object" && es.employee?._id) {
-                    employeeMap[empId] = es.employee;
-                  }
-                });
+              employees.forEach((emp) => {
+                employeeMap[emp._id] = emp;
               });
-
-              // Fill in missing employee data from Redux store (for select options compatibility)
-              entryEmployees.forEach((empId) => {
-                if (!employeeMap[empId]) {
-                  const empFromStore = employees.find(
-                    (emp) => emp._id === empId
-                  );
-                  if (empFromStore) {
-                    employeeMap[empId] = empFromStore;
-                  }
-                }
-              });
-
-              // Build a map of shiftTemplates from entries (prioritize entry data)
+              // Build a map of shiftTemplates
               const shiftMap = {};
-
-              // First, collect all unique shift templates from entries
-              const entryShiftTemplates = new Set();
-              allEntries.forEach((entry) => {
-                entry.employeeSchedules.forEach((es) => {
-                  const shiftId =
-                    typeof es.shiftTemplate === "string"
-                      ? es.shiftTemplate
-                      : es.shiftTemplate?._id;
-                  entryShiftTemplates.add(shiftId);
-
-                  // If shift template data is populated in entry, use it
-                  if (
-                    typeof es.shiftTemplate === "object" &&
-                    es.shiftTemplate?._id
-                  ) {
-                    shiftMap[shiftId] = es.shiftTemplate;
-                  }
-                });
+              shiftTemplates.forEach((st) => {
+                shiftMap[st._id] = st;
               });
-
-              // Fill in missing shift template data from Redux store (for select options compatibility)
-              entryShiftTemplates.forEach((shiftId) => {
-                if (!shiftMap[shiftId]) {
-                  const shiftFromStore = shiftTemplates.find(
-                    (st) => st._id === shiftId
-                  );
-                  if (shiftFromStore) {
-                    shiftMap[shiftId] = shiftFromStore;
-                  }
-                }
-              });
-
               // Calculate total per employee for the month
               allEntries.forEach((entry) => {
                 entry.employeeSchedules.forEach((es) => {
@@ -1374,7 +1207,6 @@ const ManagerDutyScheduleForm = () => {
                   }
                 });
               });
-
               // Get all unique employees scheduled in this month, sorted by last name
               const scheduledEmployeeIds = new Set();
               allEntries.forEach((entry) => {
@@ -1386,10 +1218,8 @@ const ManagerDutyScheduleForm = () => {
                   scheduledEmployeeIds.add(empId);
                 });
               });
-
-              const sortedEmployees = Array.from(scheduledEmployeeIds)
-                .map((id) => employeeMap[id])
-                .filter((emp) => emp) // Remove null/undefined entries
+              const sortedEmployees = [...employees]
+                .filter((e) => scheduledEmployeeIds.has(e._id))
                 .sort((a, b) =>
                   a.personalInformation.lastName.localeCompare(
                     b.personalInformation.lastName

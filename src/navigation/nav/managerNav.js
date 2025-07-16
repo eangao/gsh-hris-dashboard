@@ -1,7 +1,6 @@
 import { FaUserCog } from "react-icons/fa";
 import {
   AiOutlineDashboard,
-  AiOutlineCalendar,
   AiOutlineTeam,
   AiOutlineSchedule,
   AiOutlineForm,
@@ -13,6 +12,7 @@ import {
   AiOutlineFileText,
   AiOutlineApartment,
   AiOutlinePieChart,
+  AiOutlineClockCircle,
 } from "react-icons/ai";
 
 const managerRoles = ["MANAGER", "SUPER_ADMIN"];
@@ -42,13 +42,13 @@ export const managerNav = [
     group: "Manager Dashboard",
   },
 
-  // {
-  //   title: "Team Attendance",
-  //   icon: <AiOutlineCalendar />,
-  //   path: "/manager/team-attendance",
-  //   role: managerRoles,
-  //   group: "Manager Dashboard",
-  // },
+  {
+    title: "Attendance",
+    icon: <AiOutlineClockCircle />,
+    path: "/manager/employee-attendance",
+    role: managerRoles,
+    group: "Manager Dashboard",
+  },
   // {
   //   title: "Team Overview",
   //   icon: <AiOutlineTeam />,

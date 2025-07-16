@@ -16,7 +16,7 @@ const ManagerDutySchedule = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
-  const { employee: employeeId } = userInfo;
+  const employeeId = userInfo?.employee?._id;
 
   const { loading: managedDepartmentsLoading, managedDepartments } =
     useSelector((state) => state.employee);

@@ -2,17 +2,19 @@
 import moment from "moment-timezone";
 
 /**
- * Formats a Date or string to PH-local formatted string.
+ * Formats a Date or string to PH-local formatted string at PH midnight (00:00:00).
  * Default format: 'YYYY-MM-DD'.
+ *
+ * Always sets the time to midnight in Asia/Manila timezone before formatting.
  *
  * @param {Date|string} input - JS Date object or date string
  * @param {string} format - moment.js format string
- * @returns {string} - Formatted date string in PH timezone
+ * @returns {string} - Formatted date string in PH timezone at midnight
  */
 export const formatDatePH = (input, format = "YYYY-MM-DD") => {
   if (!input) return "";
   const date = input instanceof Date ? moment(input) : moment(input);
-  return date.tz("Asia/Manila").format(format);
+  return date.tz("Asia/Manila").startOf("day").format(format);
 };
 
 /**
@@ -305,4 +307,16 @@ export const getAttendanceDateRangePH = (
   }
 
   return { start, end };
+};
+
+/**
+ * Formats a DateTime object (ISO string or Date) to PH-local 12-hour time string (e.g., '7:45 AM').
+ * Specifically handles DateTime objects that may contain date and time information.
+ * @param {string|Date} dateTime - ISO string or Date object
+ * @returns {string} - 12-hour formatted time string in PH timezone
+ */
+export const formatDateTimeToTimePH = (dateTime) => {
+  if (!dateTime) return "";
+  const m = moment(dateTime).tz("Asia/Manila");
+  return m.format("h:mm A");
 };

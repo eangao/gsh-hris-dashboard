@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 
 const MyProfile = () => {
   const { userInfo } = useSelector((state) => state.auth);
-  const { employee: employeeId } = userInfo;
+  const employeeId = userInfo?.employee?._id;
 
   return <EmployeeDetails employeeId={employeeId} />;
 };

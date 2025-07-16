@@ -1,25 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAttendanceByDepartment } from "../../../store/Reducers/attendanceReducer";
+import { fetchAttendanceByDepartment } from "../../../../store/Reducers/attendanceReducer";
 import {
   formatDatePH,
   getTodayDatePH,
   formatTimeTo12HourPH,
   formatDateTimeToTimePH,
   convertDatePHToUTCISO,
-} from "../../../utils/phDateUtils";
-import { fetchEmployeeDepartmentId } from "../../../store/Reducers/employeeReducer";
-import { fetchDutyScheduleByDepartmentAndDate } from "../../../store/Reducers/dutyScheduleReducer";
+} from "../../../../utils/phDateUtils";
+import { fetchManagedDepartments } from "../../../../store/Reducers/employeeReducer";
+import { fetchDutyScheduleByDepartmentAndDate } from "../../../../store/Reducers/dutyScheduleReducer";
 
-const MyAttendance = () => {
+const ManagerEmployeeAttendance = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
   const employeeId = userInfo?.employee?._id;
 
-  const { loading: employeeLoading, employee } = useSelector(
-    (state) => state.employee
-  );
+  const { loading: managedDepartmentsLoading, managedDepartments } =
+    useSelector((state) => state.employee);
 
   const {
     dutySchedule,
@@ -33,19 +32,18 @@ const MyAttendance = () => {
     errorMessage,
   } = useSelector((state) => state.attendance);
 
-  const loading = employeeLoading || attendanceLoading || dutyScheduleLoading;
+  const loading =
+    managedDepartmentsLoading || attendanceLoading || dutyScheduleLoading;
+
+  const [selectedDepartment, setSelectedDepartment] = useState("");
 
   // Fetch managed departments
   useEffect(() => {
-    if (!employeeId) return;
-
-    dispatch(fetchEmployeeDepartmentId(employeeId));
+    dispatch(fetchManagedDepartments(employeeId));
   }, [employeeId, dispatch]);
 
-  // console.log(employee);
-
   useEffect(() => {
-    if (!employee?.employmentInformation?.department) return;
+    if (!selectedDepartment) return;
 
     // Get today's date in PH timezone and convert to UTC ISO format
     const todayPH = getTodayDatePH();
@@ -53,11 +51,36 @@ const MyAttendance = () => {
 
     dispatch(
       fetchDutyScheduleByDepartmentAndDate({
-        departmentId: employee?.employmentInformation?.department,
+        departmentId: selectedDepartment,
         currentDate: currentDateUTC,
       })
     );
-  }, [dispatch, employee?.employmentInformation?.department]);
+  }, [dispatch, selectedDepartment]);
+
+  // If only one department, set it as selected by default
+  useEffect(() => {
+    if (
+      managedDepartments &&
+      managedDepartments.length === 1 &&
+      selectedDepartment !== managedDepartments[0]._id
+    ) {
+      setSelectedDepartment(managedDepartments[0]._id);
+    }
+  }, [managedDepartments, selectedDepartment]);
+
+  // Set first department as selected and trigger handleDepartmentChange on first load
+  useEffect(() => {
+    if (
+      managedDepartments &&
+      managedDepartments.length > 0 &&
+      !selectedDepartment
+    ) {
+      setSelectedDepartment(managedDepartments[0]._id);
+      // Simulate event for handleDepartmentChange
+      handleDepartmentChange({ target: { value: managedDepartments[0]._id } });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [managedDepartments]);
 
   useEffect(() => {
     if (!dutySchedule) return;
@@ -65,10 +88,19 @@ const MyAttendance = () => {
     dispatch(
       fetchAttendanceByDepartment({
         scheduleId: dutySchedule._id,
-        employeeId: employeeId,
       })
     );
-  }, [dispatch, dutySchedule, employeeId]);
+  }, [dispatch, dutySchedule]);
+
+  // Handle department change
+  const handleDepartmentChange = (e) => {
+    const departmentId = e.target.value;
+    if (departmentId === "") {
+      setSelectedDepartment("");
+    } else {
+      setSelectedDepartment(departmentId);
+    }
+  };
 
   // Status badge component
   const StatusBadge = ({ status, lateMinutes = 0 }) => {
@@ -269,7 +301,10 @@ const MyAttendance = () => {
               {attendances && attendances.length > 0 ? (
                 attendances.map((attendance, idx) => (
                   <div
-                    key={attendance.datePH || idx}
+                    key={
+                      attendance._id ||
+                      `${attendance.datePH || attendance.date}-${idx}`
+                    }
                     className="px-6 py-4 hover:bg-gray-50 transition-colors"
                   >
                     <div className="grid grid-cols-7 gap-4 items-center text-sm">
@@ -466,4 +501,4 @@ const MyAttendance = () => {
   );
 };
 
-export default MyAttendance;
+export default ManagerEmployeeAttendance;

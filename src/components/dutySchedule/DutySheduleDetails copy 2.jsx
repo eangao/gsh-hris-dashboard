@@ -191,7 +191,6 @@ const DutyScheduleDetails = ({
           : "";
 
         return {
-          id: es?.employee?._id,
           name: `${
             es?.employee?.personalInformation.lastName
           }, ${es?.employee?.personalInformation.firstName
@@ -563,40 +562,31 @@ const DutyScheduleDetails = ({
                           </div>
 
                           <div className="space-y-1">
-                            {getEmployeesForDate(day).map(
-                              (group, groupIndex) => (
-                                <div
-                                  key={`${formatDatePH(day)}-${
-                                    group.shift
-                                  }-${groupIndex}`}
-                                  className={`rounded p-1 ${group?.shiftColor}`}
-                                >
-                                  <div className="text-xs font-bold mb-1 uppercase text-gray-700">
-                                    {group.shift}
-                                  </div>
-                                  {group.employees.map((emp, empIndex) => (
-                                    <div
-                                      key={
-                                        emp.id ||
-                                        `${formatDatePH(day)}-${
-                                          group.shift
-                                        }-${empIndex}-${emp.name}`
-                                      }
-                                      className="text-sm mb-1 p-1 rounded bg-white/50"
-                                    >
-                                      <div className="flex justify-between items-center">
-                                        <span>{emp.name}</span>
-                                      </div>
-                                      {emp.description && (
-                                        <div className="text-gray-600 mt-1 text-xs italic">
-                                          {emp.description}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
+                            {getEmployeesForDate(day).map((group) => (
+                              <div
+                                key={group.shift}
+                                className={`rounded p-1 ${group?.shiftColor}`}
+                              >
+                                <div className="text-xs font-bold mb-1 uppercase text-gray-700">
+                                  {group.shift}
                                 </div>
-                              )
-                            )}
+                                {group.employees.map((emp) => (
+                                  <div
+                                    key={emp.id}
+                                    className="text-sm mb-1 p-1 rounded bg-white/50"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span>{emp.name}</span>
+                                    </div>
+                                    {emp.description && (
+                                      <div className="text-gray-600 mt-1 text-xs italic">
+                                        {emp.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}

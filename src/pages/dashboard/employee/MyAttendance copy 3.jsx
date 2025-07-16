@@ -1,74 +1,93 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAttendanceByDepartment } from "../../../store/Reducers/attendanceReducer";
+import { fetchAttendanceByEmployee } from "../../../store/Reducers/attendanceReducer";
 import {
   formatDatePH,
   getTodayDatePH,
   formatTimeTo12HourPH,
   formatDateTimeToTimePH,
-  convertDatePHToUTCISO,
+  getAttendanceDateRangePH,
 } from "../../../utils/phDateUtils";
-import { fetchEmployeeDepartmentId } from "../../../store/Reducers/employeeReducer";
-import { fetchDutyScheduleByDepartmentAndDate } from "../../../store/Reducers/dutyScheduleReducer";
 
 const MyAttendance = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
-  const employeeId = userInfo?.employee?._id;
+  const { employee: employeeId } = userInfo;
 
-  const { loading: employeeLoading, employee } = useSelector(
-    (state) => state.employee
+  const { attendances, loading, errorMessage } = useSelector(
+    (state) => state.attendance
   );
 
-  const {
-    dutySchedule,
+  const [viewType, setViewType] = useState("last7");
 
-    loading: dutyScheduleLoading,
-  } = useSelector((state) => state.dutySchedule);
+  // Memoize currentDate to ensure it is only calculated once per component mount.
+  // This prevents unnecessary re-renders and avoids infinite update loops in useEffect.
+  // getTodayDatePH() returns the current date in PH timezone, so memoizing ensures consistency for all date calculations in this render cycle.
+  const currentDate = useMemo(() => getTodayDatePH(), []);
 
-  const {
-    attendances,
-    loading: attendanceLoading,
-    errorMessage,
-  } = useSelector((state) => state.attendance);
+  // Use getAttendanceDateRangePH for initial state
+  const initialRange = useMemo(() => getAttendanceDateRangePH("last7"), []);
+  const [dateRange, setDateRange] = useState({
+    start: initialRange.start,
+    end: initialRange.end,
+  });
 
-  const loading = employeeLoading || attendanceLoading || dutyScheduleLoading;
+  useEffect(() => {
+    // Only update dateRange when viewType changes and the new range is different
+    if (viewType === "last7" || viewType === "last30") {
+      const range = getAttendanceDateRangePH(viewType);
+      // Only update if the range actually changed
+      if (
+        !dateRange.start ||
+        !dateRange.end ||
+        dateRange.start.getTime() !== range.start.getTime() ||
+        dateRange.end.getTime() !== range.end.getTime()
+      ) {
+        setDateRange({ start: range.start, end: range.end });
+      }
+    }
+  }, [viewType, dateRange.start, dateRange.end]);
 
-  // Fetch managed departments
   useEffect(() => {
     if (!employeeId) return;
-
-    dispatch(fetchEmployeeDepartmentId(employeeId));
-  }, [employeeId, dispatch]);
-
-  // console.log(employee);
-
-  useEffect(() => {
-    if (!employee?.employmentInformation?.department) return;
-
-    // Get today's date in PH timezone and convert to UTC ISO format
-    const todayPH = getTodayDatePH();
-    const currentDateUTC = convertDatePHToUTCISO(formatDatePH(todayPH));
-
+    // Only fetch when dateRange changes
+    const isoStart =
+      dateRange.start instanceof Date
+        ? dateRange.start.toISOString()
+        : new Date(dateRange.start).toISOString();
+    const isoEnd =
+      dateRange.end instanceof Date
+        ? dateRange.end.toISOString()
+        : new Date(dateRange.end).toISOString();
     dispatch(
-      fetchDutyScheduleByDepartmentAndDate({
-        departmentId: employee?.employmentInformation?.department,
-        currentDate: currentDateUTC,
+      fetchAttendanceByEmployee({
+        employeeId,
+        startDate: isoStart,
+        endDate: isoEnd,
       })
     );
-  }, [dispatch, employee?.employmentInformation?.department]);
+  }, [dispatch, employeeId, dateRange]);
 
-  useEffect(() => {
-    if (!dutySchedule) return;
+  const handleViewTypeChange = (e) => {
+    setViewType(e.target.value);
+  };
 
-    dispatch(
-      fetchAttendanceByDepartment({
-        scheduleId: dutySchedule._id,
-        employeeId: employeeId,
-      })
-    );
-  }, [dispatch, dutySchedule, employeeId]);
+  const handleDateRangeChange = (type, e) => {
+    const newDate = e.target.value;
+    setDateRange((prev) => {
+      let start = type === "start" ? newDate : prev.start;
+      let end = type === "end" ? newDate : prev.end;
+      // Ensure start is not after end
+      if (new Date(start) > new Date(end)) {
+        if (type === "start") end = start;
+        else start = end;
+      }
+      // Use getAttendanceDateRangePH for custom range
+      const range = getAttendanceDateRangePH("range", start, end);
+      return { start: range.start, end: range.end };
+    });
+  };
 
   // Status badge component
   const StatusBadge = ({ status, lateMinutes = 0 }) => {
@@ -184,6 +203,10 @@ const MyAttendance = () => {
     </div>
   );
 
+  console.log("Attendances Data:", attendances);
+  console.log("Loading:", loading);
+  console.log("Error:", errorMessage);
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
@@ -213,6 +236,79 @@ const MyAttendance = () => {
         <LoadingSkeleton />
       ) : (
         <>
+          {/* Filters Section */}
+          <div className="bg-white shadow-sm rounded-lg p-6 mb-6 border border-gray-200">
+            <div className="flex flex-wrap gap-4 items-end">
+              {/* View Type Selection */}
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  View Type
+                </label>
+                <select
+                  value={viewType}
+                  onChange={handleViewTypeChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                  <option value="last7">Last 7 Days</option>
+                  <option value="last30">Last 30 Days</option>
+                  <option value="range">Custom Range</option>
+                </select>
+              </div>
+
+              {/* Date Selection */}
+              {(viewType === "last7" || viewType === "last30") && (
+                <div className="flex flex-1 min-w-[200px] gap-4">
+                  <div className="w-1/2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      From
+                    </label>
+                    <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 text-sm">
+                      {formatDatePH(dateRange.start, "MMMM D, YYYY")}
+                    </div>
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      To
+                    </label>
+                    <div className="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 text-sm">
+                      {formatDatePH(dateRange.end, "MMMM D, YYYY")}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viewType === "range" && (
+                <div className="flex flex-1 min-w-[200px] gap-4">
+                  <div className="w-1/2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      From
+                    </label>
+                    <input
+                      type="date"
+                      value={formatDatePH(dateRange.start, "YYYY-MM-DD")}
+                      onChange={(e) => handleDateRangeChange("start", e)}
+                      max={formatDatePH(currentDate, "YYYY-MM-DD")}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      To
+                    </label>
+                    <input
+                      type="date"
+                      value={formatDatePH(dateRange.end, "YYYY-MM-DD")}
+                      onChange={(e) => handleDateRangeChange("end", e)}
+                      min={formatDatePH(dateRange.start, "YYYY-MM-DD")}
+                      max={formatDatePH(currentDate, "YYYY-MM-DD")}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Attendance Table */}
           <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
             {/* Summary Stats */}

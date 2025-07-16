@@ -1138,7 +1138,7 @@ const ManagerDutyScheduleForm = () => {
                   {days.map((day, index) => (
                     <div key={index}>
                       {day && (
-                        <div
+                        <button
                           draggable={true}
                           onDragStart={(e) =>
                             handleDragStart(e, "dateBox", { date: day })
@@ -1151,7 +1151,7 @@ const ManagerDutyScheduleForm = () => {
                           onContextMenu={(e) =>
                             handleDateBoxContextMenu(e, day)
                           }
-                          className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left cursor-pointer ${
+                          className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left ${
                             dragOverDate === formatDatePH(day)
                               ? "ring-4 ring-blue-400"
                               : ""
@@ -1238,8 +1238,7 @@ const ManagerDutyScheduleForm = () => {
                                           e.stopPropagation();
                                           handleEmployeeRemove(day, emp.id);
                                         }}
-                                        className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
-                                        type="button"
+                                        className="text-red-500 hover:text-red-700 flex items-center justify-center"
                                       >
                                         <FaTimes />
                                       </button>
@@ -1254,7 +1253,7 @@ const ManagerDutyScheduleForm = () => {
                               </div>
                             ))}
                           </div>
-                        </div>
+                        </button>
                       )}
                     </div>
                   ))}

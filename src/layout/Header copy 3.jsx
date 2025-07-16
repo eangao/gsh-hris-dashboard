@@ -10,17 +10,13 @@ import {
   BiHelpCircle,
 } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
-import { useWindowSize } from "../hooks/useWindowSize";
 
 const Header = ({ showSidebar, setShowSidebar }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { width } = useWindowSize();
 
   const { userInfo } = useSelector((state) => state.auth);
   const { employee } = userInfo;
-
-  const isLargeScreen = width >= 1024;
 
   // State to hold the current PH date and time string
   const [dateTimePH, setDateTimePH] = useState(
@@ -51,17 +47,15 @@ const Header = ({ showSidebar, setShowSidebar }) => {
           showSidebar ? "ml-0 lg:ml-[260px]" : "ml-0"
         } flex justify-between items-center px-5 py-2 transition-all duration-300`}
       >
-        {/* Sidebar toggle button - only show when sidebar is collapsed or on mobile */}
-        {(!showSidebar || !isLargeScreen) && (
-          <div
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="w-[40px] h-[40px] rounded-full bg-[#3B5998] shadow-lg hover:bg-[#6A82FB] justify-center items-center cursor-pointer border-2 border-white flex"
-          >
-            <span className="text-white text-xl">
-              <FaList />
-            </span>
-          </div>
-        )}
+        {/* Sidebar toggle button */}
+        <div
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="w-[40px] h-[40px] rounded-full bg-[#3B5998] shadow-lg hover:bg-[#6A82FB] justify-center items-center cursor-pointer border-2 border-white flex"
+        >
+          <span className="text-white text-xl">
+            <FaList />
+          </span>
+        </div>
 
         {/* PH Date and Time display (visible on md and up) */}
         <div className="hidden md:block">

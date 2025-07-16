@@ -17,21 +17,20 @@ import { formatTimeTo12HourPH } from "../../../../utils/phDateUtils";
 
 const shiftColors = [
   // Already Used — KEEP EXACTLY
-  "bg-yellow-100",
-  "bg-red-100",
+  "bg-pink-300",
   "bg-blue-100",
   "bg-purple-100",
+  "bg-green-200",
   "bg-teal-100",
-  "bg-green-100",
-  "bg-zinc-100",
   "bg-orange-100",
+  "bg-cyan-200", // close to teal → use 200
   "bg-lime-100",
+  "bg-red-100",
+  "bg-yellow-100",
 
   // Other Unique or Differentiated Colors
-  "bg-pink-300",
   "bg-indigo-100",
   "bg-gray-100",
-  "bg-cyan-200", // close to teal → use 200
   "bg-rose-200", // close to red/pink → use 200
   "bg-violet-200", // close to purple → use 200
   "bg-fuchsia-300", // close to violet → use 300

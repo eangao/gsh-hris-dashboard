@@ -1,74 +1,23 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAttendanceByDepartment } from "../../../store/Reducers/attendanceReducer";
+import { fetchAttendanceByEmployee } from "../../../store/Reducers/attendanceReducer";
 import {
   formatDatePH,
   getTodayDatePH,
   formatTimeTo12HourPH,
   formatDateTimeToTimePH,
-  convertDatePHToUTCISO,
+  getAttendanceDateRangePH,
 } from "../../../utils/phDateUtils";
-import { fetchEmployeeDepartmentId } from "../../../store/Reducers/employeeReducer";
-import { fetchDutyScheduleByDepartmentAndDate } from "../../../store/Reducers/dutyScheduleReducer";
 
 const MyAttendance = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
-  const employeeId = userInfo?.employee?._id;
+  const { employee: employeeId } = userInfo;
 
-  const { loading: employeeLoading, employee } = useSelector(
-    (state) => state.employee
+  const { attendances, loading, errorMessage } = useSelector(
+    (state) => state.attendance
   );
-
-  const {
-    dutySchedule,
-
-    loading: dutyScheduleLoading,
-  } = useSelector((state) => state.dutySchedule);
-
-  const {
-    attendances,
-    loading: attendanceLoading,
-    errorMessage,
-  } = useSelector((state) => state.attendance);
-
-  const loading = employeeLoading || attendanceLoading || dutyScheduleLoading;
-
-  // Fetch managed departments
-  useEffect(() => {
-    if (!employeeId) return;
-
-    dispatch(fetchEmployeeDepartmentId(employeeId));
-  }, [employeeId, dispatch]);
-
-  // console.log(employee);
-
-  useEffect(() => {
-    if (!employee?.employmentInformation?.department) return;
-
-    // Get today's date in PH timezone and convert to UTC ISO format
-    const todayPH = getTodayDatePH();
-    const currentDateUTC = convertDatePHToUTCISO(formatDatePH(todayPH));
-
-    dispatch(
-      fetchDutyScheduleByDepartmentAndDate({
-        departmentId: employee?.employmentInformation?.department,
-        currentDate: currentDateUTC,
-      })
-    );
-  }, [dispatch, employee?.employmentInformation?.department]);
-
-  useEffect(() => {
-    if (!dutySchedule) return;
-
-    dispatch(
-      fetchAttendanceByDepartment({
-        scheduleId: dutySchedule._id,
-        employeeId: employeeId,
-      })
-    );
-  }, [dispatch, dutySchedule, employeeId]);
 
   // Status badge component
   const StatusBadge = ({ status, lateMinutes = 0 }) => {
@@ -183,6 +132,10 @@ const MyAttendance = () => {
       </div>
     </div>
   );
+
+  console.log("Attendances Data:", attendances);
+  console.log("Loading:", loading);
+  console.log("Error:", errorMessage);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

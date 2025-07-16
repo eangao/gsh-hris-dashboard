@@ -243,6 +243,29 @@ export const hrApproval = createAsyncThunk(
   }
 );
 
+export const fetchDutyScheduleByDepartmentAndDate = createAsyncThunk(
+  "dutySchedule/fetchDutyScheduleByDepartmentAndDate",
+  async (
+    { departmentId, currentDate },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const { data } = await api.post(
+        `/hris/duty-schedules/by-department-date/${departmentId}`,
+        { currentDate },
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      console.log(error);
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const dutyScheduleSlice = createSlice({
   name: "dutySchedule",
   initialState: {
@@ -402,6 +425,26 @@ const dutyScheduleSlice = createSlice({
         state.loading = false;
         state.errorMessage = payload.error;
       });
+
+    // Handle fetchDutyScheduleByDepartmentAndDate
+    builder
+      .addCase(fetchDutyScheduleByDepartmentAndDate.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(
+        fetchDutyScheduleByDepartmentAndDate.fulfilled,
+        (state, { payload }) => {
+          state.loading = false;
+          state.dutySchedule = payload.dutySchedule;
+        }
+      )
+      .addCase(
+        fetchDutyScheduleByDepartmentAndDate.rejected,
+        (state, { payload }) => {
+          state.loading = false;
+          state.errorMessage = payload.error;
+        }
+      );
   },
 });
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Router from "./router/Router";
 import publicRoutes from "./router/routes/publicRoutes";
-import { getRoutes } from "./router/routes";
+import { getAllRoutes } from "./router/routes";
 import { useDispatch, useSelector } from "react-redux";
 import { get_user_info } from "./store/Reducers/authReducer";
 
@@ -14,10 +14,21 @@ function App() {
 
   const [allroutes, setAllRoutes] = useState([...publicRoutes]);
 
+  // Debug logging
+  console.log(
+    `App: Current role: "${role}", token: ${token ? "present" : "absent"}`
+  );
+  console.log(`App: Current routes count: ${allroutes.length}`);
+
   useEffect(() => {
     if (role) {
-      const routes = getRoutes(role);
-      setAllRoutes([...publicRoutes, routes]);
+      console.log(`App: Getting routes for role "${role}"`);
+      const routes = getAllRoutes(role);
+      console.log(`App: Received routes:`, routes);
+      setAllRoutes([...publicRoutes, ...routes]);
+    } else {
+      console.log(`App: No role, using only public routes`);
+      setAllRoutes([...publicRoutes]);
     }
   }, [role]);
 
@@ -25,7 +36,7 @@ function App() {
     if (token) {
       dispatch(get_user_info());
     }
-  }, [token]);
+  }, [token, dispatch]);
 
   return <Router allRoutes={allroutes} />;
 }

@@ -11,7 +11,7 @@ const EmployeeDutySchedule = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
-  const { employee: employeeId } = userInfo;
+  const employeeId = userInfo?.employee?._id;
 
   const { dutySchedules, totalDutySchedule, loading } = useSelector(
     (state) => state.dutySchedule
