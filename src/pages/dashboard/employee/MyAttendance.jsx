@@ -17,6 +17,8 @@ const MyAttendance = () => {
   const { userInfo } = useSelector((state) => state.auth);
   const employeeId = userInfo?.employee?._id;
 
+  console.log("MyAttendance: employeeId:", employeeId);
+
   const { loading: employeeLoading, employee } = useSelector(
     (state) => state.employee
   );

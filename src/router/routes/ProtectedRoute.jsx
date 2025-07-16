@@ -28,9 +28,7 @@ const ProtectedRouteLoader = () => (
 );
 
 const ProtectedRoute = ({ route, children }) => {
-  const { role, userInfo, loading, isInitialized } = useSelector(
-    (state) => state.auth
-  );
+  const { role, userInfo, loading } = useSelector((state) => state.auth);
   const location = useLocation();
 
   // Debug logging
@@ -38,7 +36,6 @@ const ProtectedRoute = ({ route, children }) => {
     role,
     hasUserInfo: !!userInfo,
     loading,
-    isInitialized,
     pathname: location.pathname,
   });
 
@@ -47,7 +44,7 @@ const ProtectedRoute = ({ route, children }) => {
   // ===============================
 
   // Show loading while authentication is being checked
-  if (loading || !isInitialized) {
+  if (loading) {
     console.log("ProtectedRoute: Showing loading state");
     return <ProtectedRouteLoader />;
   }
