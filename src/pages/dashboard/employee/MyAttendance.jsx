@@ -10,6 +10,14 @@ import {
 } from "../../../utils/phDateUtils";
 import { fetchEmployeeDepartmentId } from "../../../store/Reducers/employeeReducer";
 import { fetchDutyScheduleByDepartmentAndDate } from "../../../store/Reducers/dutyScheduleReducer";
+import {
+  PageContainer,
+  PageHeader,
+  Card,
+  StatusBadge,
+  LoadingSpinner,
+  Table,
+} from "../../../components/ui";
 
 const MyAttendance = () => {
   const dispatch = useDispatch();
@@ -72,57 +80,10 @@ const MyAttendance = () => {
     );
   }, [dispatch, dutySchedule, employeeId]);
 
-  // Status badge component
-  const StatusBadge = ({ status, lateMinutes = 0 }) => {
-    const getStatusConfig = (status, lateMinutes) => {
-      switch (status) {
-        case "Present":
-          return {
-            bg: "bg-green-100",
-            text: "text-green-800",
-            border: "border-green-200",
-            label: "Present",
-          };
-        case "Late":
-          return {
-            bg: "bg-yellow-100",
-            text: "text-yellow-800",
-            border: "border-yellow-200",
-            label: `Late (${lateMinutes}m)`,
-          };
-        case "Absent":
-          return {
-            bg: "bg-red-100",
-            text: "text-red-800",
-            border: "border-red-200",
-            label: "Absent",
-          };
-        case "Off":
-          return {
-            bg: "bg-gray-100",
-            text: "text-gray-800",
-            border: "border-gray-200",
-            label: "Off",
-          };
-        default:
-          return {
-            bg: "bg-gray-100",
-            text: "text-gray-800",
-            border: "border-gray-200",
-            label: "Unknown",
-          };
-      }
-    };
-
-    const config = getStatusConfig(status, lateMinutes);
-    return (
-      <span
-        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${config.bg} ${config.text} ${config.border}`}
-      >
-        {config.label}
-      </span>
-    );
-  };
+  // Status badge component - now using design system
+  // const StatusBadge = ({ status, lateMinutes = 0 }) => {
+  //   // This is now imported from the design system
+  // };
 
   // Time display component - formats time to PH timezone 12-hour format
   const TimeDisplay = ({ time, type = "in" }) => {

@@ -140,8 +140,8 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
         flex items-center gap-3 px-4 py-3 mx-2 rounded-lg font-medium transition-all duration-200 group
         ${
           isActive
-            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg transform scale-[1.02]"
-            : "text-gray-700 hover:text-white hover:bg-blue-600 hover:shadow-md"
+            ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg transform scale-[1.02] ring-2 ring-blue-400/50"
+            : "text-gray-300 hover:text-white hover:bg-gradient-to-r hover:from-blue-600/80 hover:to-indigo-600/80 hover:shadow-md"
         }
       `}
       aria-current={isActive ? "page" : undefined}
@@ -158,7 +158,7 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
 
       {/* Active Indicator */}
       {isActive && (
-        <div className="ml-auto w-2 h-2 bg-white rounded-full flex-shrink-0" />
+        <div className="ml-auto w-2 h-2 bg-white rounded-full flex-shrink-0 shadow-sm" />
       )}
     </Link>
   ));
@@ -178,8 +178,8 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
             w-full flex items-center justify-between px-4 py-3 text-left rounded-lg font-medium transition-all duration-200 
             ${
               isOpen
-                ? "bg-blue-100 text-blue-800 shadow-md"
-                : "text-gray-700 hover:text-blue-700 hover:bg-blue-50"
+                ? "bg-blue-800/50 text-blue-200 shadow-md ring-1 ring-blue-500/30"
+                : "text-gray-400 hover:text-white hover:bg-blue-800/30"
             }
           `}
           aria-expanded={isOpen}
@@ -218,7 +218,7 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
               isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
             }`}
           >
-            <ul className="space-y-1 pl-4 border-l-2 border-blue-200">
+            <ul className="space-y-1 pl-4 border-l-2 border-blue-500/30">
               {items.map((item, itemIndex) => (
                 <li key={item.path || itemIndex}>
                   <NavigationItem
@@ -256,31 +256,34 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-gray-50 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
+        className={`fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-slate-900 via-blue-900 to-slate-900 shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
           showSidebar ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Main Navigation"
       >
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="flex gap-2 items-center justify-between px-6 py-3 border-b border-blue-800/30 bg-gradient-to-r from-blue-800/20 to-indigo-800/20 backdrop-blur-sm">
           {/* Logo */}
           <Link
             to="/"
             className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
             aria-label="Go to homepage"
           >
-            <img
-              className="h-10 w-auto object-contain"
-              src="/images/ahg-logo.png"
-              alt="Company Logo"
-            />
+            {/* White background container for blue logo visibility */}
+            <div className="bg-white/95 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-white/20">
+              <img
+                className="h-10 w-auto object-contain"
+                src="/images/ahg-logo.png"
+                alt="Company Logo"
+              />
+            </div>
           </Link>
 
           {/* Desktop Toggle Button - Only visible on large screens when sidebar is open */}
           {isLargeScreen && (
             <button
               onClick={() => setShowSidebar(false)}
-              className="p-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+              className="p-2 rounded-lg bg-blue-600/80 text-white hover:bg-blue-500 transition-colors duration-200 shadow-md hover:shadow-lg backdrop-blur-sm"
               aria-label="Close sidebar"
             >
               <BiChevronUp className="w-4 h-4 rotate-90" />
@@ -305,8 +308,8 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="border-t border-gray-100 p-4 bg-gray-50">
-          <div className="text-xs text-gray-500 text-center">
+        <div className="border-t border-blue-800/30 p-4 bg-gradient-to-r from-blue-800/20 to-indigo-800/20 backdrop-blur-sm">
+          <div className="text-xs text-blue-300/80 text-center font-medium">
             © 2025 AHG HRIS
           </div>
         </div>

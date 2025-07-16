@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchAttendanceByDepartment } from "../../../../store/Reducers/attendanceReducer";
+import { fetchAttendanceByDepartment, clearAttendanceData } from "../../../../store/Reducers/attendanceReducer";
 import {
   formatDatePH,
   getTodayDatePH,
@@ -10,6 +10,8 @@ import {
 } from "../../../../utils/phDateUtils";
 import { fetchManagedDepartments } from "../../../../store/Reducers/employeeReducer";
 import { fetchDutyScheduleByDepartmentAndDate } from "../../../../store/Reducers/dutyScheduleReducer";
+import Search from "../../../../components/Search";
+import Pagination from "../../../../components/Pagination";
 
 const ManagerEmployeeAttendance = () => {
   const dispatch = useDispatch();
@@ -20,14 +22,13 @@ const ManagerEmployeeAttendance = () => {
   const { loading: managedDepartmentsLoading, managedDepartments } =
     useSelector((state) => state.employee);
 
-  const {
-    dutySchedule,
-
-    loading: dutyScheduleLoading,
-  } = useSelector((state) => state.dutySchedule);
+  const { dutySchedule, loading: dutyScheduleLoading } = useSelector(
+    (state) => state.dutySchedule
+  );
 
   const {
     attendances,
+    totalAttendance,
     loading: attendanceLoading,
     errorMessage,
   } = useSelector((state) => state.attendance);
@@ -36,26 +37,74 @@ const ManagerEmployeeAttendance = () => {
     managedDepartmentsLoading || attendanceLoading || dutyScheduleLoading;
 
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchValue, setSearchValue] = useState("");
+  const [perPage, setPerpage] = useState(10);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = getTodayDatePH();
+    return formatDatePH(today, "YYYY-MM-DD");
+  });
 
   // Fetch managed departments
   useEffect(() => {
     dispatch(fetchManagedDepartments(employeeId));
   }, [employeeId, dispatch]);
 
+  // Clear attendance data when employee changes (manager logout/login)
   useEffect(() => {
-    if (!selectedDepartment) return;
+    dispatch(clearAttendanceData());
+    setSelectedDepartment("");
+    setCurrentPage(1);
+    setSearchValue("");
+  }, [employeeId, dispatch]);
 
-    // Get today's date in PH timezone and convert to UTC ISO format
-    const todayPH = getTodayDatePH();
-    const currentDateUTC = convertDatePHToUTCISO(formatDatePH(todayPH));
+  // Memoized fetch for attendance
+  const getAttendanceByDepartment = useCallback(() => {
+    if (!dutySchedule?._id) return;
 
+    dispatch(
+      fetchAttendanceByDepartment({
+        scheduleId: dutySchedule._id,
+        perPage: parseInt(perPage),
+        page: parseInt(currentPage),
+        searchValue,
+      })
+    );
+  }, [dispatch, dutySchedule, perPage, currentPage, searchValue]);
+
+  // Reset page to 1 when searchValue changes
+  useEffect(() => {
+    if (searchValue && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [searchValue, currentPage]);
+
+  // Clear attendance data when search changes
+  useEffect(() => {
+    if (dutySchedule?._id) {
+      dispatch(clearAttendanceData());
+    }
+  }, [searchValue, dispatch, dutySchedule]);
+
+  // Fetch duty schedule when department or date changes
+  useEffect(() => {
+    if (!selectedDepartment || !selectedDate) return;
+
+    const currentDateUTC = convertDatePHToUTCISO(selectedDate);
     dispatch(
       fetchDutyScheduleByDepartmentAndDate({
         departmentId: selectedDepartment,
         currentDate: currentDateUTC,
       })
     );
-  }, [dispatch, selectedDepartment]);
+  }, [dispatch, selectedDepartment, selectedDate]);
+
+  // Fetch attendance when duty schedule is available
+  useEffect(() => {
+    if (dutySchedule?._id) {
+      getAttendanceByDepartment();
+    }
+  }, [dutySchedule, getAttendanceByDepartment]);
 
   // If only one department, set it as selected by default
   useEffect(() => {
@@ -68,7 +117,7 @@ const ManagerEmployeeAttendance = () => {
     }
   }, [managedDepartments, selectedDepartment]);
 
-  // Set first department as selected and trigger handleDepartmentChange on first load
+  // Set first department as selected on first load
   useEffect(() => {
     if (
       managedDepartments &&
@@ -76,31 +125,41 @@ const ManagerEmployeeAttendance = () => {
       !selectedDepartment
     ) {
       setSelectedDepartment(managedDepartments[0]._id);
-      // Simulate event for handleDepartmentChange
-      handleDepartmentChange({ target: { value: managedDepartments[0]._id } });
+      setCurrentPage(1);
+      setSearchValue("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [managedDepartments]);
 
-  useEffect(() => {
-    if (!dutySchedule) return;
-
-    dispatch(
-      fetchAttendanceByDepartment({
-        scheduleId: dutySchedule._id,
-      })
-    );
-  }, [dispatch, dutySchedule]);
-
   // Handle department change
   const handleDepartmentChange = (e) => {
     const departmentId = e.target.value;
+    
+    // Clear attendance data when department changes
+    dispatch(clearAttendanceData());
+    
     if (departmentId === "") {
       setSelectedDepartment("");
     } else {
       setSelectedDepartment(departmentId);
     }
+    // Reset pagination and search when department changes
+    setCurrentPage(1);
+    setSearchValue("");
   };
+
+  // Handle date change
+  const handleDateChange = (e) => {
+    // Clear attendance data when date changes
+    dispatch(clearAttendanceData());
+    
+    setSelectedDate(e.target.value);
+    setCurrentPage(1);
+    setSearchValue("");
+  };
+
+  // Only show attendances for selected department
+  // const filteredAttendances = selectedDepartment && dutySchedule ? attendances : [];
 
   // Status badge component
   const StatusBadge = ({ status, lateMinutes = 0 }) => {
@@ -264,6 +323,57 @@ const ManagerEmployeeAttendance = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Date Selection and Search */}
+      {selectedDepartment && (
+        <div className="bg-white shadow-sm rounded-lg p-6 mb-6 border border-gray-200">
+          <div className="flex flex-col sm:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <label
+                htmlFor="date"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Select Date
+              </label>
+              <input
+                type="date"
+                id="date"
+                value={selectedDate}
+                onChange={handleDateChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label
+                htmlFor="search"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Search Employee
+              </label>
+              <Search
+                setParPage={setPerpage}
+                setSearchValue={setSearchValue}
+                searchValue={searchValue}
+                placeholder="Search by employee name..."
+              />
+            </div>
+          </div>
+          
+          {/* Search Results Info */}
+          {searchValue && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-blue-700">
+                  Showing results for: "<strong>{searchValue}</strong>"
+                </span>
+                <span className="text-blue-600">
+                  {totalAttendance} record{totalAttendance !== 1 ? 's' : ''} found
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -549,6 +659,19 @@ const ManagerEmployeeAttendance = () => {
                 </div>
               )}
             </div>
+
+            {/* Pagination */}
+            {totalAttendance > perPage && (
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalAttendance}
+                  itemsPerPage={perPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setPerpage}
+                />
+              </div>
+            )}
           </div>
         </>
       )}

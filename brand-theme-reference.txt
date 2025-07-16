@@ -1,0 +1,22 @@
+// Brand-Matched Theme Example - Customize colors based on your logo
+
+// If your logo is primarily GREEN:
+bg-gradient-to-b from-emerald-900 via-slate-900 to-emerald-900
+
+// If your logo is primarily RED:
+bg-gradient-to-b from-red-900 via-slate-900 to-red-900
+
+// If your logo is primarily PURPLE:
+bg-gradient-to-b from-purple-900 via-slate-900 to-purple-900
+
+// If your logo is primarily TEAL:
+bg-gradient-to-b from-teal-900 via-slate-900 to-teal-900
+
+// Multi-color logo (use dominant color):
+bg-gradient-to-b from-[#YOUR-LOGO-COLOR] via-slate-900 to-[#YOUR-LOGO-COLOR]
+
+// Steps to implement:
+1. Extract the dominant color from your logo
+2. Replace the blue-* classes with your chosen color
+3. Update hover states and active states to match
+4. Ensure sufficient contrast for accessibility

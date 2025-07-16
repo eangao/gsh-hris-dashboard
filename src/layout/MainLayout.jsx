@@ -47,7 +47,7 @@ const MainLayout = () => {
   }, [hideLayout, showSidebar]);
 
   return (
-    <div className="bg-[#cdcae9] w-full min-h-screen">
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 w-full min-h-screen">
       {!hideLayout && (
         <>
           <Header

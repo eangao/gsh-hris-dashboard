@@ -22,11 +22,22 @@ export const fetchAttendanceByEmployee = createAsyncThunk(
 
 export const fetchAttendanceByDepartment = createAsyncThunk(
   "attendance/fetchAttendanceByDepartment",
-  async ({ scheduleId, employeeId }, { rejectWithValue, fulfillWithValue }) => {
+  async (
+    { scheduleId, employeeId = "", perPage, page, searchValue },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
       const { data } = await api.get(
         `/hris/attendances/schedule-attendance-preview/${scheduleId}`,
-        { params: { employeeId }, withCredentials: true }
+        {
+          params: {
+            perPage,
+            page,
+            searchValue,
+            employeeId, // optional, for specific employee in department only
+          },
+          withCredentials: true,
+        }
       );
 
       return fulfillWithValue(data);
@@ -48,6 +59,12 @@ const attendanceSlice = createSlice({
   },
   reducers: {
     messageClear: (state) => {
+      state.errorMessage = "";
+      state.successMessage = "";
+    },
+    clearAttendanceData: (state) => {
+      state.attendances = [];
+      state.totalAttendance = 0;
       state.errorMessage = "";
       state.successMessage = "";
     },
@@ -76,6 +93,8 @@ const attendanceSlice = createSlice({
       .addCase(fetchAttendanceByDepartment.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.attendances = payload.attendances;
+        state.totalAttendance =
+          payload.totalAttendance || payload.attendances?.length || 0;
         state.errorMessage = "";
       })
       .addCase(fetchAttendanceByDepartment.rejected, (state, { payload }) => {
@@ -85,5 +104,5 @@ const attendanceSlice = createSlice({
   },
 });
 
-export const { messageClear } = attendanceSlice.actions;
+export const { messageClear, clearAttendanceData } = attendanceSlice.actions;
 export default attendanceSlice.reducer;

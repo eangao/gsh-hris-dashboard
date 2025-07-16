@@ -169,7 +169,7 @@ const ManagerEmployeeAttendance = () => {
 
     const colorClass = type === "in" ? "text-green-600" : "text-red-600";
 
-    return <span className={`font-medium ${colorClass}`}>{formattedTime}</span>;
+    return <span className={` text-sm ${colorClass}`}>{formattedTime}</span>;
   };
 
   // Loading skeleton component
@@ -194,7 +194,10 @@ const ManagerEmployeeAttendance = () => {
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="bg-gray-100 p-4">
           <div className="flex gap-4">
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
             <div className="h-4 bg-gray-200 rounded w-20"></div>
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
+            <div className="h-4 bg-gray-200 rounded w-16"></div>
             <div className="h-4 bg-gray-200 rounded w-16"></div>
             <div className="h-4 bg-gray-200 rounded w-16"></div>
             <div className="h-4 bg-gray-200 rounded w-16"></div>
@@ -205,9 +208,12 @@ const ManagerEmployeeAttendance = () => {
           <div key={i} className="p-4 border-b border-gray-200">
             <div className="flex gap-4">
               <div className="h-4 bg-gray-200 rounded w-32"></div>
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
               <div className="h-4 bg-gray-200 rounded w-20"></div>
               <div className="h-4 bg-gray-200 rounded w-20"></div>
               <div className="h-4 bg-gray-200 rounded w-20"></div>
+              <div className="h-4 bg-gray-200 rounded w-20"></div>
+              <div className="h-4 bg-gray-200 rounded w-24"></div>
               <div className="h-4 bg-gray-200 rounded w-24"></div>
             </div>
           </div>
@@ -219,11 +225,47 @@ const ManagerEmployeeAttendance = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Attendance</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Employee Attendance
+        </h1>
         <p className="text-gray-600">
-          Track your daily attendance and schedule
+          Monitor attendance records for employees in your departments
         </p>
       </div>
+
+      {/* Department Selection */}
+      {managedDepartments && managedDepartments.length > 1 && (
+        <div className="bg-white shadow-sm rounded-lg p-6 mb-6 border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label
+                htmlFor="department"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
+                Select Department
+              </label>
+              <select
+                id="department"
+                value={selectedDepartment}
+                onChange={handleDepartmentChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select a department...</option>
+                {managedDepartments.map((dept) => (
+                  <option key={dept._id} value={dept._id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex-shrink-0">
+              <div className="text-sm text-gray-500">
+                Total Departments: {managedDepartments.length}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Show error message if there's an error */}
       {errorMessage && (
@@ -285,7 +327,13 @@ const ManagerEmployeeAttendance = () => {
 
             {/* Table Header */}
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-              <div className="grid grid-cols-7 gap-4 text-sm font-semibold text-gray-700">
+              <div
+                className="grid gap-2 text-sm font-semibold text-gray-700"
+                style={{
+                  gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                }}
+              >
+                <div>Employee</div>
                 <div>Date</div>
                 <div>Schedule</div>
                 <div>Time In</div>
@@ -307,7 +355,38 @@ const ManagerEmployeeAttendance = () => {
                     }
                     className="px-6 py-4 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="grid grid-cols-7 gap-4 items-center text-sm">
+                    <div
+                      className="grid gap-4 items-center text-sm"
+                      style={{
+                        gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                      }}
+                    >
+                      {/* Employee Name */}
+                      <div className="font-medium text-gray-900">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-blue-600 font-semibold text-xs">
+                              {attendance.employeeName
+                                ? attendance.employeeName
+                                    .split(" ")[0]
+                                    ?.charAt(0) +
+                                  (attendance.employeeName
+                                    .split(" ")[1]
+                                    ?.charAt(0) || "")
+                                : "N/A"}
+                            </span>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-gray-900 text-sm truncate">
+                              {attendance.employeeName || "N/A"}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              ID: {attendance.hospitalEmployeeId || "N/A"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Date */}
                       <div className="font-medium text-gray-900">
                         {formatDatePH(
@@ -323,7 +402,7 @@ const ManagerEmployeeAttendance = () => {
                       </div>
 
                       {/* Schedule */}
-                      <div className="text-gray-700">
+                      <div className="text-gray-700 ">
                         {attendance.scheduleString ||
                           (attendance.dutySchedule &&
                           attendance.dutySchedule[0]?.workSchedule
@@ -368,27 +447,14 @@ const ManagerEmployeeAttendance = () => {
                             {!attendance.morningInLog &&
                               !attendance.afternoonInLog && (
                                 <TimeDisplay
-                                  time={
-                                    attendance.timeIn ||
-                                    attendance.biometricLogs?.find(
-                                      (log) => log.type === "CheckIn"
-                                    )?.logTime
-                                  }
+                                  time={attendance.timeIn}
                                   type="in"
                                 />
                               )}
                           </div>
                         ) : (
                           // For Shifting shifts, show single time in
-                          <TimeDisplay
-                            time={
-                              attendance.timeIn ||
-                              attendance.biometricLogs?.find(
-                                (log) => log.type === "CheckIn"
-                              )?.logTime
-                            }
-                            type="in"
-                          />
+                          <TimeDisplay time={attendance.timeIn} type="in" />
                         )}
                       </div>
 
@@ -399,7 +465,7 @@ const ManagerEmployeeAttendance = () => {
                           <div className="space-y-1">
                             {attendance.morningOutLog && (
                               <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-500 font-medium min-w-[60px]">
+                                <span className="text-xs text-gray-500 min-w-[60px]">
                                   Morning:
                                 </span>
                                 <TimeDisplay
@@ -410,7 +476,7 @@ const ManagerEmployeeAttendance = () => {
                             )}
                             {attendance.afternoonOutLog && (
                               <div className="flex items-center gap-1">
-                                <span className="text-xs text-gray-500 font-medium min-w-[60px]">
+                                <span className="text-xs text-gray-500  min-w-[60px]">
                                   Afternoon:
                                 </span>
                                 <TimeDisplay
@@ -422,27 +488,14 @@ const ManagerEmployeeAttendance = () => {
                             {!attendance.morningOutLog &&
                               !attendance.afternoonOutLog && (
                                 <TimeDisplay
-                                  time={
-                                    attendance.timeOut ||
-                                    attendance.biometricLogs?.find(
-                                      (log) => log.type === "CheckOut"
-                                    )?.logTime
-                                  }
+                                  time={attendance.timeOut}
                                   type="out"
                                 />
                               )}
                           </div>
                         ) : (
                           // For Shifting shifts, show single time out
-                          <TimeDisplay
-                            time={
-                              attendance.timeOut ||
-                              attendance.biometricLogs?.find(
-                                (log) => log.type === "CheckOut"
-                              )?.logTime
-                            }
-                            type="out"
-                          />
+                          <TimeDisplay time={attendance.timeOut} type="out" />
                         )}
                       </div>
 
@@ -484,12 +537,14 @@ const ManagerEmployeeAttendance = () => {
                 ))
               ) : (
                 <div className="px-6 py-12 text-center">
-                  <div className="text-gray-400 text-lg mb-2">📅</div>
+                  <div className="text-gray-400 text-lg mb-2">�</div>
                   <h3 className="text-lg font-medium text-gray-900 mb-1">
                     No attendance records found
                   </h3>
                   <p className="text-gray-500">
-                    Try adjusting your date range or check back later.
+                    {selectedDepartment
+                      ? "No attendance records found for the selected department and date."
+                      : "Please select a department to view attendance records."}
                   </p>
                 </div>
               )}
