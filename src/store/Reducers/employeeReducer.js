@@ -231,7 +231,6 @@ const employeeSlice = createSlice({
     errorMessage: "",
     employees: [],
     employee: "",
-    lastFetchedEmployeeId: null, // Add caching for employee details
     managers: [],
     directors: [],
     totalEmployee: 0,
@@ -264,7 +263,6 @@ const employeeSlice = createSlice({
       fetchEmployeeDetailsById.fulfilled,
       (state, { payload }) => {
         state.employee = payload.employee;
-        state.lastFetchedEmployeeId = payload.employee._id; // Cache the fetched employee ID
         state.loading = false;
       }
     );

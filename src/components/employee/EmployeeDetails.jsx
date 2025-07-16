@@ -13,43 +13,22 @@ const EmployeeDetails = ({ employeeId }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { employee, loading, lastFetchedEmployeeId } = useSelector(
-    (state) => state.employee
-  );
+  const { employee, loading } = useSelector((state) => state.employee);
 
   useEffect(() => {
-    // Only fetch if we don't have the employee data or if it's a different employee
-    if (employeeId && employeeId !== lastFetchedEmployeeId) {
+    if (employeeId) {
       dispatch(fetchEmployeeDetailsById(employeeId));
     }
-  }, [dispatch, employeeId, lastFetchedEmployeeId]);
+  }, [dispatch, employeeId]);
 
   const handlePrint = () => {
     window.print();
   };
 
-  // Enhanced loading state with better messaging
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <div
-              className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-indigo-400 rounded-full animate-spin mx-auto"
-              style={{
-                animationDuration: "0.8s",
-                animationDirection: "reverse",
-              }}
-            ></div>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            Loading Employee Details...
-          </h2>
-          <p className="text-gray-500">
-            Please wait while we fetch the information...
-          </p>
-        </div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
