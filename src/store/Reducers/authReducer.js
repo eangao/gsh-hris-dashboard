@@ -177,33 +177,48 @@ export const get_user_info = createAsyncThunk(
 
 const returnRole = (token) => {
   if (token) {
-    const decodeToken = jwtDecode(token);
-    const expireTime = new Date(decodeToken.exp * 1000);
-    if (new Date() > expireTime) {
+    try {
+      const decodeToken = jwtDecode(token);
+      const expireTime = new Date(decodeToken.exp * 1000);
+      if (new Date() > expireTime) {
+        localStorage.removeItem("accessToken");
+        return "";
+      } else {
+        return decodeToken.role;
+      }
+    } catch (error) {
+      console.error("Invalid token:", error);
       localStorage.removeItem("accessToken");
       return "";
-    } else {
-      return decodeToken.role;
     }
   } else {
     return "";
   }
 };
 
-export const authReducer = createSlice({
-  name: "auth",
-  initialState: {
+// Get initial auth state
+const getInitialAuthState = () => {
+  const token = localStorage.getItem("accessToken");
+  const role = returnRole(token);
+
+  return {
     successMessage: "",
     errorMessage: "",
     loading: false,
     userInfo: "",
-    role: returnRole(localStorage.getItem("accessToken")),
-    token: localStorage.getItem("accessToken"),
+    role,
+    token,
     users: [],
     user: "",
     totalUser: 0,
     unRegisteredUsers: [],
-  },
+    isInitialized: false, // Will be set to true after checking user info or confirming no token
+  };
+};
+
+export const authReducer = createSlice({
+  name: "auth",
+  initialState: getInitialAuthState(),
   reducers: {
     messageClear: (state, _) => {
       state.errorMessage = "";
@@ -212,38 +227,47 @@ export const authReducer = createSlice({
     clearUnRegisteredUsers: (state, _) => {
       state.unRegisteredUsers = [];
     },
+    setInitialized: (state, _) => {
+      state.isInitialized = true;
+    },
   },
   extraReducers: (builder) => {
     builder
       // Admin Login
       .addCase(admin_login.pending, (state) => {
         state.loader = true;
+        state.errorMessage = ""; // Clear any previous errors
       })
       .addCase(admin_login.rejected, (state, { payload }) => {
         state.loader = false;
         state.errorMessage = payload.error;
+        state.isInitialized = true; // Mark as initialized even on error
       })
       .addCase(admin_login.fulfilled, (state, { payload }) => {
         state.loader = false;
         state.successMessage = payload.message;
         state.token = payload.token;
         state.role = returnRole(payload.token);
-        state.user = payload.user;
+        state.userInfo = payload.user; // Use userInfo consistently
+        state.isInitialized = true;
       })
       // User Login
       .addCase(user_login.pending, (state) => {
         state.loader = true;
+        state.errorMessage = ""; // Clear any previous errors
       })
       .addCase(user_login.rejected, (state, { payload }) => {
         state.loader = false;
         state.errorMessage = payload.error;
+        state.isInitialized = true; // Mark as initialized even on error
       })
       .addCase(user_login.fulfilled, (state, { payload }) => {
         state.loader = false;
         state.successMessage = payload.message;
         state.token = payload.token;
         state.role = returnRole(payload.token);
-        state.user = payload.user;
+        state.userInfo = payload.user; // Use userInfo consistently
+        state.isInitialized = true;
       })
 
       .addCase(fetchUsers.fulfilled, (state, { payload }) => {
@@ -284,9 +308,23 @@ export const authReducer = createSlice({
         state.successMessage = payload.message;
       })
 
+      .addCase(get_user_info.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(get_user_info.fulfilled, (state, { payload }) => {
-        state.loader = false;
+        state.loading = false;
         state.userInfo = payload.userInfo;
+        state.isInitialized = true; // Mark as initialized when user info is loaded
+      })
+      .addCase(get_user_info.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload?.error || "Failed to load user info";
+        state.isInitialized = true; // Mark as initialized even on error
+        // Clear auth state on error
+        state.role = "";
+        state.token = "";
+        state.userInfo = "";
+        localStorage.removeItem("accessToken");
       })
 
       .addCase(logout.rejected, (state, { payload }) => {
@@ -299,9 +337,11 @@ export const authReducer = createSlice({
         state.role = ""; // Reset user role
         state.token = "";
         state.userInfo = "";
+        state.isInitialized = false; // Reset initialization flag
       });
   },
 });
 
-export const { messageClear, clearUnRegisteredUsers } = authReducer.actions;
+export const { messageClear, clearUnRegisteredUsers, setInitialized } =
+  authReducer.actions;
 export default authReducer.reducer;
