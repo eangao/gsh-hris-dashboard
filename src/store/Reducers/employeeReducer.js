@@ -8,19 +8,12 @@ export const fetchEmployees = createAsyncThunk(
     { perPage, page, searchValue, departmentId = null },
     { rejectWithValue, fulfillWithValue }
   ) => {
-    console.log("Fetching employees with params:", {
-      perPage,
-      page,
-      searchValue,
-      departmentId,
-    });
     try {
       const { data } = await api.get(
         `/hris/employees?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&departmentId=${departmentId}`,
         { withCredentials: true }
       );
 
-      // console.log(data);
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -240,6 +233,7 @@ const employeeSlice = createSlice({
     managers: [],
     directors: [],
     totalEmployee: 0,
+    statusCounts: {}, // Add statusCounts to initial state
     managedDepartments: [], // <-- add this
     managedCluster: null, // <-- add this for directors
   },
@@ -251,10 +245,10 @@ const employeeSlice = createSlice({
     clearEmployeeData: (state) => {
       state.employees = [];
       state.employee = null;
-      state.allEmployees = [];
       state.managers = [];
       state.directors = [];
       state.totalEmployee = 0;
+      state.statusCounts = {};
       state.managedDepartments = [];
       state.managedCluster = null;
       state.errorMessage = "";
@@ -270,6 +264,7 @@ const employeeSlice = createSlice({
       state.managers = [];
       state.directors = [];
       state.totalEmployee = 0;
+      state.statusCounts = {};
       state.managedDepartments = [];
       state.managedCluster = null;
     },
@@ -278,6 +273,7 @@ const employeeSlice = createSlice({
     builder.addCase(fetchEmployees.fulfilled, (state, { payload }) => {
       state.totalEmployee = payload.totalEmployee;
       state.employees = payload.employees;
+      state.statusCounts = payload.statusCounts || {}; // Store statusCounts from backend
       state.loading = false;
     });
 

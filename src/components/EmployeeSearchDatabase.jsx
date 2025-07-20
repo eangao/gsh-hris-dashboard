@@ -8,8 +8,8 @@ const EmployeeSearchDatabase = ({
   searchValue,
   inputPlaceholder,
   loading = false,
-  managedDepartments = [],
-  selectedDepartment = "",
+  departments = [],
+  selectedDepartment = null,
   onDepartmentChange,
 }) => {
   const [inputValue, setInputValue] = useState("");
@@ -61,37 +61,38 @@ const EmployeeSearchDatabase = ({
     setShowClear(false);
   };
 
-  // Get department label
+  // Get department label with proper formatting
   const getDepartmentLabel = () => {
-    if (!managedDepartments || managedDepartments.length === 0) {
+    if (!departments || departments.length === 0) {
       return "Select Department";
     }
 
-    if (managedDepartments.length === 1) {
-      return managedDepartments[0].name;
+    if (departments.length === 1) {
+      return departments[0].name?.toUpperCase() || "DEPARTMENT";
     }
 
-    const selectedDept = managedDepartments.find(
+    const selectedDept = departments.find(
       (dept) => dept._id === selectedDepartment
     );
-    return selectedDept ? selectedDept.name : "Select Department";
+    return selectedDept
+      ? selectedDept.name?.toUpperCase() || "DEPARTMENT"
+      : "Select Department";
   };
 
   // Check if there's only one department to show label instead of dropdown
-  const singleDepartment =
-    managedDepartments && managedDepartments.length === 1;
+  const singleDepartment = departments && departments.length === 1;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
       {/* Department Selection - Only show if we have departments */}
-      {managedDepartments && managedDepartments.length > 0 && (
+      {departments && departments.length > 0 && (
         <div className="sm:col-span-4">
           {singleDepartment ? (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Department
               </label>
-              <div className="px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+              <div className="px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 font-medium uppercase tracking-wide">
                 {getDepartmentLabel()}
               </div>
             </div>
@@ -105,15 +106,21 @@ const EmployeeSearchDatabase = ({
               </label>
               <select
                 id="department"
-                value={selectedDepartment}
+                value={selectedDepartment || ""} // Convert null to empty string for select
                 onChange={onDepartmentChange}
-                className="w-full px-4 py-2 focus:border-blue-600 outline-none border border-gray-300 rounded-md shadow-sm text-gray-900 bg-white transition-all"
+                className="w-full px-4 py-2 focus:border-blue-600 outline-none border border-gray-300 rounded-md shadow-sm text-gray-900 bg-white transition-all font-medium"
                 disabled={loading}
               >
-                <option value="">All Departments</option>
-                {managedDepartments.map((dept) => (
-                  <option key={dept._id} value={dept._id}>
-                    {dept.name}
+                <option value="" className="text-gray-500">
+                  All Departments
+                </option>
+                {departments.map((dept) => (
+                  <option
+                    key={dept._id}
+                    value={dept._id}
+                    className="uppercase tracking-wide text-xs font-medium"
+                  >
+                    {dept.name?.toUpperCase() || "DEPARTMENT"}
                   </option>
                 ))}
               </select>
@@ -125,7 +132,7 @@ const EmployeeSearchDatabase = ({
       {/* Employee Search - Show in remaining space */}
       <div
         className={`relative ${
-          managedDepartments && managedDepartments.length > 0
+          departments && departments.length > 0
             ? "sm:col-span-6"
             : "sm:col-span-10"
         }`}
