@@ -14,8 +14,12 @@ import {
 import {
   fetchEmployeesByDepartment,
   fetchManagedDepartments,
+  clearEmployeeData,
 } from "../../../../store/Reducers/employeeReducer";
-import { fetchDutyScheduleByDepartmentAndDate } from "../../../../store/Reducers/dutyScheduleReducer";
+import {
+  fetchDutyScheduleByDepartmentAndDate,
+  clearDutySchedule,
+} from "../../../../store/Reducers/dutyScheduleReducer";
 import Pagination from "../../../../components/Pagination";
 import EmployeeSearchFrontend from "../../../../components/EmployeeSearchFrontend";
 import LoadingIndicator from "../../../../components/LoadingIndicator";
@@ -61,8 +65,10 @@ const ManagerEmployeeAttendance = () => {
   //   console.log("Full employee state:", fullEmployeeState);
   // }, [dutySchedule, attendances, managedDepartments, employees, departmentLoading, attendanceLoading, dutyScheduleLoading, employeesLoading, errorMessage, fullEmployeeState]);
 
-  // State variables
+  // Simplified state variables - remove all loading states
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [isDataCleared, setIsDataCleared] = useState(false); // Track if data has been cleared for fresh login
+  const [userChangeKey, setUserChangeKey] = useState(0); // Track user changes for component key
 
   // Track if we've fetched data for the current user
   const fetchedForEmployee = useRef(null);
@@ -79,7 +85,8 @@ const ManagerEmployeeAttendance = () => {
     attendanceLoading ||
     dutyScheduleLoading ||
     employeesLoading ||
-    departmentLoading;
+    departmentLoading ||
+    isDataCleared; // Also show loading when data is being cleared
 
   // Callback functions definitions - moved here to avoid hoisting issues
   const handlePageChange = useCallback((page) => {
@@ -145,7 +152,7 @@ const ManagerEmployeeAttendance = () => {
     setPerpage(newPerPage);
   }, []);
 
-  // Clear attendance data when component unmounts
+  // Clear attendance data when component unmounts or user changes
   useEffect(() => {
     return () => {
       // Cleanup function runs when component unmounts
@@ -153,56 +160,130 @@ const ManagerEmployeeAttendance = () => {
     };
   }, [dispatch]);
 
-  // Track employeeId changes for fresh data fetching
+  // Clear attendance data when user changes (employeeId changes)
   useEffect(() => {
+    // console.log("Employee ID changed to:", employeeId);
+
     if (!employeeId) {
-      // Reset local state when no employee
+      // console.log("No employeeId - clearing all data");
+      // Clear everything when no user
+      dispatch(clearAttendance());
+      dispatch(clearEmployeeData());
+      dispatch(clearDutySchedule());
+
       setOriginalAttendances([]);
       setFilteredAttendances([]);
       setTotalFilteredAttendance(0);
       setSelectedDepartment("");
       setSearchValue("");
       setCurrentPage(1);
+      setIsDataCleared(true);
       return;
     }
 
     // Clear the ref to allow fetching for the new user
     fetchedForEmployee.current = null;
 
-    // Reset local state for new user
+    // console.log("Clearing all data for new user login");
+    // Always clear data when employeeId changes (including when it becomes null)
+    dispatch(clearAttendance());
+    dispatch(clearEmployeeData());
+    dispatch(clearDutySchedule());
+
+    // Also clear local state immediately and synchronously
     setOriginalAttendances([]);
     setFilteredAttendances([]);
     setTotalFilteredAttendance(0);
     setSelectedDepartment("");
     setSearchValue("");
     setCurrentPage(1);
-  }, [employeeId]);
 
-  // Fetch managed departments
+    // Set flag to indicate data has been cleared for fresh login
+    setIsDataCleared(true);
+
+    // Force a small delay to ensure all state is cleared before proceeding
+    const clearingTimeout = setTimeout(() => {
+      // console.log("Data clearing timeout completed - allowing new data fetch");
+      setIsDataCleared(false);
+    }, 300); // Reduced timeout for faster response
+
+    return () => clearTimeout(clearingTimeout);
+  }, [employeeId, dispatch]);
+
+  // Additional safeguard: clear data when userInfo becomes null/undefined (logout)
   useEffect(() => {
-    if (!employeeId) return;
+    if (!userInfo) {
+      dispatch(clearAttendance());
+      dispatch(clearEmployeeData());
+      dispatch(clearDutySchedule());
+
+      setOriginalAttendances([]);
+      setFilteredAttendances([]);
+      setTotalFilteredAttendance(0);
+      setSelectedDepartment("");
+      setSearchValue("");
+      setCurrentPage(1);
+      setIsDataCleared(true);
+    }
+  }, [userInfo, dispatch]);
+
+  // Fetch managed departments - use ref to avoid dependency loops
+  useEffect(() => {
+    // console.log("Fetch managed departments effect triggered, employeeId:", employeeId);
+    // console.log("Previous fetchedForEmployee.current:", fetchedForEmployee.current);
+
+    if (!employeeId) {
+      // console.log("No employeeId, returning");
+      return;
+    }
 
     // Always fetch managed departments for a new employee
     if (fetchedForEmployee.current !== employeeId) {
+      // console.log("Fetching managed departments for employee:", employeeId);
+      // console.log("Clearing previous department data first");
+
+      // Clear any existing managed departments before fetching new ones
+      dispatch(clearEmployeeData());
+
+      // Fetch new managed departments
       dispatch(fetchManagedDepartments(employeeId));
       fetchedForEmployee.current = employeeId;
+    } else {
+      // console.log("Already fetched for this employee, skipping");
     }
-  }, [employeeId, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeId, dispatch]); // Don't include managedDepartments to prevent loop
 
-  // Auto-select first department when managed departments are loaded
+  // Auto-select first department in first render or page load
   useEffect(() => {
+    // console.log("Auto-select department effect triggered");
+    // console.log("managedDepartments:", managedDepartments?.length || 0);
+    // console.log("selectedDepartment:", selectedDepartment);
+
+    // When managed departments change, clear any existing attendance data
+    // This ensures no stale data from previous user sessions
+    if (managedDepartments) {
+      // console.log("Clearing stale attendance data due to managed departments change");
+      setOriginalAttendances([]);
+      setFilteredAttendances([]);
+      setTotalFilteredAttendance(0);
+      dispatch(clearAttendance());
+    }
+
     if (
       managedDepartments &&
       managedDepartments.length > 0 &&
       !selectedDepartment
     ) {
+      // console.log("Auto-selecting first department:", managedDepartments[0]._id);
       // Only auto-select if no department is currently selected
       setSelectedDepartment(managedDepartments[0]._id);
     } else if (managedDepartments && managedDepartments.length === 0) {
+      // console.log("No managed departments found for this user");
       // Clear selected department if user has no managed departments
       setSelectedDepartment("");
     }
-  }, [managedDepartments, selectedDepartment]);
+  }, [managedDepartments, selectedDepartment, dispatch]);
 
   // if have selected department,
   useEffect(() => {
@@ -219,31 +300,49 @@ const ManagerEmployeeAttendance = () => {
     getDutyScheduleAndEmployeesByDepartment(selectedDepartment);
   }, [selectedDepartment, getDutyScheduleAndEmployeesByDepartment, dispatch]);
 
-  // Fetch attendance data when duty schedule is available
+  //
   useEffect(() => {
-    if (!dutySchedule?._id) return;
+    // console.log("Duty schedule changed:", dutySchedule);
+    if (!dutySchedule?._id) {
+      // console.log("No duty schedule ID found, returning");
+      return;
+    }
+
+    // console.log("Fetching attendance for schedule ID:", dutySchedule._id);
+    // Clear old attendance data immediately before fetching new data
+    dispatch(clearAttendance());
+    setOriginalAttendances([]);
+    setFilteredAttendances([]);
+    setTotalFilteredAttendance(0);
 
     dispatch(
       fetchAttendanceByDepartment({
         scheduleId: dutySchedule._id,
       })
     );
-  }, [dutySchedule, dispatch]);
+  }, [dutySchedule, dispatch]); // Keep dispatch but add dutySchedule._id specifically
 
-  // Set attendances data when available
+  // if have attendances, set them to original and filtered
   useEffect(() => {
+    // console.log("Attendances updated:", attendances);
     if (attendances && attendances.length > 0) {
+      // console.log("Setting attendance data, count:", attendances.length);
       // Set new data when we have attendances
       setOriginalAttendances(attendances);
       setFilteredAttendances(attendances);
       setTotalFilteredAttendance(attendances.length);
+      // Reset the data cleared flag since we now have fresh data
+      setIsDataCleared(false);
     } else if (attendances && attendances.length === 0) {
+      // console.log("Clearing attendance data - empty array received");
       // Clear local state when attendances is explicitly empty array
       setOriginalAttendances([]);
       setFilteredAttendances([]);
       setTotalFilteredAttendance(0);
+      // Also reset the flag for empty legitimate results
+      setIsDataCleared(false);
     }
-  }, [attendances]);
+  }, [attendances]); // Remove dispatch from dependencies
 
   // Search filtering effect
   useEffect(() => {
@@ -353,8 +452,17 @@ const ManagerEmployeeAttendance = () => {
     return <span className={` text-sm ${colorClass}`}>{formattedTime}</span>;
   };
 
+  // Update key when employeeId changes to force complete component re-render
+  useEffect(() => {
+    setUserChangeKey((prev) => prev + 1);
+  }, [employeeId]);
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div
+      key={`user-${employeeId || "no-user"}-${userChangeKey}`}
+      className="p-6 max-w-7xl mx-auto"
+    >
+      {/* Force complete re-render when user changes */}
       {/* Don't show any content if no employeeId (user not logged in) */}
       {!employeeId ? (
         <div className="flex items-center justify-center min-h-screen">
@@ -515,6 +623,7 @@ const ManagerEmployeeAttendance = () => {
 
           {/* Show message when user has no managed departments */}
           {!loading &&
+            !isDataCleared &&
             managedDepartments &&
             managedDepartments.length === 0 &&
             !employeeErrorMessage && (
@@ -539,7 +648,10 @@ const ManagerEmployeeAttendance = () => {
           <LoadingIndicator isLoading={loading} />
 
           {/* Show table when we have data OR when we're ready to show "no records" */}
-          {!loading && filteredAttendances && filteredAttendances.length > 0 ? (
+          {!loading &&
+          !isDataCleared &&
+          filteredAttendances &&
+          filteredAttendances.length > 0 ? (
             <>
               <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
                 {/* Summary Stats */}
@@ -1008,6 +1120,7 @@ const ManagerEmployeeAttendance = () => {
             </>
           ) : (
             !loading &&
+            !isDataCleared &&
             selectedDepartment && (
               <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
                 <div className="px-6 py-12 text-center">

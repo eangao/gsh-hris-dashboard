@@ -62,7 +62,7 @@ const Header = ({ showSidebar, setShowSidebar }) => {
       await dispatch(logout({}));
       navigate("/login");
     } catch (error) {
-      console.error("Logout error:", error);
+      // console.error("Logout error:", error);
     } finally {
       setIsLoggingOut(false);
     }

@@ -49,14 +49,20 @@ const Pagination = ({
   };
 
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex justify-between items-center w-full">
+      {/* Page Indicator */}
+      {totalItem > 0 && pageNumber > 0 && (
+        <span className="text-gray-700 font-medium">
+          Page {pageNumber} of {totalPage}
+        </span>
+      )}
+
       {/* Pagination Buttons */}
       <ul className="flex gap-2">
         {pageNumber > 1 && (
           <li
             onClick={() => setPageNumber(pageNumber - 1)}
-            className="cursor-pointer w-[33px] h-[33px] rounded-full flex justify-center items-center bg-blue-500 text-white hover:bg-blue-700 transition-colors"
-            title="Previous page"
+            className="cursor-pointer w-[33px] h-[33px] rounded-full flex justify-center items-center bg-blue-500 text-white hover:bg-blue-700"
           >
             <MdKeyboardDoubleArrowLeft />
           </li>
@@ -67,8 +73,7 @@ const Pagination = ({
         {pageNumber < totalPage && (
           <li
             onClick={() => setPageNumber(pageNumber + 1)}
-            className="cursor-pointer w-[33px] h-[33px] rounded-full flex justify-center items-center bg-blue-500 text-white hover:bg-blue-700 transition-colors"
-            title="Next page"
+            className="cursor-pointer w-[33px] h-[33px] rounded-full flex justify-center items-center bg-blue-500 text-white hover:bg-blue-700"
           >
             <MdKeyboardDoubleArrowRight />
           </li>

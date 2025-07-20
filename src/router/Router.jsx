@@ -45,7 +45,7 @@ const LoadingSpinner = () => (
  */
 const Router = ({ allRoutes }) => {
   // Debug logging
-  console.log("Router: Received routes:", allRoutes);
+  // console.log("Router: Received routes:", allRoutes);
 
   // Generate routes using React Router's useRoutes hook
   // Note: Hooks must be called at the top level, before any conditional logic
@@ -53,7 +53,7 @@ const Router = ({ allRoutes }) => {
 
   // Validate routes prop after hooks
   if (!allRoutes || !Array.isArray(allRoutes)) {
-    console.error("Router: allRoutes must be a valid array");
+    // console.error("Router: allRoutes must be a valid array");
     return (
       <div className="min-h-screen flex items-center justify-center bg-red-50">
         <div className="text-center">

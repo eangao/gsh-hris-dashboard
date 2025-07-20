@@ -30,7 +30,7 @@ import { allNav } from "./nav/allNav";
 export const getNav = (role) => {
   // Input validation
   if (!role || typeof role !== "string") {
-    console.warn("getNav: Invalid role provided, returning empty navigation");
+    // console.warn("getNav: Invalid role provided, returning empty navigation");
     return [];
   }
 
@@ -41,9 +41,9 @@ export const getNav = (role) => {
     // Secure by default: deny access if no role defined
     // This prevents accidental exposure of navigation items
     if (!navItem.role) {
-      console.warn(
-        `getNav: Navigation item "${navItem.title}" has no role defined, denying access`
-      );
+      // console.warn(
+      //   `getNav: Navigation item "${navItem.title}" has no role defined, denying access`
+      // );
       return false;
     }
 

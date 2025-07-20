@@ -289,14 +289,6 @@ const dutyScheduleSlice = createSlice({
       state.successMessage = "";
       state.loading = false;
     },
-    clearState: (state) => {
-      state.loading = false;
-      state.successMessage = "";
-      state.errorMessage = "";
-      state.dutySchedules = [];
-      state.dutySchedule = "";
-      state.totalDutySchedule = 0;
-    },
   },
   extraReducers: (builder) => {
     builder

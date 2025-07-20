@@ -261,18 +261,6 @@ const employeeSlice = createSlice({
       state.successMessage = "";
       state.loading = false;
     },
-    clearState: (state) => {
-      state.loading = false;
-      state.successMessage = "";
-      state.errorMessage = "";
-      state.employees = [];
-      state.employee = "";
-      state.managers = [];
-      state.directors = [];
-      state.totalEmployee = 0;
-      state.managedDepartments = [];
-      state.managedCluster = null;
-    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchEmployees.fulfilled, (state, { payload }) => {

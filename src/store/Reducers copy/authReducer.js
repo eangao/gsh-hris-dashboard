@@ -40,7 +40,7 @@ export const user_login = createAsyncThunk(
 
 export const logout = createAsyncThunk(
   "auth/logout",
-  async (_, { rejectWithValue, fulfillWithValue, dispatch }) => {
+  async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
         "/auth/logout",
@@ -51,14 +51,6 @@ export const logout = createAsyncThunk(
       );
 
       localStorage.removeItem("accessToken");
-
-      // Clear all reducers on logout
-      dispatch({ type: "auth/clearState" });
-      dispatch({ type: "employee/clearState" });
-      dispatch({ type: "attendance/clearState" });
-      dispatch({ type: "dutySchedule/clearState" });
-      dispatch({ type: "department/clearState" });
-      dispatch({ type: "cluster/clearState" });
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -228,9 +220,6 @@ export const authReducer = createSlice({
     clearUnRegisteredUsers: (state, _) => {
       state.unRegisteredUsers = [];
     },
-    clearState: () => {
-      return getInitialAuthState();
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -329,6 +318,5 @@ export const authReducer = createSlice({
   },
 });
 
-export const { messageClear, clearUnRegisteredUsers, clearState } =
-  authReducer.actions;
+export const { messageClear, clearUnRegisteredUsers } = authReducer.actions;
 export default authReducer.reducer;

@@ -40,7 +40,7 @@ export const user_login = createAsyncThunk(
 
 export const logout = createAsyncThunk(
   "auth/logout",
-  async (_, { rejectWithValue, fulfillWithValue, dispatch }) => {
+  async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.post(
         "/auth/logout",
@@ -51,14 +51,6 @@ export const logout = createAsyncThunk(
       );
 
       localStorage.removeItem("accessToken");
-
-      // Clear all reducers on logout
-      dispatch({ type: "auth/clearState" });
-      dispatch({ type: "employee/clearState" });
-      dispatch({ type: "attendance/clearState" });
-      dispatch({ type: "dutySchedule/clearState" });
-      dispatch({ type: "department/clearState" });
-      dispatch({ type: "cluster/clearState" });
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -198,28 +190,20 @@ const returnRole = (token) => {
   }
 };
 
-// Get initial auth state
-const getInitialAuthState = () => {
-  const token = localStorage.getItem("accessToken");
-  const role = returnRole(token);
-
-  return {
+export const authReducer = createSlice({
+  name: "auth",
+  initialState: {
     successMessage: "",
     errorMessage: "",
     loading: false,
     userInfo: "",
-    role,
-    token,
+    role: returnRole(localStorage.getItem("accessToken")),
+    token: localStorage.getItem("accessToken"),
     users: [],
     user: "",
     totalUser: 0,
     unRegisteredUsers: [],
-  };
-};
-
-export const authReducer = createSlice({
-  name: "auth",
-  initialState: getInitialAuthState(),
+  },
   reducers: {
     messageClear: (state, _) => {
       state.errorMessage = "";
@@ -227,9 +211,6 @@ export const authReducer = createSlice({
     },
     clearUnRegisteredUsers: (state, _) => {
       state.unRegisteredUsers = [];
-    },
-    clearState: () => {
-      return getInitialAuthState();
     },
   },
   extraReducers: (builder) => {
@@ -303,16 +284,9 @@ export const authReducer = createSlice({
         state.successMessage = payload.message;
       })
 
-      .addCase(get_user_info.pending, (state) => {
-        state.loading = true;
-      })
       .addCase(get_user_info.fulfilled, (state, { payload }) => {
-        state.loading = false;
+        state.loader = false;
         state.userInfo = payload.userInfo;
-      })
-      .addCase(get_user_info.rejected, (state, { payload }) => {
-        state.loading = false;
-        state.errorMessage = payload?.error || "Failed to load user info";
       })
 
       .addCase(logout.rejected, (state, { payload }) => {
@@ -329,6 +303,5 @@ export const authReducer = createSlice({
   },
 });
 
-export const { messageClear, clearUnRegisteredUsers, clearState } =
-  authReducer.actions;
+export const { messageClear, clearUnRegisteredUsers } = authReducer.actions;
 export default authReducer.reducer;

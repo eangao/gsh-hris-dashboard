@@ -137,14 +137,6 @@ const departmentSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
-    clearState: (state) => {
-      state.loading = false;
-      state.successMessage = "";
-      state.errorMessage = "";
-      state.departments = [];
-      state.department = "";
-      state.totalDepartment = 0;
-    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchDepartments.fulfilled, (state, { payload }) => {

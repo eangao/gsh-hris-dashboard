@@ -143,14 +143,6 @@ const clusterSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
-    clearState: (state) => {
-      state.loading = false;
-      state.successMessage = "";
-      state.errorMessage = "";
-      state.clusters = [];
-      state.cluster = "";
-      state.totalCluster = 0;
-    },
   },
   extraReducers: (builder) => {
     // Fetch Clusters

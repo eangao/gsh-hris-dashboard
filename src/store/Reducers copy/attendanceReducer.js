@@ -51,14 +51,6 @@ const attendanceSlice = createSlice({
       state.successMessage = "";
       state.loading = false;
     },
-    clearState: (state) => {
-      state.loading = false;
-      state.successMessage = "";
-      state.errorMessage = "";
-      state.attendances = [];
-      state.attendance = "";
-      state.totalAttendance = 0;
-    },
   },
   extraReducers: (builder) => {
     builder

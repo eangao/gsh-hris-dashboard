@@ -1,10 +1,29 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
+export const fetchAttendanceByEmployee = createAsyncThunk(
+  "attendance/fetchAttendanceByEmployee",
+  async (
+    { employeeId, startDate, endDate },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const { data } = await api.get(
+        `/hris/attendances/employee/${employeeId}/attendance-by-date-range`,
+        { params: { startDate, endDate }, withCredentials: true }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export const fetchAttendanceByDepartment = createAsyncThunk(
   "attendance/fetchAttendanceByDepartment",
   async (
-    { scheduleId, employeeId = "", perPage, page, searchValue, requestId },
+    { scheduleId, employeeId = "", perPage, page, searchValue },
     { rejectWithValue, fulfillWithValue }
   ) => {
     try {
@@ -21,7 +40,7 @@ export const fetchAttendanceByDepartment = createAsyncThunk(
         }
       );
 
-      return fulfillWithValue({ ...data, requestId });
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -43,45 +62,39 @@ const attendanceSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
-    clearAttendance: (state) => {
+    clearAttendanceData: (state) => {
       state.attendances = [];
-      state.attendance = "";
       state.totalAttendance = 0;
       state.errorMessage = "";
       state.successMessage = "";
-      state.loading = false;
-    },
-    clearState: (state) => {
-      state.loading = false;
-      state.successMessage = "";
-      state.errorMessage = "";
-      state.attendances = [];
-      state.attendance = "";
-      state.totalAttendance = 0;
     },
   },
   extraReducers: (builder) => {
     builder
-
-      .addCase(fetchAttendanceByDepartment.pending, (state, { meta }) => {
+      .addCase(fetchAttendanceByEmployee.pending, (state) => {
         state.loading = true;
         state.errorMessage = "";
-        state.attendances = [];
-        state.totalAttendance = 0;
       })
-      .addCase(fetchAttendanceByDepartment.fulfilled, (state, { payload }) => {
+      .addCase(fetchAttendanceByEmployee.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.attendances = payload.attendances;
+        state.errorMessage = "";
+      })
+      .addCase(fetchAttendanceByEmployee.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload?.error;
+      });
+
+    builder.addCase(
+      fetchAttendanceByDepartment.fulfilled,
+      (state, { payload }) => {
         state.loading = false;
         state.attendances = payload.attendances;
         state.totalAttendance = payload.totalAttendance;
-      })
-      .addCase(fetchAttendanceByDepartment.rejected, (state, { payload }) => {
-        state.loading = false;
-        state.attendances = [];
-        state.totalAttendance = 0;
-        state.errorMessage = payload?.error || "Failed to load attendance data";
-      });
+      }
+    );
   },
 });
 
-export const { messageClear, clearAttendance } = attendanceSlice.actions;
+export const { messageClear, clearAttendanceData } = attendanceSlice.actions;
 export default attendanceSlice.reducer;

@@ -67,24 +67,24 @@ const ROLE_HIERARCHY = {
 export const getRoutes = (role) => {
   // Input validation
   if (!role || typeof role !== "string") {
-    console.warn(
-      "getRoutes: Invalid role provided, defaulting to empty routes"
-    );
+    // console.warn(
+    //   "getRoutes: Invalid role provided, defaulting to empty routes"
+    // );
     return [];
   }
 
   // Check if role exists in hierarchy
   if (!ROLE_HIERARCHY[role]) {
-    console.warn(
-      `getRoutes: Unknown role "${role}", defaulting to employee routes`
-    );
+    // console.warn(
+    //   `getRoutes: Unknown role "${role}", defaulting to employee routes`
+    // );
     return employeeRoutes;
   }
 
   let privateRoutes = [];
 
   // Debug logging
-  console.log(`getRoutes: Processing role "${role}"`);
+  // console.log(`getRoutes: Processing role "${role}"`);
 
   // Role-based route assignment with inheritance
   switch (role) {
@@ -131,9 +131,9 @@ export const getRoutes = (role) => {
       break;
 
     default:
-      console.warn(
-        `getRoutes: Unhandled role "${role}", defaulting to employee routes`
-      );
+      // console.warn(
+      //   `getRoutes: Unhandled role "${role}", defaulting to employee routes`
+      // );
       privateRoutes = employeeRoutes;
   }
 
@@ -143,11 +143,11 @@ export const getRoutes = (role) => {
       index === self.findIndex((r) => r.path === route.path)
   );
 
-  console.log(`getRoutes: Role "${role}" has ${uniqueRoutes.length} routes`);
-  console.log(
-    `getRoutes: Sample routes:`,
-    uniqueRoutes.slice(0, 3).map((r) => r.path)
-  );
+  // console.log(`getRoutes: Role "${role}" has ${uniqueRoutes.length} routes`);
+  // console.log(
+  //   `getRoutes: Sample routes:`,
+  //   uniqueRoutes.slice(0, 3).map((r) => r.path)
+  // );
 
   return uniqueRoutes;
 };
@@ -162,8 +162,8 @@ export const getAllRoutes = (role) => {
   const privateRoutes = getRoutes(role);
 
   // Debug logging
-  console.log(`getAllRoutes: Getting routes for role "${role}"`);
-  console.log(`getAllRoutes: Found ${privateRoutes.length} private routes`);
+  // console.log(`getAllRoutes: Getting routes for role "${role}"`);
+  // console.log(`getAllRoutes: Found ${privateRoutes.length} private routes`);
 
   // Wrap each route with ProtectedRoute to maintain compatibility with existing structure
   const protectedRoutes = privateRoutes.map((route) => ({
@@ -179,7 +179,7 @@ export const getAllRoutes = (role) => {
     },
   ];
 
-  console.log(`getAllRoutes: Final route configuration:`, routeConfig);
+  // console.log(`getAllRoutes: Final route configuration:`, routeConfig);
   return routeConfig;
 };
 
