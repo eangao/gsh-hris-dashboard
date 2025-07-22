@@ -59,6 +59,12 @@ export const logout = createAsyncThunk(
       dispatch({ type: "dutySchedule/clearState" });
       dispatch({ type: "department/clearState" });
       dispatch({ type: "cluster/clearState" });
+      dispatch({ type: "position/clearState" });
+      dispatch({ type: "role/clearState" });
+      dispatch({ type: "religion/clearState" });
+      dispatch({ type: "employmentStatus/clearState" });
+      dispatch({ type: "holidays/clearState" });
+      dispatch({ type: "shiftTemplate/clearState" });
 
       return fulfillWithValue(data);
     } catch (error) {

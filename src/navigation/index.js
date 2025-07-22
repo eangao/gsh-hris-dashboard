@@ -16,18 +16,21 @@
 import { allNav } from "./nav/allNav";
 
 /**
- * Get navigation items filtered by user role
+ * Get navigation items filtered by user role and permissions
  *
  * This function implements a secure-by-default approach:
  * - Super admins see everything
  * - Items without roles are hidden (security)
  * - Supports both string and array role definitions
- * - Filters items based on user permissions
+ * - Filters items based on user permissions (managedDepartments, managedCluster)
+ * - Manager Dashboard only visible if user has managedDepartments
+ * - Director Dashboard only visible if user has managedCluster
  *
  * @param {string} role - User role identifier
+ * @param {Object} userInfo - Complete user information object
  * @returns {Array} Filtered navigation items for the user
  */
-export const getNav = (role) => {
+export const getNav = (role, userInfo = null) => {
   // Input validation
   if (!role || typeof role !== "string") {
     // console.warn("getNav: Invalid role provided, returning empty navigation");
@@ -36,7 +39,7 @@ export const getNav = (role) => {
 
   return allNav.filter((navItem) => {
     // Super admin has access to everything
-    if (role === "SUPER_ADMIN") return true;
+    // if (role === "SUPER_ADMIN") return true;
 
     // Secure by default: deny access if no role defined
     // This prevents accidental exposure of navigation items
@@ -48,12 +51,50 @@ export const getNav = (role) => {
     }
 
     // Handle array of roles (multiple roles can access this item)
-    if (Array.isArray(navItem.role)) {
-      return navItem.role.includes(role);
+    const hasRoleAccess = Array.isArray(navItem.role)
+      ? navItem.role.includes(role)
+      : navItem.role === role;
+
+    if (!hasRoleAccess) {
+      return false;
     }
 
-    // Handle single role assignment
-    return navItem.role === role;
+    // Additional permission checks based on user data
+    if (userInfo) {
+      // Manager Dashboard permission checks
+      if (
+        navItem.group === "Manager Dashboard" ||
+        navItem.title === "Manager Dashboard"
+      ) {
+        const managedDepartments =
+          userInfo.employee?.employmentInformation?.managedDepartments;
+        const hasManagedDepartments =
+          managedDepartments && managedDepartments.length > 0;
+
+        if (!hasManagedDepartments) {
+          // console.log(`Hiding "${navItem.title}" - user has no managedDepartments`);
+          return false;
+        }
+      }
+
+      // Director Dashboard permission checks
+      if (
+        navItem.group === "Director Dashboard" ||
+        navItem.title === "Director Dashboard"
+      ) {
+        const managedCluster =
+          userInfo.employee?.employmentInformation?.managedCluster;
+        const hasManagedCluster =
+          managedCluster !== null && managedCluster !== undefined;
+
+        if (!hasManagedCluster) {
+          // console.log(`Hiding "${navItem.title}" - user has no managedCluster`);
+          return false;
+        }
+      }
+    }
+
+    return true;
   });
 };
 
@@ -61,10 +102,11 @@ export const getNav = (role) => {
  * Get navigation items grouped by categories
  *
  * @param {string} role - User role identifier
+ * @param {Object} userInfo - Complete user information object
  * @returns {Object} Navigation items organized by groups
  */
-export const getGroupedNav = (role) => {
-  const navItems = getNav(role);
+export const getGroupedNav = (role, userInfo = null) => {
+  const navItems = getNav(role, userInfo);
 
   return navItems.reduce((acc, item) => {
     const group = item.group || "Ungrouped";
@@ -83,10 +125,11 @@ export const getGroupedNav = (role) => {
  *
  * @param {string} role - User role identifier
  * @param {string} path - Navigation path to check
+ * @param {Object} userInfo - Complete user information object
  * @returns {boolean} Whether user has access to the path
  */
-export const hasNavAccess = (role, path) => {
-  const navItems = getNav(role);
+export const hasNavAccess = (role, path, userInfo = null) => {
+  const navItems = getNav(role, userInfo);
   return navItems.some((item) => item.path === path);
 };
 
@@ -95,10 +138,11 @@ export const hasNavAccess = (role, path) => {
  *
  * @param {string} role - User role identifier
  * @param {string} currentPath - Current navigation path
+ * @param {Object} userInfo - Complete user information object
  * @returns {Array} Breadcrumb navigation items
  */
-export const getBreadcrumb = (role, currentPath) => {
-  const navItems = getNav(role);
+export const getBreadcrumb = (role, currentPath, userInfo = null) => {
+  const navItems = getNav(role, userInfo);
   const currentItem = navItems.find((item) => item.path === currentPath);
 
   if (!currentItem) return [];

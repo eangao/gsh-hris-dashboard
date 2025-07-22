@@ -61,6 +61,29 @@ const HrDutySchedulePrint = lazy(() =>
 //   import("../../pages/dashboard/hr/OrgChartManagement")
 // );
 
+//================================
+// setup
+
+const Cluster = lazy(() => import("../../pages/dashboard/admin/setup/Cluster"));
+const Department = lazy(() =>
+  import("../../pages/dashboard/admin/setup/Department")
+);
+
+const EmploymentStatus = lazy(() =>
+  import("../../pages/dashboard/admin/setup/EmploymentStatus")
+);
+const Holiday = lazy(() => import("../../pages/dashboard/admin/setup/Holiday"));
+
+const Position = lazy(() =>
+  import("../../pages/dashboard/admin/setup/Position")
+);
+const Religion = lazy(() =>
+  import("../../pages/dashboard/admin/setup/Religion")
+);
+const ShiftTemplates = lazy(() =>
+  import("../../pages/dashboard/admin/setup/ShiftTemplates")
+);
+
 const hrRoutes = [
   {
     path: "/hr/dashboard",
@@ -174,6 +197,46 @@ const hrRoutes = [
   //   element: <OrgChartManagement />,
   //   role: ["HR_ADMIN", "SUPER_ADMIN"],
   // },
+
+  //============================
+  // HR Setups page
+
+  {
+    path: "/hr/setup/cluster",
+    element: <Cluster />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/setup/department",
+    element: <Department />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/setup/position",
+    element: <Position />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/setup/employment-status",
+    element: <EmploymentStatus />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/setup/religion",
+    element: <Religion />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    path: "/hr/setup/shift-templates",
+    element: <ShiftTemplates />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
+
+  {
+    path: "/hr/setup/holiday",
+    element: <Holiday />,
+    role: ["HR_ADMIN", "SUPER_ADMIN"],
+  },
 ];
 
 export default hrRoutes;

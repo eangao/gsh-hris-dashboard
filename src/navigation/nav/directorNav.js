@@ -17,7 +17,7 @@ import {
   AiOutlineApartment,
 } from "react-icons/ai";
 
-const directorRoles = ["DIRECTOR", "SUPER_ADMIN"];
+const directorRoles = ["DIRECTOR"];
 
 export const directorNav = [
   //====================================

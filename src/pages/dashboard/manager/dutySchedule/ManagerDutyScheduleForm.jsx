@@ -1039,702 +1039,951 @@ const ManagerDutyScheduleForm = () => {
    */
 
   return (
-    <div className="p-4">
-      <div className="mb-6 flex flex-col items-center space-y-4 sm:space-y-0 sm:flex-row sm:justify-between">
-        <h1 className="text-xl font-bold uppercase">
-          {isEditMode
-            ? `Edit ${dutySchedule?.name} Duty Schedule`
-            : `Create ${department?.name} ${getMonthLabelPH(
-                currentDate
-              )} Duty Schedule`}
-        </h1>
-
-        {!isEditMode && (
-          <div className="flex flex-col items-center space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
-            {!isAtCurrentMonth() && (
-              <button
-                onClick={handlePrevMonth}
-                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 w-full sm:w-auto"
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
+      {/* Professional Header */}
+      <div className="mb-6 bg-gradient-to-r from-blue-700 to-indigo-800 rounded-lg shadow-lg p-6 text-white">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2 flex items-center gap-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-8 w-8 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                Previous
-              </button>
-            )}
-            <span className="text-lg font-semibold text-center">
-              {getMonthLabelPH(currentDate)}
-            </span>
-            <button
-              onClick={handleNextMonth}
-              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 w-full sm:w-auto"
-            >
-              Next
-            </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              {isEditMode
+                ? `Edit ${dutySchedule?.name} Duty Schedule`
+                : `Create ${department?.name} ${getMonthLabelPH(
+                    currentDate
+                  )} Duty Schedule`}
+            </h1>
+            <p className="text-blue-100">
+              {isEditMode
+                ? "Modify and update the existing duty schedule"
+                : "Plan and organize employee duty schedules for the month"}
+            </p>
           </div>
-        )}
+
+          {!isEditMode && (
+            <div className="flex items-center gap-3 bg-white/10 rounded-lg px-4 py-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-blue-200"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 10a1 1 0 001 1h10a1 1 0 001-1L16 7m-6 0V5"
+                />
+              </svg>
+              <div className="flex items-center gap-2">
+                {!isAtCurrentMonth() && (
+                  <button
+                    onClick={handlePrevMonth}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded font-medium transition-all text-sm"
+                  >
+                    Previous
+                  </button>
+                )}
+                <span className="text-lg font-semibold text-white mx-2">
+                  {getMonthLabelPH(currentDate)}
+                </span>
+                <button
+                  onClick={handleNextMonth}
+                  className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded font-medium transition-all text-sm"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-[40vh]">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center bg-white p-8 rounded-lg shadow-sm">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">
+              Loading duty schedule...
+            </p>
+          </div>
         </div>
       ) : (
         <>
-          <div className="overflow-x-auto">
-            <div className="min-w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-2">
-                {weekDays.map(({ day }, index) => (
-                  <div
-                    key={day}
-                    className={`p-2 font-semibold text-center hidden lg:block ${
-                      index === 0 || index === 6
-                        ? "text-red-600"
-                        : "text-blue-600"
-                    }`}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setDragOverDate(`WEEKDAY-${index}`);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setDragOverDate(null);
-                      if (!draggedItem || draggedItem.type !== "dateBox") {
-                        setDraggedItem(null);
-                        return;
-                      }
-                      // Find the first date in this column (week day)
-                      const firstDate = days.find(
-                        (d) => d && d.getDay() === index
-                      );
-                      if (firstDate) {
-                        handleDrop(e, firstDate);
-                      } else {
-                        setDraggedItem(null);
-                      }
-                    }}
-                    onDragLeave={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget)) {
-                        setDragOverDate(null);
-                      }
-                    }}
-                    style={{
-                      cursor:
-                        draggedItem && draggedItem.type === "dateBox"
-                          ? "copy"
-                          : "default",
-                    }}
+          {/* Calendar Section Card */}
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+            <div className="p-6">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    {day}
-                  </div>
-                ))}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 10a1 1 0 001 1h10a1 1 0 001-1L16 7m-6 0V5"
+                    />
+                  </svg>
+                  Schedule Calendar
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Click on any date to add employees. Drag and drop to copy
+                  schedules between dates.
+                </p>
               </div>
 
-              <div className="space-y-2">
-                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2">
-                  {Array.from({ length: days[0]?.getDay() || 0 }).map(
-                    (_, index) => (
-                      <div key={`empty-${index}`} className="lg:block hidden" />
-                    )
-                  )}
-
-                  {days.map((day, index) => (
-                    <div key={index}>
-                      {day && (
-                        <div
-                          draggable={true}
-                          onDragStart={(e) =>
-                            handleDragStart(e, "dateBox", { date: day })
+              <div className="overflow-x-auto">
+                <div className="min-w-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-2">
+                    {weekDays.map(({ day }, index) => (
+                      <div
+                        key={day}
+                        className={`p-2 font-semibold text-center hidden lg:block ${
+                          index === 0 || index === 6
+                            ? "text-red-600"
+                            : "text-blue-600"
+                        }`}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setDragOverDate(`WEEKDAY-${index}`);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDragOverDate(null);
+                          if (!draggedItem || draggedItem.type !== "dateBox") {
+                            setDraggedItem(null);
+                            return;
                           }
-                          onDragEnd={handleDragEnd}
-                          onDragOver={(e) => handleDragOver(e, day)}
-                          onDrop={(e) => handleDrop(e, day)}
-                          onDragLeave={handleDragLeave}
-                          onClick={() => handleDateClick(day)}
-                          onContextMenu={(e) =>
-                            handleDateBoxContextMenu(e, day)
+                          // Find the first date in this column (week day)
+                          const firstDate = days.find(
+                            (d) => d && d.getDay() === index
+                          );
+                          if (firstDate) {
+                            handleDrop(e, firstDate);
+                          } else {
+                            setDraggedItem(null);
                           }
-                          className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left cursor-pointer ${
-                            dragOverDate === formatDatePH(day)
-                              ? "ring-4 ring-blue-400"
-                              : ""
-                          }`}
-                        >
-                          <div className="mb-1">
-                            {isHoliday(day) ? (
-                              <div className="flex justify-between items-start">
-                                <span
-                                  className={`font-medium ${
-                                    shouldMarkRed(day)
-                                      ? "text-red-600"
-                                      : "text-blue-600"
-                                  }`}
-                                  style={{ marginTop: "-4px" }}
-                                >
-                                  {day.getDate()}
-                                </span>
-                                <span className="text-xs text-red-600 italic ml-2 whitespace-nowrap">
-                                  {getHolidayName(day)}
-                                </span>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="hidden lg:flex justify-center">
-                                  <span
-                                    className={`font-medium ${
-                                      shouldMarkRed(day)
-                                        ? "text-red-600"
-                                        : "text-blue-600"
-                                    }`}
-                                  >
-                                    {day.getDate()}
-                                  </span>
-                                </div>
-                                <div className="flex lg:hidden justify-between items-start">
-                                  <span
-                                    className={`font-medium ${
-                                      shouldMarkRed(day)
-                                        ? "text-red-600"
-                                        : "text-blue-600"
-                                    }`}
-                                    style={{ marginTop: "-4px" }}
-                                  >
-                                    {day.getDate()}
-                                  </span>
-                                  <span
-                                    className={`text-xs ${
-                                      day.getDay() === 0 || day.getDay() === 6
-                                        ? "text-red-600"
-                                        : "text-blue-600"
-                                    }`}
-                                  >
-                                    {weekDays[day.getDay()].day}
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                        }}
+                        onDragLeave={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget)) {
+                            setDragOverDate(null);
+                          }
+                        }}
+                        style={{
+                          cursor:
+                            draggedItem && draggedItem.type === "dateBox"
+                              ? "copy"
+                              : "default",
+                        }}
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
 
-                          <div className="space-y-1">
-                            {getEmployeesForDate(day).map((group) => (
-                              <div
-                                key={group.shift}
-                                className={`rounded p-1 ${getShiftColor(
-                                  group.shiftName
-                                )}`}
-                                // Remove draggable and drag handlers from group
-                              >
-                                <div className="text-xs font-bold mb-1 uppercase text-gray-700">
-                                  {group.shift}
-                                </div>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+                      {Array.from({ length: days[0]?.getDay() || 0 }).map(
+                        (_, index) => (
+                          <div
+                            key={`empty-${index}`}
+                            className="lg:block hidden"
+                          />
+                        )
+                      )}
 
-                                {group.employees.map((emp) => (
-                                  <div
-                                    key={emp.id}
-                                    className="text-sm mb-1 p-1 rounded bg-white/50"
-                                    // Remove draggable and drag handlers from employee
-                                  >
-                                    <div className="flex justify-between items-center">
-                                      <span>{emp.name}</span>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEmployeeRemove(day, emp.id);
-                                        }}
-                                        className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
-                                        type="button"
+                      {days.map((day, index) => (
+                        <div key={index}>
+                          {day && (
+                            <div
+                              draggable={true}
+                              onDragStart={(e) =>
+                                handleDragStart(e, "dateBox", { date: day })
+                              }
+                              onDragEnd={handleDragEnd}
+                              onDragOver={(e) => handleDragOver(e, day)}
+                              onDrop={(e) => handleDrop(e, day)}
+                              onDragLeave={handleDragLeave}
+                              onClick={() => handleDateClick(day)}
+                              onContextMenu={(e) =>
+                                handleDateBoxContextMenu(e, day)
+                              }
+                              className={`w-full p-2 min-h-[160px] border rounded-lg hover:border-blue-500 transition-colors bg-white text-left cursor-pointer ${
+                                dragOverDate === formatDatePH(day)
+                                  ? "ring-4 ring-blue-400"
+                                  : ""
+                              }`}
+                            >
+                              <div className="mb-1">
+                                {isHoliday(day) ? (
+                                  <div className="flex justify-between items-start">
+                                    <span
+                                      className={`font-medium ${
+                                        shouldMarkRed(day)
+                                          ? "text-red-600"
+                                          : "text-blue-600"
+                                      }`}
+                                      style={{ marginTop: "-4px" }}
+                                    >
+                                      {day.getDate()}
+                                    </span>
+                                    <span className="text-xs text-red-600 italic ml-2 whitespace-nowrap">
+                                      {getHolidayName(day)}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="hidden lg:flex justify-center">
+                                      <span
+                                        className={`font-medium ${
+                                          shouldMarkRed(day)
+                                            ? "text-red-600"
+                                            : "text-blue-600"
+                                        }`}
                                       >
-                                        <FaTimes />
-                                      </button>
+                                        {day.getDate()}
+                                      </span>
                                     </div>
-                                    {emp.description && (
-                                      <div className="text-gray-600 mt-1 text-xs italic">
-                                        {emp.description}
+                                    <div className="flex lg:hidden justify-between items-start">
+                                      <span
+                                        className={`font-medium ${
+                                          shouldMarkRed(day)
+                                            ? "text-red-600"
+                                            : "text-blue-600"
+                                        }`}
+                                        style={{ marginTop: "-4px" }}
+                                      >
+                                        {day.getDate()}
+                                      </span>
+                                      <span
+                                        className={`text-xs ${
+                                          day.getDay() === 0 ||
+                                          day.getDay() === 6
+                                            ? "text-red-600"
+                                            : "text-blue-600"
+                                        }`}
+                                      >
+                                        {weekDays[day.getDay()].day}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+
+                              <div className="space-y-1">
+                                {getEmployeesForDate(day).map((group) => (
+                                  <div
+                                    key={group.shift}
+                                    className={`rounded p-1 ${getShiftColor(
+                                      group.shiftName
+                                    )}`}
+                                    // Remove draggable and drag handlers from group
+                                  >
+                                    <div className="text-xs font-bold mb-1 uppercase text-gray-700">
+                                      {group.shift}
+                                    </div>
+
+                                    {group.employees.map((emp) => (
+                                      <div
+                                        key={emp.id}
+                                        className="text-sm mb-1 p-1 rounded bg-white/50"
+                                        // Remove draggable and drag handlers from employee
+                                      >
+                                        <div className="flex justify-between items-center">
+                                          <span>{emp.name}</span>
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleEmployeeRemove(day, emp.id);
+                                            }}
+                                            className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
+                                            type="button"
+                                          >
+                                            <FaTimes />
+                                          </button>
+                                        </div>
+                                        {emp.description && (
+                                          <div className="text-gray-600 mt-1 text-xs italic">
+                                            {emp.description}
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
+                                    ))}
                                   </div>
                                 ))}
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Summary Section */}
-          <div className="overflow-x-auto mb-6 mt-6">
-            <h2 className="text-lg font-bold mb-2   text-blue-800">
-              Weekly Summary
-            </h2>
-            {(() => {
-              const weekDaysShort = [
-                "Sun",
-                "Mon",
-                "Tue",
-                "Wed",
-                "Thu",
-                "Fri",
-                "Sat",
-              ];
-              const summary = getWeeklySummary();
-              // Build a flat map of employeeId to total hours for the month
-              const employeeMonthTotals = {};
+          {/* Summary Section Card */}
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+            <div className="p-6">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  Weekly Summary
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Review total working hours for each employee by week and
+                  month.
+                </p>
+              </div>
 
-              // Build a map of employees from entries (prioritize entry data)
-              const employeeMap = {};
+              <div className="overflow-x-auto">
+                {(() => {
+                  const weekDaysShort = [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat",
+                  ];
+                  const summary = getWeeklySummary();
+                  // Build a flat map of employeeId to total hours for the month
+                  const employeeMonthTotals = {};
 
-              // First, collect all unique employees from entries
-              const entryEmployees = new Set();
-              allEntries.forEach((entry) => {
-                entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-                  entryEmployees.add(empId);
+                  // Build a map of employees from entries (prioritize entry data)
+                  const employeeMap = {};
 
-                  // If employee data is populated in entry, use it
-                  if (typeof es.employee === "object" && es.employee?._id) {
-                    employeeMap[empId] = es.employee;
-                  }
-                });
-              });
+                  // First, collect all unique employees from entries
+                  const entryEmployees = new Set();
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const empId =
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id;
+                      entryEmployees.add(empId);
 
-              // Fill in missing employee data from Redux store (for select options compatibility)
-              entryEmployees.forEach((empId) => {
-                if (!employeeMap[empId]) {
-                  const empFromStore = employees.find(
-                    (emp) => emp._id === empId
-                  );
-                  if (empFromStore) {
-                    employeeMap[empId] = empFromStore;
-                  }
-                }
-              });
-
-              // Build a map of shiftTemplates from entries (prioritize entry data)
-              const shiftMap = {};
-
-              // First, collect all unique shift templates from entries
-              const entryShiftTemplates = new Set();
-              allEntries.forEach((entry) => {
-                entry.employeeSchedules.forEach((es) => {
-                  const shiftId =
-                    typeof es.shiftTemplate === "string"
-                      ? es.shiftTemplate
-                      : es.shiftTemplate?._id;
-                  entryShiftTemplates.add(shiftId);
-
-                  // If shift template data is populated in entry, use it
-                  if (
-                    typeof es.shiftTemplate === "object" &&
-                    es.shiftTemplate?._id
-                  ) {
-                    shiftMap[shiftId] = es.shiftTemplate;
-                  }
-                });
-              });
-
-              // Fill in missing shift template data from Redux store (for select options compatibility)
-              entryShiftTemplates.forEach((shiftId) => {
-                if (!shiftMap[shiftId]) {
-                  const shiftFromStore = shiftTemplates.find(
-                    (st) => st._id === shiftId
-                  );
-                  if (shiftFromStore) {
-                    shiftMap[shiftId] = shiftFromStore;
-                  }
-                }
-              });
-
-              // Calculate total per employee for the month
-              allEntries.forEach((entry) => {
-                entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-                  const shift =
-                    shiftMap[
-                      typeof es.shiftTemplate === "string"
-                        ? es.shiftTemplate
-                        : es.shiftTemplate?._id
-                    ];
-                  const hours = getShiftHours(shift);
-                  if (
-                    hours !== "off" &&
-                    hours !== "" &&
-                    !isNaN(Number(hours))
-                  ) {
-                    if (!employeeMonthTotals[empId])
-                      employeeMonthTotals[empId] = 0;
-                    employeeMonthTotals[empId] += Number(hours);
-                  }
-                });
-              });
-
-              // Get all unique employees scheduled in this month, sorted by last name
-              const scheduledEmployeeIds = new Set();
-              allEntries.forEach((entry) => {
-                entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-                  scheduledEmployeeIds.add(empId);
-                });
-              });
-
-              const sortedEmployees = Array.from(scheduledEmployeeIds)
-                .map((id) => employeeMap[id])
-                .filter((emp) => emp) // Remove null/undefined entries
-                .sort((a, b) =>
-                  a.personalInformation.lastName.localeCompare(
-                    b.personalInformation.lastName
-                  )
-                );
-              // Render summary tables per week
-              return (
-                <>
-                  {summary.map((rows, weekIdx) => {
-                    // Get the weekDates for this week (aligned to calendar)
-                    const weekDates = (() => {
-                      // The weeks array in getWeeklySummary uses the same logic as the calendar grid
-                      // So we can reconstruct the weeks array here for header rendering
-                      const weeks = [];
-                      let week = [];
-                      days.forEach((date) => {
-                        if (week.length === 0 && date.getDay() !== 0) {
-                          for (let i = 0; i < date.getDay(); i++)
-                            week.push(null);
-                        }
-                        week.push(date);
-                        if (week.length === 7) {
-                          weeks.push(week);
-                          week = [];
-                        }
-                      });
-                      if (week.length > 0) {
-                        while (week.length < 7) week.push(null);
-                        weeks.push(week);
+                      // If employee data is populated in entry, use it
+                      if (typeof es.employee === "object" && es.employee?._id) {
+                        employeeMap[empId] = es.employee;
                       }
-                      return weeks[weekIdx] || [];
-                    })();
-                    return (
-                      <div key={weekIdx} className="mb-4">
+                    });
+                  });
+
+                  // Fill in missing employee data from Redux store (for select options compatibility)
+                  entryEmployees.forEach((empId) => {
+                    if (!employeeMap[empId]) {
+                      const empFromStore = employees.find(
+                        (emp) => emp._id === empId
+                      );
+                      if (empFromStore) {
+                        employeeMap[empId] = empFromStore;
+                      }
+                    }
+                  });
+
+                  // Build a map of shiftTemplates from entries (prioritize entry data)
+                  const shiftMap = {};
+
+                  // First, collect all unique shift templates from entries
+                  const entryShiftTemplates = new Set();
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const shiftId =
+                        typeof es.shiftTemplate === "string"
+                          ? es.shiftTemplate
+                          : es.shiftTemplate?._id;
+                      entryShiftTemplates.add(shiftId);
+
+                      // If shift template data is populated in entry, use it
+                      if (
+                        typeof es.shiftTemplate === "object" &&
+                        es.shiftTemplate?._id
+                      ) {
+                        shiftMap[shiftId] = es.shiftTemplate;
+                      }
+                    });
+                  });
+
+                  // Fill in missing shift template data from Redux store (for select options compatibility)
+                  entryShiftTemplates.forEach((shiftId) => {
+                    if (!shiftMap[shiftId]) {
+                      const shiftFromStore = shiftTemplates.find(
+                        (st) => st._id === shiftId
+                      );
+                      if (shiftFromStore) {
+                        shiftMap[shiftId] = shiftFromStore;
+                      }
+                    }
+                  });
+
+                  // Calculate total per employee for the month
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const empId =
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id;
+                      const shift =
+                        shiftMap[
+                          typeof es.shiftTemplate === "string"
+                            ? es.shiftTemplate
+                            : es.shiftTemplate?._id
+                        ];
+                      const hours = getShiftHours(shift);
+                      if (
+                        hours !== "off" &&
+                        hours !== "" &&
+                        !isNaN(Number(hours))
+                      ) {
+                        if (!employeeMonthTotals[empId])
+                          employeeMonthTotals[empId] = 0;
+                        employeeMonthTotals[empId] += Number(hours);
+                      }
+                    });
+                  });
+
+                  // Get all unique employees scheduled in this month, sorted by last name
+                  const scheduledEmployeeIds = new Set();
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const empId =
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id;
+                      scheduledEmployeeIds.add(empId);
+                    });
+                  });
+
+                  const sortedEmployees = Array.from(scheduledEmployeeIds)
+                    .map((id) => employeeMap[id])
+                    .filter((emp) => emp) // Remove null/undefined entries
+                    .sort((a, b) =>
+                      a.personalInformation.lastName.localeCompare(
+                        b.personalInformation.lastName
+                      )
+                    );
+                  // Render summary tables per week
+                  return (
+                    <>
+                      {summary.map((rows, weekIdx) => {
+                        // Get the weekDates for this week (aligned to calendar)
+                        const weekDates = (() => {
+                          // The weeks array in getWeeklySummary uses the same logic as the calendar grid
+                          // So we can reconstruct the weeks array here for header rendering
+                          const weeks = [];
+                          let week = [];
+                          days.forEach((date) => {
+                            if (week.length === 0 && date.getDay() !== 0) {
+                              for (let i = 0; i < date.getDay(); i++)
+                                week.push(null);
+                            }
+                            week.push(date);
+                            if (week.length === 7) {
+                              weeks.push(week);
+                              week = [];
+                            }
+                          });
+                          if (week.length > 0) {
+                            while (week.length < 7) week.push(null);
+                            weeks.push(week);
+                          }
+                          return weeks[weekIdx] || [];
+                        })();
+                        return (
+                          <div key={weekIdx} className="mb-4">
+                            <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                              <thead>
+                                <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
+                                  <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                                    Employee
+                                  </th>
+                                  {weekDaysShort.map((d, i) => {
+                                    const dateObj = weekDates[i];
+                                    // Check if this date is a holiday
+                                    const isHoliday =
+                                      dateObj &&
+                                      HOLIDAYS_2025.some(
+                                        (h) => h.date === formatDatePH(dateObj)
+                                      );
+                                    const isWeekend = i === 0 || i === 6;
+                                    return (
+                                      <th
+                                        key={i}
+                                        className={`px-2 py-2 border text-center font-semibold ${
+                                          isHoliday || isWeekend
+                                            ? "text-red-600"
+                                            : "text-blue-700"
+                                        }`}
+                                      >
+                                        <div>{d}</div>
+                                        <div
+                                          className={`text-xs ${
+                                            isHoliday || isWeekend
+                                              ? "text-red-600"
+                                              : "text-blue-400"
+                                          }`}
+                                        >
+                                          {dateObj ? dateObj.getDate() : ""}
+                                        </div>
+                                      </th>
+                                    );
+                                  })}
+                                  <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                                    Total
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, i) => (
+                                  <tr
+                                    key={i}
+                                    className={
+                                      i % 2 === 0 ? "bg-white" : "bg-slate-100"
+                                    }
+                                  >
+                                    <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                                      {row.employee}
+                                    </td>
+                                    {row.days.map((val, j) => (
+                                      <td
+                                        key={j}
+                                        className={`px-2 py-2 border text-center capitalize text-blue-700 ${
+                                          val === "off"
+                                            ? "bg-gray-200 text-gray-500 font-semibold"
+                                            : ""
+                                        }`}
+                                      >
+                                        {val === "off" || val === ""
+                                          ? val
+                                          : formatHoursAndMinutes(val)}
+                                      </td>
+                                    ))}
+                                    <td className="px-2 py-2 border text-center font-bold text-blue-900 capitalize">
+                                      {row.total === ""
+                                        ? ""
+                                        : formatHoursAndMinutes(row.total)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+                      {/* Monthly total row */}
+                      <div className="mb-4">
+                        <h2 className="text-lg font-bold mb-2 text-blue-800">
+                          Summary for this Month
+                        </h2>
                         <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
                           <thead>
-                            <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
+                            <tr className="bg-gradient-to-r from-blue-200 to-blue-300">
                               <th className="px-2 py-2 border text-left font-semibold text-gray-700">
                                 Employee
                               </th>
-                              {weekDaysShort.map((d, i) => {
-                                const dateObj = weekDates[i];
-                                // Check if this date is a holiday
-                                const isHoliday =
-                                  dateObj &&
-                                  HOLIDAYS_2025.some(
-                                    (h) => h.date === formatDatePH(dateObj)
-                                  );
-                                const isWeekend = i === 0 || i === 6;
-                                return (
-                                  <th
-                                    key={i}
-                                    className={`px-2 py-2 border text-center font-semibold ${
-                                      isHoliday || isWeekend
-                                        ? "text-red-600"
-                                        : "text-blue-700"
-                                    }`}
-                                  >
-                                    <div>{d}</div>
-                                    <div
-                                      className={`text-xs ${
-                                        isHoliday || isWeekend
-                                          ? "text-red-600"
-                                          : "text-blue-400"
-                                      }`}
-                                    >
-                                      {dateObj ? dateObj.getDate() : ""}
-                                    </div>
-                                  </th>
-                                );
-                              })}
                               <th className="px-2 py-2 border text-center font-semibold text-gray-700">
                                 Total
                               </th>
                             </tr>
                           </thead>
                           <tbody>
-                            {rows.map((row, i) => (
+                            {sortedEmployees.map((emp, i) => (
                               <tr
-                                key={i}
+                                key={emp._id}
                                 className={
-                                  i % 2 === 0 ? "bg-white" : "bg-slate-100"
+                                  i % 2 === 0 ? "bg-white" : "bg-gray-50"
                                 }
                               >
                                 <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
-                                  {row.employee}
+                                  {emp.personalInformation.lastName},{" "}
+                                  {emp.personalInformation.firstName}
                                 </td>
-                                {row.days.map((val, j) => (
-                                  <td
-                                    key={j}
-                                    className={`px-2 py-2 border text-center capitalize text-blue-700 ${
-                                      val === "off"
-                                        ? "bg-gray-200 text-gray-500 font-semibold"
-                                        : ""
-                                    }`}
-                                  >
-                                    {val === "off" || val === ""
-                                      ? val
-                                      : formatHoursAndMinutes(val)}
-                                  </td>
-                                ))}
-                                <td className="px-2 py-2 border text-center font-bold text-blue-900 capitalize">
-                                  {row.total === ""
-                                    ? ""
-                                    : formatHoursAndMinutes(row.total)}
+                                <td className="px-2 py-2 border text-center font-bold text-blue-900">
+                                  {employeeMonthTotals[emp._id]
+                                    ? formatHoursAndMinutes(
+                                        employeeMonthTotals[emp._id]
+                                      )
+                                    : "0 min"}
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                    );
-                  })}
-                  {/* Monthly total row */}
-                  <div className="mb-4">
-                    <h2 className="text-lg font-bold mb-2 text-blue-800">
-                      Summary for this Month
-                    </h2>
-                    <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-blue-200 to-blue-300">
-                          <th className="px-2 py-2 border text-left font-semibold text-gray-700">
-                            Employee
-                          </th>
-                          <th className="px-2 py-2 border text-center font-semibold text-gray-700">
-                            Total
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedEmployees.map((emp, i) => (
-                          <tr
-                            key={emp._id}
-                            className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                          >
-                            <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
-                              {emp.personalInformation.lastName},{" "}
-                              {emp.personalInformation.firstName}
-                            </td>
-                            <td className="px-2 py-2 border text-center font-bold text-blue-900">
-                              {employeeMonthTotals[emp._id]
-                                ? formatHoursAndMinutes(
-                                    employeeMonthTotals[emp._id]
-                                  )
-                                : "0 min"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              );
-            })()}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
           </div>
 
-          {/* Section Save Buttons */}
-          <div className="flex justify-between items-center mt-6">
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                disabled={loading}
-              >
-                Cancel
-              </button>
+          {/* Action Buttons Section */}
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+            <div className="p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-all duration-200 border border-gray-300 flex items-center gap-2"
+                    disabled={loading}
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                    Cancel
+                  </button>
 
-              {allEntries?.length !== 0 && (
-                <button
-                  onClick={handleSaveAsDraft}
-                  disabled={loading ? true : false}
-                  className={`bg-blue-500  text-white px-4 py-2 rounded ${
-                    loading ? "" : " hover:bg-blue-600"
-                  } overflow-hidden`}
-                >
-                  {loading ? (
-                    <PropagateLoader
-                      color="#fff"
-                      cssOverride={buttonOverrideStyle}
-                    />
-                  ) : isEditMode ? (
-                    "Update As Draft"
-                  ) : (
-                    "Save As Draft"
+                  {allEntries?.length !== 0 && (
+                    <button
+                      onClick={handleSaveAsDraft}
+                      disabled={loading}
+                      className={`bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-sm flex items-center gap-2 ${
+                        loading ? "opacity-75 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Processing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h2m0 0V9a2 2 0 012-2h2a2 2 0 012 2v.93m0 0a2.5 2.5 0 002.5 2.5H13m-2 0a2.5 2.5 0 01-2.5-2.5V9"
+                            />
+                          </svg>
+                          {isEditMode ? "Update As Draft" : "Save As Draft"}
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
-              )}
+                </div>
+
+                {/* Status Info */}
+                <div className="text-sm text-gray-600">
+                  {allEntries?.length > 0 && (
+                    <span className="flex items-center gap-1">
+                      <svg
+                        className="w-4 h-4 text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {allEntries.length} schedule entr
+                      {allEntries.length === 1 ? "y" : "ies"} created
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </>
       )}
 
-      {/* Cancel Confirmation Modal */}
+      {/* Professional Cancel Confirmation Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-sm mx-4">
-            <h2 className="text-lg font-bold mb-4 text-center">
-              Discard Changes?
-            </h2>
-            <p className="mb-6 text-center text-gray-700">
-              You have unsaved changes. Are you sure you want to cancel and lose
-              your progress?
-            </p>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={handleCloseCancelModal}
-                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                No, Go Back
-              </button>
-              <button
-                onClick={handleConfirmCancel}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-              >
-                Yes, Cancel
-              </button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto border border-gray-200">
+            <div className="p-6">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                  <svg
+                    className="h-6 w-6 text-red-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold mb-2 text-gray-900">
+                  Discard Changes?
+                </h2>
+                <p className="mb-6 text-gray-600 leading-relaxed">
+                  You have unsaved changes. Are you sure you want to cancel and
+                  lose your progress?
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <button
+                    onClick={handleCloseCancelModal}
+                    className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300"
+                  >
+                    No, Go Back
+                  </button>
+                  <button
+                    onClick={handleConfirmCancel}
+                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-200 shadow-sm"
+                  >
+                    Yes, Cancel
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Copy To Modal */}
+      {/* Professional Copy To Modal */}
       {showCopyToModal && copySourceDate && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold mb-4">Copy Schedule To...</h2>
-            <div className="flex justify-end mb-2 space-x-2">
-              <button
-                type="button"
-                className="px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-semibold"
-                onClick={() =>
-                  setCopyTargetDates(
-                    days.filter(
-                      (date) =>
-                        formatDatePH(date) !== formatDatePH(copySourceDate)
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-auto border border-gray-200">
+            <div className="p-6">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                  Copy Schedule To...
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Select the dates where you want to copy the schedule from{" "}
+                  {formatMonthYearPH(copySourceDate, true)}.
+                </p>
+              </div>
+
+              <div className="flex justify-end mb-4 space-x-2">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 text-xs font-medium transition-colors"
+                  onClick={() =>
+                    setCopyTargetDates(
+                      days.filter(
+                        (date) =>
+                          formatDatePH(date) !== formatDatePH(copySourceDate)
+                      )
                     )
+                  }
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-medium transition-colors"
+                  onClick={() => setCopyTargetDates([])}
+                >
+                  Deselect All
+                </button>
+              </div>
+
+              {/* Calendar-style layout with weekday headers */}
+              <div className="mb-3 grid grid-cols-7 gap-1">
+                {["S", "M", "T", "W", "T", "F", "S"].map((wd, i) => (
+                  <div
+                    key={wd}
+                    className={`text-center font-bold text-sm py-2 ${
+                      i === 0 || i === 6 ? "text-red-600" : "text-blue-700"
+                    }`}
+                  >
+                    {wd}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 mb-6">
+                {/* Empty cells for days before the first day of the month */}
+                {Array.from({ length: days[0]?.getDay() || 0 }).map(
+                  (_, idx) => (
+                    <div key={`empty-${idx}`} className="h-10" />
                   )
-                }
-              >
-                Select All
-              </button>
-              <button
-                type="button"
-                className="px-3 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-semibold"
-                onClick={() => setCopyTargetDates([])}
-              >
-                Deselect All
-              </button>
-            </div>
-            {/* Calendar-style layout with weekday headers */}
-            <div className="mb-2 grid grid-cols-7 gap-1">
-              {["S", "M", "T", "W", "T", "F", "S"].map((wd, i) => (
-                <div
-                  key={wd}
-                  className={`text-center font-bold text-xs py-1 ${
-                    i === 0 || i === 6 ? "text-red-600" : "text-blue-700"
+                )}
+                {/* Render day buttons in calendar grid */}
+                {days.map((date, idx) => {
+                  const isSelected = copyTargetDates.some(
+                    (d) => formatDatePH(d) === formatDatePH(date)
+                  );
+                  const isSource =
+                    formatDatePH(date) === formatDatePH(copySourceDate);
+                  // Check if this date is a holiday
+                  const isHoliday = HOLIDAYS_2025.some(
+                    (h) => h.date === formatDatePH(date)
+                  );
+                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+                  return (
+                    <button
+                      key={idx}
+                      disabled={isSource}
+                      onClick={() => handleToggleCopyTargetDate(date)}
+                      className={`p-2 rounded-lg border text-center text-sm font-medium transition-all w-full h-10 flex items-center justify-center
+                        ${
+                          isSource
+                            ? "bg-blue-100 text-blue-600 border-blue-200 cursor-not-allowed font-bold"
+                            : isSelected
+                            ? "bg-green-500 text-white border-green-500 shadow-sm"
+                            : "bg-white hover:bg-gray-50 border-gray-300 hover:border-blue-300"
+                        }
+                      `}
+                    >
+                      <span
+                        className={
+                          !isSource && (isHoliday || isWeekend)
+                            ? "text-red-600 font-bold"
+                            : isSource
+                            ? "text-blue-600 font-bold"
+                            : isSelected
+                            ? "text-white"
+                            : "text-gray-700"
+                        }
+                      >
+                        {date.getDate()}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowCopyToModal(false)}
+                  className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCopyToDates}
+                  disabled={copyTargetDates.length === 0}
+                  className={`px-6 py-2.5 rounded-lg text-white font-medium transition-all duration-200 shadow-sm ${
+                    copyTargetDates.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700"
                   }`}
                 >
-                  {wd}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1 mb-4">
-              {/* Empty cells for days before the first day of the month */}
-              {Array.from({ length: days[0]?.getDay() || 0 }).map((_, idx) => (
-                <div key={`empty-${idx}`} />
-              ))}
-              {/* Render day buttons in calendar grid */}
-              {days.map((date, idx) => {
-                const isSelected = copyTargetDates.some(
-                  (d) => formatDatePH(d) === formatDatePH(date)
-                );
-                const isSource =
-                  formatDatePH(date) === formatDatePH(copySourceDate);
-                // Check if this date is a holiday
-                const isHoliday = HOLIDAYS_2025.some(
-                  (h) => h.date === formatDatePH(date)
-                );
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                return (
-                  <button
-                    key={idx}
-                    disabled={isSource}
-                    onClick={() => handleToggleCopyTargetDate(date)}
-                    className={`p-2 rounded border text-center text-sm font-medium transition-colors w-full h-10
-                      ${
-                        isSource
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : isSelected
-                          ? "bg-blue-500 text-white border-blue-500"
-                          : "bg-white hover:bg-blue-100 border-gray-300"
-                      }
-                    `}
-                  >
-                    <span
-                      className={
-                        isHoliday || isWeekend
-                          ? "text-red-600 font-bold"
-                          : "text-blue-700 font-bold"
-                      }
-                    >
-                      {date.getDate()}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowCopyToModal(false)}
-                className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCopyToDates}
-                disabled={copyTargetDates.length === 0}
-                className={`px-4 py-2 rounded-lg text-white ${
-                  copyTargetDates.length === 0
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-blue-500 hover:bg-blue-600"
-                }`}
-              >
-                OK
-              </button>
+                  Copy to {copyTargetDates.length} date
+                  {copyTargetDates.length !== 1 ? "s" : ""}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
+      {/* Professional Add Employee Modal */}
       {showAddModal && selectedDate && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white shadow-2xl rounded-xl w-full max-w-lg mx-4 p-0">
-            <div className="px-6 pt-6 pb-2 border-b flex flex-col gap-1">
-              <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                Add Employee Schedule
-              </h2>
-              <span className="text-sm font-medium text-gray-500 mb-2">
-                {formatMonthYearPH(selectedDate, true)}
-              </span>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white shadow-2xl rounded-xl w-full max-w-lg mx-auto border border-gray-200">
+            <div className="px-6 pt-6 pb-4 border-b border-gray-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Add Employee Schedule
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {formatMonthYearPH(selectedDate, true)}
+                  </p>
+                </div>
+              </div>
             </div>
+
             <form className="px-6 py-6 space-y-6">
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
                   Employee Name
                 </label>
 
@@ -1758,15 +2007,17 @@ const ManagerDutyScheduleForm = () => {
                       required
                       value={employeeInput}
                       onChange={(e) => setEmployeeInput(e.target.value)}
-                      className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm"
+                      className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
                       autoFocus
                     >
-                      <option value="">-- Select Employee --</option>
+                      <option value="" className="text-gray-500">
+                        -- Select Employee --
+                      </option>
                       {availableEmployees?.map((employee) => (
                         <option
                           key={employee._id}
                           value={employee._id}
-                          className="capitalize"
+                          className="capitalize py-2"
                         >
                           {employee.personalInformation.lastName},{" "}
                           {employee.personalInformation.firstName}{" "}
@@ -1781,23 +2032,52 @@ const ManagerDutyScheduleForm = () => {
                   );
                 })()}
                 {employeeError && (
-                  <div className="text-red-500 text-xs mt-1">
+                  <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
                     {employeeError}
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Shift
+                <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Shift Schedule
                 </label>
                 <select
                   required
                   value={selectedShift}
                   onChange={(e) => setSelectedShift(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm"
+                  className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
                 >
-                  <option value="">-- Select Schedule --</option>
+                  <option value="" className="text-gray-500">
+                    -- Select Schedule --
+                  </option>
                   {shiftTemplates &&
                     [...shiftTemplates]
                       .sort((a, b) => {
@@ -1817,7 +2097,11 @@ const ManagerDutyScheduleForm = () => {
                         return true;
                       })
                       .map((schedule) => (
-                        <option key={schedule._id} value={schedule._id}>
+                        <option
+                          key={schedule._id}
+                          value={schedule._id}
+                          className="py-2"
+                        >
                           {schedule.name}
                           {schedule.status === "off"
                             ? ""
@@ -1838,43 +2122,103 @@ const ManagerDutyScheduleForm = () => {
                       ))}
                 </select>
                 {shiftError && (
-                  <div className="text-red-500 text-xs mt-1">{shiftError}</div>
+                  <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    {shiftError}
+                  </div>
                 )}
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                    />
+                  </svg>
                   Description{" "}
                   <span className="font-normal text-gray-400">(Optional)</span>
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="block w-full rounded-lg border border-gray-300 bg-gray-50 py-2 px-3 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-base shadow-sm resize-none"
-                  placeholder="Add any additional notes"
-                  rows={2}
+                  className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm resize-none transition-all"
+                  placeholder="Add any additional notes or comments..."
+                  rows={3}
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t mt-4">
+            </form>
+
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+              <div className="flex flex-col sm:flex-row gap-3 justify-end">
                 <button
                   type="button"
                   onClick={() => {
                     setShowAddModal(false);
                     setDescription("");
+                    setEmployeeError("");
+                    setShiftError("");
                   }}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold"
+                  className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300 flex items-center gap-2 justify-center"
                 >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                   Close
                 </button>
                 <button
                   type="button"
                   onClick={handleEmployeeAdd}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-sm"
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-all duration-200 shadow-sm flex items-center gap-2 justify-center"
                 >
-                  Add
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Add Employee
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

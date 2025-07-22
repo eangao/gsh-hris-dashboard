@@ -78,43 +78,43 @@ const managerRoutes = [
   {
     path: "/manager/dashboard",
     element: <ManagerDashboard />,
-    role: ["MANAGER", "SUPER_ADMIN"],
+    role: ["MANAGER", "HR_ADMIN"],
   },
 
   {
     path: "/manager/duty-schedule",
     element: <ManagerDutySchedule />,
     // element: <OptimizedManagerDutySchedule />,
-    role: ["MANAGER", "SUPER_ADMIN"],
+    role: ["MANAGER", "HR_ADMIN"],
   },
 
   {
     path: "/manager/duty-schedule/:departmentId/create",
     element: <ManagerDutyScheduleForm />,
-    role: ["MANAGER", "SUPER_ADMIN"],
+    role: ["MANAGER", "HR_ADMIN"],
   },
   {
     path: "/manager/duty-schedule/:departmentId/edit/:scheduleId",
     element: <ManagerDutyScheduleForm />,
-    role: ["MANAGER", "SUPER_ADMIN"],
+    role: ["MANAGER", "HR_ADMIN"],
   },
 
   {
     path: "/manager/duty-schedule/:departmentId/view/:scheduleId",
     element: <ManagerDutyScheduleDetails />,
-    role: ["MANAGER", "SUPER_ADMIN"],
+    role: ["MANAGER", "HR_ADMIN"],
   },
 
   {
     path: "/manager/duty-schedule/print/department/:departmentId/schedule/:scheduleId",
     element: <ManagerDutySchedulePrint />,
-    role: ["MANAGER", "SUPER_ADMIN"],
+    role: ["MANAGER", "HR_ADMIN"],
   },
 
   {
     path: "/manager/employee-attendance",
     element: <ManagerEmployeeAttendance />,
-    role: ["MANAGER", "SUPER_ADMIN"],
+    role: ["MANAGER", "HR_ADMIN"],
   },
   // {
   //   path: "/manager/team-overview",

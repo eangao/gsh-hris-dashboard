@@ -114,6 +114,14 @@ const religionSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
+    clearState: (state) => {
+      state.loading = false;
+      state.successMessage = "";
+      state.errorMessage = "";
+      state.religions = [];
+      state.religion = "";
+      state.totalReligion = 0;
+    },
   },
   extraReducers: (builder) => {
     // Fetch Religions
@@ -176,5 +184,5 @@ const religionSlice = createSlice({
   },
 });
 
-export const { messageClear } = religionSlice.actions;
+export const { messageClear, clearState } = religionSlice.actions;
 export default religionSlice.reducer;

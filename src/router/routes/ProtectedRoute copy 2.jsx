@@ -13,7 +13,7 @@
  * @param {React.ReactNode} props.children - Child components to render if authorized
  */
 
-import React, { Suspense } from "react";
+import React, { Suspense, use } from "react";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
@@ -31,7 +31,9 @@ const ProtectedRoute = ({ route, children }) => {
   const { role, userInfo, loading } = useSelector((state) => state.auth);
   const location = useLocation();
 
-  // Debug logging (commented out for production)
+  console.log(userInfo);
+
+  // Debug logging
   // console.log("ProtectedRoute:", {
   //   role,
   //   hasUserInfo: !!userInfo,
@@ -111,9 +113,6 @@ const ProtectedRoute = ({ route, children }) => {
     // );
     return <Navigate to="/unauthorized" replace />;
   }
-
-  // Navigation-based access control is handled at the sidebar level
-  // Routes themselves only need role-based validation to prevent blocking legitimate routes
 
   // ===============================
   // RENDER AUTHORIZED CONTENT
