@@ -114,6 +114,14 @@ const positionSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
+    clearState: (state) => {
+      state.loading = false;
+      state.successMessage = "";
+      state.errorMessage = "";
+      state.positions = [];
+      state.position = "";
+      state.totalPosition = 0;
+    },
   },
   extraReducers: (builder) => {
     // Fetch Positions
@@ -176,5 +184,5 @@ const positionSlice = createSlice({
   },
 });
 
-export const { messageClear } = positionSlice.actions;
+export const { messageClear, clearState } = positionSlice.actions;
 export default positionSlice.reducer;

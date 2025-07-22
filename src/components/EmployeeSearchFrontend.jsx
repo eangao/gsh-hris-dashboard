@@ -9,7 +9,7 @@ const EmployeeSearchFrontend = ({
   inputPlaceholder,
   employees = [],
   loading = false,
-  managedDepartments = [],
+  departments = [],
   selectedDepartment = "",
   onDepartmentChange,
 }) => {
@@ -121,35 +121,34 @@ const EmployeeSearchFrontend = ({
 
   // Get department label
   const getDepartmentLabel = () => {
-    if (!managedDepartments || managedDepartments.length === 0) {
+    if (!departments || departments.length === 0) {
       return "Select Department";
     }
 
-    if (managedDepartments.length === 1) {
-      return managedDepartments[0].name;
+    if (departments.length === 1) {
+      return departments[0].name;
     }
 
-    const selectedDept = managedDepartments.find(
+    const selectedDept = departments.find(
       (dept) => dept._id === selectedDepartment
     );
     return selectedDept ? selectedDept.name : "Select Department";
   };
 
   // Check if there's only one department to show label instead of dropdown
-  const singleDepartment =
-    managedDepartments && managedDepartments.length === 1;
+  const singleDepartment = departments && departments.length === 1;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
       {/* Department Selection - Only show if we have departments */}
-      {managedDepartments && managedDepartments.length > 0 && (
+      {departments && departments.length > 0 && (
         <div className="sm:col-span-4">
           {singleDepartment ? (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Department
               </label>
-              <div className="px-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+              <div className="px-4 py-2 border uppercase border-gray-300 rounded-md bg-gray-50 text-gray-700">
                 {getDepartmentLabel()}
               </div>
             </div>
@@ -166,11 +165,11 @@ const EmployeeSearchFrontend = ({
                 value={selectedDepartment}
                 onChange={onDepartmentChange}
                 disabled={loading}
-                className={`w-full px-4 py-2 focus:border-blue-600 outline-none border border-gray-300 rounded-md shadow-sm text-gray-900 transition-all ${
+                className={`w-full px-4 py-2 text-sm font-medium uppercase focus:border-blue-600 outline-none border border-gray-300 rounded-md shadow-sm text-gray-900 transition-all ${
                   loading ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                 }`}
               >
-                {managedDepartments.map((dept) => (
+                {departments.map((dept) => (
                   <option key={dept._id} value={dept._id}>
                     {dept.name}
                   </option>
@@ -184,7 +183,7 @@ const EmployeeSearchFrontend = ({
       {/* Employee Search - Show in remaining space */}
       <div
         className={`relative ${
-          managedDepartments && managedDepartments.length > 0
+          departments && departments.length > 0
             ? "sm:col-span-6"
             : "sm:col-span-10"
         }`}

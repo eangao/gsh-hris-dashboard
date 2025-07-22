@@ -120,6 +120,14 @@ const employmentStatusSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
+    clearState: (state) => {
+      state.loading = false;
+      state.successMessage = "";
+      state.errorMessage = "";
+      state.employmentStatuses = [];
+      state.employmentStatus = "";
+      state.totalEmploymentStatus = 0;
+    },
   },
   extraReducers: (builder) => {
     // Fetch  Employment Status
@@ -186,5 +194,5 @@ const employmentStatusSlice = createSlice({
   },
 });
 
-export const { messageClear } = employmentStatusSlice.actions;
+export const { messageClear, clearState } = employmentStatusSlice.actions;
 export default employmentStatusSlice.reducer;

@@ -65,6 +65,13 @@ const holidaySlice = createSlice({
       state.success = false;
       state.message = "";
     },
+    clearState: (state) => {
+      state.holidays = [];
+      state.loading = false;
+      state.error = null;
+      state.success = false;
+      state.message = "";
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -136,5 +143,5 @@ const holidaySlice = createSlice({
   },
 });
 
-export const { messageClear } = holidaySlice.actions;
+export const { messageClear, clearState } = holidaySlice.actions;
 export default holidaySlice.reducer;

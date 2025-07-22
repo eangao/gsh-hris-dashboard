@@ -108,6 +108,7 @@ export const getRoutes = (role) => {
     case "HR_ADMIN":
       privateRoutes = [
         ...hrRoutes,
+        ...managerRoutes, // HR_ADMIN with managedDepartments can access manager routes
         ...employeeRoutes, // HR staff can access personal dashboard
       ];
       break;

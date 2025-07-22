@@ -15,7 +15,7 @@ import {
   AiOutlineClockCircle,
 } from "react-icons/ai";
 
-const managerRoles = ["MANAGER", "SUPER_ADMIN"];
+const managerRoles = ["MANAGER", "HR_ADMIN"];
 
 export const managerNav = [
   //====================================

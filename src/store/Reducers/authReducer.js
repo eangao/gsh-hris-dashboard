@@ -59,6 +59,12 @@ export const logout = createAsyncThunk(
       dispatch({ type: "dutySchedule/clearState" });
       dispatch({ type: "department/clearState" });
       dispatch({ type: "cluster/clearState" });
+      dispatch({ type: "position/clearState" });
+      dispatch({ type: "role/clearState" });
+      dispatch({ type: "religion/clearState" });
+      dispatch({ type: "employmentStatus/clearState" });
+      dispatch({ type: "holidays/clearState" });
+      dispatch({ type: "shiftTemplate/clearState" });
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -299,8 +305,8 @@ export const authReducer = createSlice({
 
       .addCase(changePassword.fulfilled, (state, { payload }) => {
         state.loader = false;
-        state.userInfo = payload.userInfo;
-        state.successMessage = payload.message;
+        state.userInfo = payload?.userInfo;
+        state.successMessage = payload?.message;
       })
 
       .addCase(get_user_info.pending, (state) => {

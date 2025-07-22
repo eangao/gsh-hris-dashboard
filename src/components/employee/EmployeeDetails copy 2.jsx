@@ -1,10 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import {
-  fetchEmployeeDetailsById,
-  clearEmployeeData,
-} from "../../store/Reducers/employeeReducer";
+import { fetchEmployeeDetailsById } from "../../store/Reducers/employeeReducer";
 import { formatDatePH, getAgePHFromISO } from "../../utils/phDateUtils";
 import { IoMdArrowBack } from "react-icons/io";
 
@@ -12,75 +9,30 @@ const EmployeeDetails = ({ employeeId }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { employee, loading, errorMessage } = useSelector(
-    (state) => state.employee
-  );
+  const { employee, loading } = useSelector((state) => state.employee);
 
   useEffect(() => {
     if (employeeId) {
-      // Clear any previous employee data to prevent showing stale data
-      dispatch(clearEmployeeData());
       dispatch(fetchEmployeeDetailsById(employeeId));
     }
   }, [dispatch, employeeId]);
 
-  // Show loading state while data is being fetched or if no employee data yet
-  if (loading || !employee) {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Loading employee details...</p>
-        </div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  // Show error state if there's an error and no employee data
-  if (errorMessage && !employee) {
+  if (!employee) {
     return (
-      <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center py-20">
-            <div className="mb-6">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-16 w-16 mx-auto text-red-500 mb-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.994-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">
-              Employee Not Found
-            </h3>
-            <p className="text-gray-600 mb-6">
-              The employee details could not be loaded. Please try again or
-              contact support if the problem persists.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={() => navigate(-1)}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
-              >
-                Go Back
-              </button>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="text-center py-10">
+        <p className="text-gray-500">No employee data found</p>
       </div>
     );
   }

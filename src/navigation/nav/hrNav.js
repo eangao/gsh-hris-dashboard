@@ -1,12 +1,14 @@
 import {
+  AiFillFileText,
   AiOutlineAreaChart,
   AiOutlineClockCircle,
+  AiOutlineCluster,
   AiOutlineFileSearch,
   AiOutlineUsergroupAdd,
   AiOutlineUserSwitch,
   AiOutlineWarning,
 } from "react-icons/ai";
-import { FaPeopleGroup } from "react-icons/fa6";
+import { FaChurch, FaPeopleGroup } from "react-icons/fa6";
 import {
   AiOutlineDashboard,
   AiOutlineCalendar,
@@ -19,8 +21,16 @@ import {
   AiOutlineNotification,
   AiOutlineApartment,
 } from "react-icons/ai";
+import { GoPerson } from "react-icons/go";
+import {
+  MdApartment,
+  MdHolidayVillage,
+  MdSettingsApplications,
+} from "react-icons/md";
+import { RiTimeFill } from "react-icons/ri";
 
-const hrRoles = ["HR_ADMIN", "SUPER_ADMIN"];
+const hrRoles = ["HR_ADMIN"];
+const hrSetupRoles = ["HR_ADMIN"];
 
 export const hrNav = [
   //====================================
@@ -152,4 +162,63 @@ export const hrNav = [
   //   role: hrRoles,
   //   group: "HR Dashboard",
   // },
+
+  // --- Setups Group Label ---
+  {
+    title: "Setups",
+    isGroupTitle: true,
+    icon: <MdSettingsApplications />,
+    role: hrSetupRoles,
+  },
+  {
+    title: "Cluster Management",
+    icon: <AiOutlineCluster />,
+    path: "/hr/setup/cluster",
+    role: hrSetupRoles,
+    group: "Setups",
+  },
+  {
+    title: "Department Management",
+    icon: <MdApartment />,
+    path: "/hr/setup/department",
+    role: hrSetupRoles,
+    group: "Setups",
+  },
+  {
+    title: "Position Titles",
+    icon: <AiFillFileText />,
+    path: "/hr/setup/position",
+    role: hrSetupRoles,
+    group: "Setups",
+  },
+
+  {
+    title: "Employment Types",
+    icon: <GoPerson />,
+    path: "/hr/setup/employment-status",
+    role: hrSetupRoles,
+    group: "Setups",
+  },
+  {
+    title: "Religion Masterlist",
+    icon: <FaChurch />,
+    path: "/hr/setup/religion",
+    role: hrSetupRoles,
+    group: "Setups",
+  },
+  {
+    title: "Shift Templates",
+    icon: <RiTimeFill />,
+    path: "/hr/setup/shift-templates",
+    role: hrSetupRoles,
+    group: "Setups",
+  },
+
+  {
+    title: "Holiday Calendar",
+    icon: <MdHolidayVillage />,
+    path: "/hr/setup/holiday",
+    role: hrSetupRoles,
+    group: "Setups",
+  },
 ];

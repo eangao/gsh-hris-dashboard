@@ -25,7 +25,7 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
   // ===============================
   // HOOKS & STATE MANAGEMENT
   // ===============================
-  const { role, userInfo } = useSelector((state) => state.auth);
+  const { role } = useSelector((state) => state.auth);
   const { pathname } = useLocation();
   const { width } = useWindowSize();
 
@@ -41,13 +41,13 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
   // ===============================
 
   /**
-   * Fetch and set navigation items based on user role and permissions
-   * Only re-run when role or userInfo changes
+   * Fetch and set navigation items based on user role
+   * Only re-run when role changes
    */
   useEffect(() => {
-    const navs = getNav(role, userInfo);
+    const navs = getNav(role);
     setAllNav(navs);
-  }, [role, userInfo]);
+  }, [role]);
 
   /**
    * Auto-expand the group containing the current route
@@ -214,8 +214,8 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
         {hasItems && (
           <div
             id={`group-${group.title}`}
-            className={`ml-2 mt-1 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
-              isOpen ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
+            className={`ml-2 mt-1 space-y-1 overflow-hidden transition-all duration-200 ${
+              isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
             }`}
           >
             <ul className="space-y-1 pl-4 border-l-2 border-blue-500/30">
@@ -292,38 +292,7 @@ const Sidebar = memo(({ showSidebar, setShowSidebar }) => {
         </div>
 
         {/* Navigation Menu */}
-        <nav
-          className="flex-1 py-4 px-2 sidebar-scroll"
-          role="navigation"
-          style={{
-            overflowY: "auto",
-            maxHeight: "calc(100vh - 120px)", // Adjust based on header and footer height
-          }}
-        >
-          <style
-            dangerouslySetInnerHTML={{
-              __html: `
-              .sidebar-scroll::-webkit-scrollbar {
-                width: 6px;
-              }
-              .sidebar-scroll::-webkit-scrollbar-track {
-                background: rgba(30, 58, 138, 0.2);
-                border-radius: 3px;
-              }
-              .sidebar-scroll::-webkit-scrollbar-thumb {
-                background: rgba(37, 99, 235, 0.5);
-                border-radius: 3px;
-              }
-              .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-                background: rgba(37, 99, 235, 0.7);
-              }
-              .sidebar-scroll {
-                scrollbar-width: thin;
-                scrollbar-color: rgba(37, 99, 235, 0.5) rgba(30, 58, 138, 0.2);
-              }
-            `,
-            }}
-          />
+        <nav className="flex-1 overflow-y-auto py-4 px-2" role="navigation">
           <ul className="space-y-2">
             {Object.entries(groupedNav).map(([groupKey, group], index) => (
               <li key={groupKey || index}>

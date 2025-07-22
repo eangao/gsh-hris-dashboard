@@ -33,7 +33,6 @@ const ChangePassword = () => {
 
     if (successMessage) {
       toast.success(successMessage);
-
       navigate("/");
       dispatch(messageClear());
     }

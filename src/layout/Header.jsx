@@ -21,7 +21,7 @@ const Header = ({ showSidebar, setShowSidebar }) => {
   const dropdownRef = useRef(null);
 
   const { userInfo } = useSelector((state) => state.auth);
-  const { employee } = userInfo;
+  const { employee } = userInfo || {};
 
   const isLargeScreen = width >= 1024;
 

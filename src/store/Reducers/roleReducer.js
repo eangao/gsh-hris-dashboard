@@ -85,6 +85,14 @@ const roleSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
+    clearState: (state) => {
+      state.loading = false;
+      state.successMessage = "";
+      state.errorMessage = "";
+      state.roles = [];
+      state.role = "";
+      state.totalRole = 0;
+    },
   },
   extraReducers: (builder) => {
     // Fetch Roles
@@ -146,5 +154,5 @@ const roleSlice = createSlice({
   },
 });
 
-export const { messageClear } = roleSlice.actions;
+export const { messageClear, clearState } = roleSlice.actions;
 export default roleSlice.reducer;

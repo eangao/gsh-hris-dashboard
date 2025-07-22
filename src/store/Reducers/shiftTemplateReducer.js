@@ -109,6 +109,14 @@ const shiftTemplateSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
     },
+    clearState: (state) => {
+      state.loading = false;
+      state.successMessage = "";
+      state.errorMessage = "";
+      state.shiftTemplates = [];
+      state.shiftTemplate = "";
+      state.totalShiftTemplate = 0;
+    },
   },
   extraReducers: (builder) => {
     // Fetch shiftTemplates
@@ -172,5 +180,5 @@ const shiftTemplateSlice = createSlice({
   },
 });
 
-export const { messageClear } = shiftTemplateSlice.actions;
+export const { messageClear, clearState } = shiftTemplateSlice.actions;
 export default shiftTemplateSlice.reducer;
