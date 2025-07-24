@@ -31,21 +31,12 @@ const ProtectedRoute = ({ route, children }) => {
   const { role, userInfo, loading } = useSelector((state) => state.auth);
   const location = useLocation();
 
-  // Debug logging (commented out for production)
-  // console.log("ProtectedRoute:", {
-  //   role,
-  //   hasUserInfo: !!userInfo,
-  //   loading,
-  //   pathname: location.pathname,
-  // });
-
   // ===============================
   // LOADING STATE HANDLING
   // ===============================
 
   // Show loading while authentication is being checked
   if (loading) {
-    // console.log("ProtectedRoute: Showing loading state");
     return <ProtectedRouteLoader />;
   }
 
@@ -55,10 +46,6 @@ const ProtectedRoute = ({ route, children }) => {
 
   // Check if user is authenticated
   if (!role || !userInfo) {
-    // console.warn(
-    //   "ProtectedRoute: User not authenticated, redirecting to login",
-    //   { role, userInfo: !!userInfo }
-    // );
     return <Navigate to="/login" replace />;
   }
 
@@ -71,7 +58,6 @@ const ProtectedRoute = ({ route, children }) => {
     userInfo?.mustChangePassword &&
     location.pathname !== "/change-password"
   ) {
-    // console.info("ProtectedRoute: User must change password, redirecting");
     return <Navigate to="/change-password" replace />;
   }
 
@@ -81,17 +67,17 @@ const ProtectedRoute = ({ route, children }) => {
 
   // Check if route configuration is valid
   if (!route) {
-    // console.error("ProtectedRoute: No route configuration provided");
+    console.error("ProtectedRoute: No route configuration provided");
     return <Navigate to="/page-not-found" replace />;
   }
 
   // Check if route has role requirements
   if (!route.role) {
-    // console.error(
-    //   `ProtectedRoute: Route "${
-    //     route.path || "unknown"
-    //   }" has no role requirements`
-    // );
+    console.error(
+      `ProtectedRoute: Route "${
+        route.path || "unknown"
+      }" has no role requirements`
+    );
     return <Navigate to="/page-not-found" replace />;
   }
 
@@ -103,12 +89,12 @@ const ProtectedRoute = ({ route, children }) => {
   const allowedRoles = Array.isArray(route.role) ? route.role : [route.role];
 
   // Check if user's role is in the allowed roles
-  if (!allowedRoles.includes(userInfo.role)) {
-    // console.warn(
-    //   `ProtectedRoute: User role "${userInfo.role}" not authorized for route "${
-    //     route.path || "unknown"
-    //   }". Required roles: ${allowedRoles.join(", ")}`
-    // );
+  if (!allowedRoles.includes(role)) {
+    console.warn(
+      `ProtectedRoute: User role "${role}" not authorized for route "${
+        route.path || "unknown"
+      }". Required roles: ${allowedRoles.join(", ")}`
+    );
     return <Navigate to="/unauthorized" replace />;
   }
 

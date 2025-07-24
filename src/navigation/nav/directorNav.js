@@ -15,6 +15,7 @@ import {
   AiOutlineComment,
   AiOutlineBell,
   AiOutlineApartment,
+  AiOutlineUserSwitch,
 } from "react-icons/ai";
 
 const directorRoles = ["DIRECTOR"];
@@ -32,6 +33,13 @@ export const directorNav = [
     title: "Dashboard Overview",
     icon: <AiOutlineDashboard />,
     path: "/director/dashboard",
+    role: directorRoles,
+    group: "Director Dashboard",
+  },
+  {
+    title: "Employees",
+    icon: <AiOutlineUserSwitch />, // Manage all employee profiles
+    path: "/director/employees",
     role: directorRoles,
     group: "Director Dashboard",
   },

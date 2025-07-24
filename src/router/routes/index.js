@@ -51,6 +51,17 @@ const ROLE_HIERARCHY = {
     inherits: ["EMPLOYEE"],
     description: "Management level access with employee dashboard",
   },
+  SUPERVISOR: {
+    level: 2,
+    inherits: ["EMPLOYEE"],
+    description: "Supervisory level access with manager dashboard features",
+  },
+  MARKETING_ADMIN: {
+    level: 2,
+    inherits: ["EMPLOYEE"],
+    description:
+      "Marketing administrative access with manager dashboard features",
+  },
   EMPLOYEE: {
     level: 1,
     inherits: [],
@@ -67,24 +78,15 @@ const ROLE_HIERARCHY = {
 export const getRoutes = (role) => {
   // Input validation
   if (!role || typeof role !== "string") {
-    // console.warn(
-    //   "getRoutes: Invalid role provided, defaulting to empty routes"
-    // );
     return [];
   }
 
   // Check if role exists in hierarchy
   if (!ROLE_HIERARCHY[role]) {
-    // console.warn(
-    //   `getRoutes: Unknown role "${role}", defaulting to employee routes`
-    // );
     return employeeRoutes;
   }
 
   let privateRoutes = [];
-
-  // Debug logging
-  // console.log(`getRoutes: Processing role "${role}"`);
 
   // Role-based route assignment with inheritance
   switch (role) {
@@ -105,11 +107,25 @@ export const getRoutes = (role) => {
       ];
       break;
 
+    case "DIRECTOR":
+      privateRoutes = [
+        ...directorRoutes,
+        ...employeeRoutes, // Directors have access to employee features
+      ];
+      break;
+
     case "HR_ADMIN":
       privateRoutes = [
         ...hrRoutes,
         ...managerRoutes, // HR_ADMIN with managedDepartments can access manager routes
         ...employeeRoutes, // HR staff can access personal dashboard
+      ];
+      break;
+
+    case "MARKETING_ADMIN":
+      privateRoutes = [
+        ...managerRoutes, // MARKETING_ADMIN with managedDepartments can access manager routes
+        ...employeeRoutes, // MARKETING_ADMIN staff can access personal dashboard
       ];
       break;
 
@@ -120,10 +136,10 @@ export const getRoutes = (role) => {
       ];
       break;
 
-    case "DIRECTOR":
+    case "SUPERVISOR":
       privateRoutes = [
-        ...directorRoutes,
-        ...employeeRoutes, // Directors have access to employee features
+        ...managerRoutes,
+        ...employeeRoutes, // Supervisors have access to manager and employee features
       ];
       break;
 
@@ -132,9 +148,6 @@ export const getRoutes = (role) => {
       break;
 
     default:
-      // console.warn(
-      //   `getRoutes: Unhandled role "${role}", defaulting to employee routes`
-      // );
       privateRoutes = employeeRoutes;
   }
 
@@ -143,12 +156,6 @@ export const getRoutes = (role) => {
     (route, index, self) =>
       index === self.findIndex((r) => r.path === route.path)
   );
-
-  // console.log(`getRoutes: Role "${role}" has ${uniqueRoutes.length} routes`);
-  // console.log(
-  //   `getRoutes: Sample routes:`,
-  //   uniqueRoutes.slice(0, 3).map((r) => r.path)
-  // );
 
   return uniqueRoutes;
 };
@@ -162,9 +169,8 @@ export const getRoutes = (role) => {
 export const getAllRoutes = (role) => {
   const privateRoutes = getRoutes(role);
 
-  // Debug logging
-  // console.log(`getAllRoutes: Getting routes for role "${role}"`);
-  // console.log(`getAllRoutes: Found ${privateRoutes.length} private routes`);
+  // Import public routes dynamically to avoid circular dependency
+  const { default: publicRoutes } = require("./publicRoutes");
 
   // Wrap each route with ProtectedRoute to maintain compatibility with existing structure
   const protectedRoutes = privateRoutes.map((route) => ({
@@ -172,15 +178,33 @@ export const getAllRoutes = (role) => {
     element: <ProtectedRoute route={route}>{route.element}</ProtectedRoute>,
   }));
 
+  // Separate catch-all route and home route from other public routes
+  const catchAllRoute = publicRoutes.find((route) => route.path === "*");
+  const homeRoute = publicRoutes.find((route) => route.path === "/");
+  const otherPublicRoutes = publicRoutes.filter(
+    (route) => route.path !== "*" && route.path !== "/"
+  );
+
   const routeConfig = [
+    // Other public routes (login, unauthorized, etc.) - excluding catch-all and home
+    ...otherPublicRoutes,
+    // Private routes (wrapped in MainLayout) - this will handle the "/" path for authenticated users
     {
       path: "/",
       element: <MainLayout />,
-      children: protectedRoutes,
+      children: [
+        // Add index route for authenticated users (redirects "/" to appropriate dashboard)
+        {
+          index: true,
+          element: homeRoute ? homeRoute.element : <div>Loading...</div>,
+        },
+        ...protectedRoutes,
+      ],
     },
+    // Catch-all route MUST be last to avoid catching protected routes
+    ...(catchAllRoute ? [catchAllRoute] : []),
   ];
 
-  // console.log(`getAllRoutes: Final route configuration:`, routeConfig);
   return routeConfig;
 };
 

@@ -13,7 +13,9 @@ const Home = () => {
     role === "MANAGER" ||
     role === "DIRECTOR" ||
     role === "HR_ADMIN" ||
-    role === "ADMIN"
+    role === "ADMIN" ||
+    role === "MARKETING_ADMIN" ||
+    role === "SUPERVISOR"
   )
     return <Navigate to="/employee/dashboard" replace />;
   // If no role is set (user is not authenticated), redirect to the login page

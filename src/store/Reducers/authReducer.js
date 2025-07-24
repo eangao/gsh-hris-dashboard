@@ -145,7 +145,7 @@ export const createUser = createAsyncThunk(
   "auth/createUser",
   async (userData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post("/users", userData, {
+      const { data } = await api.post("/users/create-user", userData, {
         withCredentials: true,
       });
 
@@ -162,9 +162,28 @@ export const updateUser = createAsyncThunk(
   "auth/updateUser",
   async ({ _id, ...userData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.put(`/users/${_id}`, userData, {
+      const { data } = await api.put(`/users/update-user/${_id}`, userData, {
         withCredentials: true,
       });
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const resetUserPassword = createAsyncThunk(
+  "auth/resetUserPassword",
+  async ({ userId, adminPassword }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.put(
+        `/users/reset-password/${userId}`,
+        { adminPassword },
+        {
+          withCredentials: true,
+        }
+      );
 
       return fulfillWithValue(data);
     } catch (error) {
@@ -246,7 +265,7 @@ export const authReducer = createSlice({
       })
       .addCase(admin_login.rejected, (state, { payload }) => {
         state.loader = false;
-        state.errorMessage = payload.error;
+        state.errorMessage = payload?.error || "Admin login failed";
       })
       .addCase(admin_login.fulfilled, (state, { payload }) => {
         state.loader = false;
@@ -261,7 +280,7 @@ export const authReducer = createSlice({
       })
       .addCase(user_login.rejected, (state, { payload }) => {
         state.loader = false;
-        state.errorMessage = payload.error;
+        state.errorMessage = payload?.error || "User login failed";
       })
       .addCase(user_login.fulfilled, (state, { payload }) => {
         state.loader = false;
@@ -282,12 +301,60 @@ export const authReducer = createSlice({
       })
       .addCase(createUser.rejected, (state, { payload }) => {
         state.loader = false;
-        state.errorMessage = payload.error;
+        state.errorMessage = payload?.error || "User creation failed";
       })
 
       .addCase(createUser.fulfilled, (state, { payload }) => {
         state.loader = false;
         state.successMessage = payload.message;
+      })
+
+      // Update User
+      .addCase(updateUser.pending, (state) => {
+        state.loader = true;
+      })
+      .addCase(updateUser.rejected, (state, { payload }) => {
+        state.loader = false;
+        state.errorMessage = payload?.error || "User update failed";
+      })
+      .addCase(updateUser.fulfilled, (state, { payload }) => {
+        state.loader = false;
+        state.successMessage = payload.message;
+        // Update the user in the users array with proper error handling
+        if (payload.user && payload.user._id && state.users) {
+          const updatedUserIndex = state.users.findIndex(
+            (user) => user && user._id === payload.user._id
+          );
+          if (updatedUserIndex !== -1) {
+            state.users[updatedUserIndex] = payload.user;
+          }
+        }
+      })
+
+      // Reset User Password
+      .addCase(resetUserPassword.pending, (state) => {
+        state.loader = true;
+      })
+      .addCase(resetUserPassword.rejected, (state, { payload }) => {
+        state.loader = false;
+        state.errorMessage = payload?.error || "Password reset failed";
+      })
+      .addCase(resetUserPassword.fulfilled, (state, { payload }) => {
+        state.loader = false;
+        state.successMessage = payload.message;
+      })
+
+      // Fetch User By ID
+      .addCase(fetchUserById.pending, (state) => {
+        state.loader = true;
+      })
+      .addCase(fetchUserById.rejected, (state, { payload }) => {
+        state.loader = false;
+        state.errorMessage = payload?.error || "Failed to fetch user";
+      })
+      .addCase(fetchUserById.fulfilled, (state, { payload }) => {
+        state.loader = false;
+        state.user = payload.user;
       })
 
       .addCase(getUnregisteredUsers.fulfilled, (state, { payload }) => {

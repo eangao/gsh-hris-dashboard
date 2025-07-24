@@ -4,6 +4,14 @@ const ManagerDashboard = lazy(() =>
   import("../../pages/dashboard/manager/ManagerDashboard")
 );
 
+const ManagerEmployees = lazy(() =>
+  import("../../pages/dashboard/manager/employees/ManagerEmployees")
+);
+
+const ManagerEmployeeDetails = lazy(() =>
+  import("../../pages/dashboard/manager/employees/ManagerEmployeeDetails")
+);
+
 const ManagerDutySchedule = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutySchedule")
 );
@@ -74,47 +82,60 @@ const ManagerEmployeeAttendance = lazy(() =>
 //   import("../../pages/dashboard/manager/OrganizationChart")
 // );
 
+const managerRoles = ["MANAGER", "HR_ADMIN", "MARKETING_ADMIN", "SUPERVISOR"];
+
 const managerRoutes = [
   {
     path: "/manager/dashboard",
     element: <ManagerDashboard />,
-    role: ["MANAGER", "HR_ADMIN"],
+    role: managerRoles,
+  },
+  {
+    path: "/manager/employees",
+    element: <ManagerEmployees />,
+    role: managerRoles,
+  },
+
+  {
+    path: "/manager/employees/details/:employeeId",
+    element: <ManagerEmployeeDetails />,
+    role: managerRoles,
   },
 
   {
     path: "/manager/duty-schedule",
     element: <ManagerDutySchedule />,
     // element: <OptimizedManagerDutySchedule />,
-    role: ["MANAGER", "HR_ADMIN"],
+    role: managerRoles,
   },
 
   {
     path: "/manager/duty-schedule/:departmentId/create",
     element: <ManagerDutyScheduleForm />,
-    role: ["MANAGER", "HR_ADMIN"],
+    role: managerRoles,
   },
   {
     path: "/manager/duty-schedule/:departmentId/edit/:scheduleId",
     element: <ManagerDutyScheduleForm />,
-    role: ["MANAGER", "HR_ADMIN"],
+    role: managerRoles,
   },
 
   {
     path: "/manager/duty-schedule/:departmentId/view/:scheduleId",
     element: <ManagerDutyScheduleDetails />,
-    role: ["MANAGER", "HR_ADMIN"],
+    role: managerRoles,
   },
 
   {
     path: "/manager/duty-schedule/print/department/:departmentId/schedule/:scheduleId",
     element: <ManagerDutySchedulePrint />,
-    role: ["MANAGER", "HR_ADMIN"],
+    role: managerRoles,
   },
 
   {
     path: "/manager/employee-attendance",
     element: <ManagerEmployeeAttendance />,
-    role: ["MANAGER", "HR_ADMIN"],
+    role: managerRoles,
   },
   // {
   //   path: "/manager/team-overview",

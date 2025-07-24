@@ -13,9 +13,10 @@ import {
   AiOutlineApartment,
   AiOutlinePieChart,
   AiOutlineClockCircle,
+  AiOutlineUserSwitch,
 } from "react-icons/ai";
 
-const managerRoles = ["MANAGER", "HR_ADMIN"];
+const managerRoles = ["MANAGER", "HR_ADMIN", "MARKETING_ADMIN", "SUPERVISOR"];
 
 export const managerNav = [
   //====================================
@@ -30,6 +31,14 @@ export const managerNav = [
     title: "Dashboard Overview",
     icon: <AiOutlineDashboard />,
     path: "/manager/dashboard",
+    role: managerRoles,
+    group: "Manager Dashboard",
+  },
+
+  {
+    title: "Employees",
+    icon: <AiOutlineUserSwitch />, // Manage all employee profiles
+    path: "/manager/employees",
     role: managerRoles,
     group: "Manager Dashboard",
   },

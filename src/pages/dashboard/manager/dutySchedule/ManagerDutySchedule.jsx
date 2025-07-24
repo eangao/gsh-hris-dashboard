@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { fetchManagedDepartments } from "../../../../store/Reducers/employeeReducer";
 import {
   fetchDutySchedulesByDepartment,
   messageClear,
@@ -16,20 +15,23 @@ const ManagerDutySchedule = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
-  const employeeId = userInfo?.employee?._id;
 
-  const { loading: managedDepartmentsLoading, managedDepartments } =
-    useSelector((state) => state.employee);
+  // Extract departments from the new API structure - Memoized for performance
+  const managedDepartments = useMemo(
+    () =>
+      userInfo?.employee?.employmentInformation?.managedDepartments?.map(
+        (item) => item.department
+      ) || [],
+    [userInfo?.employee?.employmentInformation?.managedDepartments]
+  );
 
   const {
     dutySchedules,
     totalDutySchedule,
-    loading: dutyScheduleLoading,
+    loading,
     successMessage,
     errorMessage,
   } = useSelector((state) => state.dutySchedule);
-
-  const loading = managedDepartmentsLoading || dutyScheduleLoading;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
@@ -38,13 +40,6 @@ const ManagerDutySchedule = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalRemarks, setModalRemarks] = useState("");
   const [modalTitle, setModalTitle] = useState("");
-
-  // Fetch managed departments
-  useEffect(() => {
-    if (!employeeId) return;
-
-    dispatch(fetchManagedDepartments(employeeId));
-  }, [employeeId, dispatch]);
 
   // Memoized fetch for schedules
   const getDutySchedulesByDepartment = useCallback(() => {
@@ -370,7 +365,7 @@ const ManagerDutySchedule = () => {
                 <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
                   {/* Mobile Card View - show on small/medium screens */}
                   <div className="lg:hidden">
-                    {dutyScheduleLoading ? (
+                    {loading ? (
                       <div className="p-8 text-center">
                         <div className="flex items-center justify-center space-x-2">
                           <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
@@ -851,7 +846,7 @@ const ManagerDutySchedule = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {dutyScheduleLoading ? (
+                        {loading ? (
                           <tr>
                             <td colSpan="4" className="p-8 text-center">
                               <div className="flex items-center justify-center space-x-2">

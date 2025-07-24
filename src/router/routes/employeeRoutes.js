@@ -65,115 +65,64 @@ const HelpSupport = lazy(() => import("../../pages/HelpSupport"));
 //   import("../../pages/dashboard/employee/OrganizationChart")
 // );import EmployeeDutyScheduleDetails from './../../pages/dashboard/employee/dutySchedule/EmployeeDutyScheduleDetails';
 
+const employeeAccessRoles = [
+  "EMPLOYEE",
+  "MANAGER",
+  "SUPERVISOR",
+  "DIRECTOR",
+  "HR_ADMIN",
+  "MARKETING_ADMIN",
+  "ADMIN",
+];
+
 const employeeRoutes = [
   {
     path: "/employee/dashboard",
     element: <EmployeeDashboard />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ], // ✅ whoever needs personal dashboard
+    role: employeeAccessRoles,
+    // ✅ whoever needs personal dashboard
   },
   {
     path: "/employee/profile",
     element: <MyProfile />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ], // ✅ whoever needs personal dashboard
+    role: employeeAccessRoles,
   },
+
   {
     path: "/employee/duty-schedule",
     element: <EmployeeDutySchedule />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ], // ✅ whoever needs personal dashboard
+    role: employeeAccessRoles,
   },
   {
     path: "/employee/duty-schedule/view/employee/:employeeId/department/:departmentId/schedule/:scheduleId",
     element: <EmployeeDutyScheduleDetails />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ], // ✅ whoever needs personal dashboard
+    role: employeeAccessRoles,
   },
   {
     path: "/employee/duty-schedule/print/employee/:employeeId/schedule/:scheduleId",
     element: <EmployeeDutySchedulePrint />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ], // ✅ whoever needs personal dashboard
+    role: employeeAccessRoles,
   },
   {
     path: "/employee/attendance",
     element: <MyAttendance />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ], // ✅ whoever needs personal dashboard
+    role: employeeAccessRoles,
   },
 
   {
     path: "/employee/dependents",
     element: <MyDependents />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ], // ✅ whoever needs personal dashboard
+    role: employeeAccessRoles,
   },
   {
     path: "/employee/account-settings",
     element: <AccountSettings />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ],
+    role: employeeAccessRoles,
   },
   {
     path: "/employee/help-support",
     element: <HelpSupport />,
-    role: [
-      "EMPLOYEE",
-      "MANAGER",
-      "HR_ADMIN",
-      "DIRECTOR",
-      "ADMIN",
-      "SUPER_ADMIN",
-    ],
+    role: employeeAccessRoles,
   },
 
   // {

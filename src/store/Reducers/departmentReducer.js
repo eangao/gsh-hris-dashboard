@@ -14,8 +14,6 @@ export const fetchDepartments = createAsyncThunk(
         { withCredentials: true }
       );
 
-      // console.log(data);
-
       return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
@@ -28,6 +26,24 @@ export const fetchAllDepartments = createAsyncThunk(
   async (_, { rejectWithValue, fulfillWithValue }) => {
     try {
       const { data } = await api.get("/hris/departments/options", {
+        withCredentials: true,
+      });
+
+      // console.log(data);
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchDepartmentsByCluster = createAsyncThunk(
+  "department/fetchDepartmentsByCluster",
+  async (clusterId, { rejectWithValue, fulfillWithValue }) => {
+    console.log("Fetching departments for cluster:", clusterId);
+    try {
+      const { data } = await api.get(`/hris/departments/cluster/${clusterId}`, {
         withCredentials: true,
       });
 
@@ -157,6 +173,13 @@ const departmentSlice = createSlice({
       state.departments = payload.departments;
     });
 
+    builder.addCase(
+      fetchDepartmentsByCluster.fulfilled,
+      (state, { payload }) => {
+        state.departments = payload.departments;
+      }
+    );
+
     builder.addCase(fetchDepartmentById.fulfilled, (state, { payload }) => {
       state.department = payload.department;
     });
@@ -167,7 +190,7 @@ const departmentSlice = createSlice({
       })
       .addCase(createDepartment.rejected, (state, { payload }) => {
         state.loading = false;
-        state.errorMessage = payload.error;
+        state.errorMessage = payload?.error || "Failed to create department";
       })
       .addCase(createDepartment.fulfilled, (state, { payload }) => {
         state.loading = false;
@@ -180,7 +203,7 @@ const departmentSlice = createSlice({
       })
       .addCase(updateDepartment.rejected, (state, { payload }) => {
         state.loading = false;
-        state.errorMessage = payload.error;
+        state.errorMessage = payload?.error || "Failed to update department";
       })
       .addCase(updateDepartment.fulfilled, (state, { payload }) => {
         state.loading = false;
@@ -193,7 +216,8 @@ const departmentSlice = createSlice({
       })
       .addCase(assignDepartmentManager.rejected, (state, { payload }) => {
         state.loading = false;
-        state.errorMessage = payload.error;
+        state.errorMessage =
+          payload?.error || "Failed to assign department manager";
       })
       .addCase(assignDepartmentManager.fulfilled, (state, { payload }) => {
         state.loading = false;
@@ -206,7 +230,7 @@ const departmentSlice = createSlice({
       })
       .addCase(deleteDepartment.rejected, (state, { payload }) => {
         state.loading = false;
-        state.errorMessage = payload.error;
+        state.errorMessage = payload?.error || "Failed to delete department";
       })
 
       .addCase(deleteDepartment.fulfilled, (state, { payload }) => {

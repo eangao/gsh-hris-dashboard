@@ -2,25 +2,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   createUser,
-  updateUser,
   fetchUsers,
   getUnregisteredUsers,
+  fetchUserById,
   messageClear,
   clearUnRegisteredUsers,
-  resetUserPassword,
 } from "../../../store/Reducers/authReducer";
 import toast from "react-hot-toast";
 import Search from "../../../components/Search";
 import { FaCheck, FaSearch, FaTimes } from "react-icons/fa";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import {
-  FaUsers,
-  FaEnvelope,
-  FaBriefcase,
-  FaUserTag,
-  FaToggleOn,
-  FaCogs,
-} from "react-icons/fa";
 import Pagination from "../../../components/Pagination";
 
 import { Formik, Field, Form, ErrorMessage } from "formik";
@@ -31,6 +21,7 @@ const UserManagement = () => {
 
   const {
     users,
+    user,
     totalUser,
     unRegisteredUsers,
     loading,
@@ -43,15 +34,7 @@ const UserManagement = () => {
   const [perPage, setPerpage] = useState(5);
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-
-  // Reset password modal state
-  const [resetPasswordModal, setResetPasswordModal] = useState({
-    open: false,
-    userId: null,
-    userEmail: "",
-  });
-  const [adminPassword, setAdminPassword] = useState("");
-  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
   // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {
@@ -86,12 +69,6 @@ const UserManagement = () => {
     setSelectedUnregisteredUser(null);
   }, []);
 
-  const handleCloseResetPasswordModal = useCallback(() => {
-    setResetPasswordModal({ open: false, userId: null, userEmail: "" });
-    setAdminPassword("");
-    setShowAdminPassword(false);
-  }, []);
-
   useEffect(() => {
     if (successMessage || errorMessage) {
       successMessage && toast.success(successMessage);
@@ -100,19 +77,11 @@ const UserManagement = () => {
       if (successMessage) {
         getUsers();
         handleCloseUserModal();
-        handleCloseResetPasswordModal();
       }
 
       dispatch(messageClear());
     }
-  }, [
-    successMessage,
-    errorMessage,
-    dispatch,
-    getUsers,
-    handleCloseUserModal,
-    handleCloseResetPasswordModal,
-  ]);
+  }, [successMessage, errorMessage, dispatch, getUsers, handleCloseUserModal]);
 
   const [formData, setFormData] = useState({
     id: null,
@@ -124,57 +93,19 @@ const UserManagement = () => {
   //====edit============
   const handleEdit = useCallback(
     (userId) => {
-      // Find the user from the users array (already loaded)
-      const userToEdit = users.find((user) => user?._id === userId);
-
-      if (userToEdit) {
-        setFormData({
-          _id: userToEdit?._id,
-          email: userToEdit?.email,
-          role: userToEdit?.role,
-          employee: userToEdit?.employee?._id,
-        });
-        // Create a combined object with both employee data and position data from user
-        const combinedEmployeeData = {
-          ...userToEdit?.employee,
-          position: userToEdit?.position, // Position data is on the user object
-        };
-        setSelectedUnregisteredUser(combinedEmployeeData);
-        setIsUserModalOpen(true);
-      }
+      setSelectedUserId(userId);
+      dispatch(fetchUserById(userId));
     },
-    [users]
+    [dispatch]
   );
+
+  useEffect(() => {
+    if (user && user._id === selectedUserId) {
+      setFormData(user);
+      setIsUserModalOpen(true);
+    }
+  }, [user, selectedUserId]);
   //====edit============
-
-  //====reset password============
-  const handleResetPassword = useCallback((userId, userEmail) => {
-    setResetPasswordModal({
-      open: true,
-      userId: userId,
-      userEmail: userEmail,
-    });
-  }, []);
-
-  const handleConfirmResetPassword = useCallback(() => {
-    if (!adminPassword.trim()) {
-      toast.error("Please enter your password to confirm this action.");
-      return;
-    }
-
-    // Prevent duplicate calls if already loading
-    if (loading) {
-      return;
-    }
-
-    const resetData = {
-      userId: resetPasswordModal.userId,
-      adminPassword: adminPassword,
-    };
-
-    dispatch(resetUserPassword(resetData));
-  }, [adminPassword, resetPasswordModal.userId, dispatch, loading]);
-  //====reset password============
 
   const resetForm = () => {
     setFormData({
@@ -200,7 +131,6 @@ const UserManagement = () => {
         [
           "EMPLOYEE",
           "MANAGER",
-          "SUPERVISOR",
           "DIRECTOR",
           "EXECUTIVE",
           "HR_ADMIN",
@@ -212,25 +142,24 @@ const UserManagement = () => {
       .required("Role is required"),
   });
 
-  const handleUserFormSubmit = (formData) => (values) => {
-    if (formData?._id) {
-      // Update existing user - include employeeId along with email and role
-      const updatePayload = {
-        _id: formData._id,
+  const handleUserFormSubmit =
+    (formData) =>
+    async (values, { setSubmitting }) => {
+      const payload = {
+        ...formData,
         email: values.email,
         role: values.role,
+        employee: selectedUnregisteredUser._id,
       };
-      dispatch(updateUser(updatePayload));
-    } else {
-      // Create new user
-      const createPayload = {
-        email: values.email,
-        role: values.role,
-        employee: selectedUnregisteredUser?._id,
-      };
-      dispatch(createUser(createPayload));
-    }
-  };
+
+      if (payload._id) {
+        // dispatch(updateUser(payload));
+      } else {
+        dispatch(createUser(payload));
+      }
+
+      setSubmitting(false); // ← tells Formik the submit is done
+    };
 
   //==============================================
   //search Unregistered Users start
@@ -411,26 +340,16 @@ const UserManagement = () => {
               className="bg-white/20 hover:bg-white/30 text-white px-4 sm:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 flex items-center gap-2 hover:shadow-lg text-sm sm:text-base"
               disabled={loading}
             >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span className="hidden sm:inline">Loading...</span>
-                  <span className="sm:hidden">...</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 sm:h-5 sm:w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-                  </svg>
-                  <span className="hidden sm:inline">Add User</span>
-                  <span className="sm:hidden">Add</span>
-                </>
-              )}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 sm:h-5 sm:w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+              </svg>
+              <span className="hidden sm:inline">Add User</span>
+              <span className="sm:hidden">Add</span>
             </button>
           </div>
         </div>
@@ -467,47 +386,26 @@ const UserManagement = () => {
           <table className="w-full">
             <thead>
               <tr className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
-                <th className="p-4 text-sm font-semibold text-gray-700">
-                  <div className="flex items-center">
-                    <FaUsers className="h-4 w-4 mr-2 text-blue-600" />
-                    User
-                  </div>
+                <th className="px-4 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  User
                 </th>
-                <th className="p-4 text-sm font-semibold text-gray-700">
-                  <div className="flex items-center">
-                    <FaEnvelope className="h-4 w-4 mr-2 text-blue-600" />
-                    Email
-                  </div>
+                <th className="px-4 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Email
                 </th>
-                <th className="p-4 text-sm font-semibold text-gray-700">
-                  <div className="flex items-center">
-                    <FaBriefcase className="h-4 w-4 mr-2 text-blue-600" />
-                    Position
-                  </div>
+                <th className="px-4 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Position
                 </th>
-                <th className="p-4 text-sm font-semibold text-gray-700">
-                  <div className="flex items-center">
-                    <FaUserTag className="h-4 w-4 mr-2 text-blue-600" />
-                    Level
-                  </div>
+                <th className="px-4 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Level
                 </th>
-                <th className="p-4 text-sm font-semibold text-gray-700">
-                  <div className="flex items-center">
-                    <FaUserTag className="h-4 w-4 mr-2 text-blue-600" />
-                    Role
-                  </div>
+                <th className="px-4 py-4 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Role
                 </th>
-                <th className="p-4 text-center text-sm font-semibold text-gray-700">
-                  <div className="flex items-center justify-center">
-                    <FaToggleOn className="h-4 w-4 mr-2 text-blue-600" />
-                    Status
-                  </div>
+                <th className="px-4 py-4 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Status
                 </th>
-                <th className="p-4 text-center text-sm font-semibold text-gray-700">
-                  <div className="flex items-center justify-center">
-                    <FaCogs className="h-4 w-4 mr-2 text-blue-600" />
-                    Actions
-                  </div>
+                <th className="px-4 py-4 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -550,7 +448,7 @@ const UserManagement = () => {
               <tbody className="divide-y divide-gray-200 bg-white">
                 {users?.map((user) => (
                   <tr
-                    key={user?._id}
+                    key={user._id}
                     className="hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 py-4">
@@ -621,65 +519,21 @@ const UserManagement = () => {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex justify-center space-x-2">
+                      <div className="flex justify-center">
                         <button
-                          onClick={() => handleEdit(user?._id)}
-                          className="inline-flex items-center px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-800 border border-amber-200 hover:border-amber-300 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                          onClick={() => handleEdit(user._id)}
+                          className="inline-flex items-center px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-800 border border-amber-200 hover:border-amber-300 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm"
                           disabled={loading}
                         >
-                          {loading ? (
-                            <>
-                              <div className="w-3.5 h-3.5 border-2 border-amber-700 border-t-transparent rounded-full animate-spin mr-1"></div>
-                              <span className="hidden sm:inline">
-                                Loading...
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3.5 w-3.5 mr-1"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                              </svg>
-                              Edit
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleResetPassword(user?._id, user?.email)
-                          }
-                          className="inline-flex items-center px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800 border border-red-200 hover:border-red-300 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={loading || resetPasswordModal.open}
-                        >
-                          {resetPasswordModal.open &&
-                          resetPasswordModal.userId === user?._id ? (
-                            <>
-                              <div className="w-3.5 h-3.5 border-2 border-red-700 border-t-transparent rounded-full animate-spin mr-1"></div>
-                              <span className="hidden sm:inline">
-                                Processing...
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-3.5 w-3.5 mr-1"
-                                viewBox="0 0 20 20"
-                                fill="currentColor"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                              Reset
-                            </>
-                          )}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3.5 w-3.5 mr-1"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                          </svg>
+                          Edit
                         </button>
                       </div>
                     </td>
@@ -759,7 +613,7 @@ const UserManagement = () => {
                 >
                   <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
                 </svg>
-                {formData?._id ? "Edit User" : "Add User"}
+                {formData._id ? "Edit User" : "Add User"}
               </h2>
             </div>
 
@@ -773,7 +627,7 @@ const UserManagement = () => {
                 validationSchema={userValidationSchema}
                 onSubmit={handleUserFormSubmit(formData)}
               >
-                {() => (
+                {({ isSubmitting }) => (
                   <Form className="space-y-5">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -787,25 +641,16 @@ const UserManagement = () => {
                         value={
                           `${
                             selectedUnregisteredUser?.personalInformation
-                              ?.lastName ||
-                            selectedUnregisteredUser?.lastName ||
-                            ""
+                              ?.lastName || ""
                           }, ` +
                           `${
                             selectedUnregisteredUser?.personalInformation
-                              ?.firstName ||
-                            selectedUnregisteredUser?.firstName ||
-                            ""
+                              ?.firstName || ""
                           } ` +
                           `${
                             selectedUnregisteredUser?.personalInformation
-                              ?.middleName ||
-                            selectedUnregisteredUser?.middleName
-                              ? (
-                                  selectedUnregisteredUser?.personalInformation
-                                    ?.middleName ||
-                                  selectedUnregisteredUser?.middleName
-                                )
+                              ?.middleName
+                              ? selectedUnregisteredUser.personalInformation.middleName
                                   .charAt(0)
                                   .toUpperCase() + "."
                               : ""
@@ -825,9 +670,7 @@ const UserManagement = () => {
                         className="w-full border border-gray-300 px-4 py-2.5 rounded-lg capitalize bg-gray-50 text-gray-800 font-medium"
                         value={`${
                           selectedUnregisteredUser?.employmentInformation
-                            ?.position?.name ||
-                          selectedUnregisteredUser?.position?.name ||
-                          ""
+                            ?.position?.name || ""
                         }`}
                       />
                     </div>
@@ -843,9 +686,7 @@ const UserManagement = () => {
                         className="w-full border border-gray-300 px-4 py-2.5 rounded-lg capitalize bg-gray-50 text-gray-800 font-medium"
                         value={`${
                           selectedUnregisteredUser?.employmentInformation
-                            ?.position?.level ||
-                          selectedUnregisteredUser?.position?.level ||
-                          ""
+                            ?.position?.level || ""
                         }`}
                       />
                     </div>
@@ -879,7 +720,6 @@ const UserManagement = () => {
                         <option value="">Select Role</option>
                         <option value="EMPLOYEE">Employee</option>
                         <option value="MANAGER">Manager</option>
-                        <option value="SUPERVISOR">Supervisor</option>
                         <option value="DIRECTOR">Director</option>
                         <option value="EXECUTIVE">Executive</option>
                         <option value="HR_ADMIN">HR Admin</option>
@@ -902,27 +742,20 @@ const UserManagement = () => {
                       <button
                         type="button"
                         onClick={handleCloseUserModal}
-                        className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={loading}
+                        className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-lg font-medium transition-all duration-200"
+                        disabled={isSubmitting}
                       >
-                        {loading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Loading...
-                          </>
-                        ) : (
-                          "Cancel"
-                        )}
+                        Cancel
                       </button>
                       <button
                         type="submit"
                         className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={loading}
+                        disabled={isSubmitting}
                       >
-                        {loading ? (
+                        {isSubmitting ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            {formData?._id ? "Updating..." : "Creating..."}
+                            Processing...
                           </>
                         ) : (
                           <>
@@ -938,7 +771,7 @@ const UserManagement = () => {
                                 clipRule="evenodd"
                               />
                             </svg>
-                            {formData?._id ? "Update User" : "Create User"}
+                            {formData._id ? "Update User" : "Create User"}
                           </>
                         )}
                       </button>
@@ -1002,15 +835,11 @@ const UserManagement = () => {
 
                 <button
                   onClick={handleSearchButtonClick}
-                  className="absolute right-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md p-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="absolute right-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md p-2 transition-all"
                   title="Search"
                   disabled={!inputValue || loading}
                 >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <FaSearch />
-                  )}
+                  <FaSearch />
                 </button>
               </div>
 
@@ -1071,7 +900,7 @@ const UserManagement = () => {
                           selectedUnregisteredUser === userToRegistered;
                         return (
                           <tr
-                            key={userToRegistered?._id}
+                            key={userToRegistered._id}
                             onClick={() => handleRowClick(userToRegistered)}
                             className={`cursor-pointer transition-all hover:bg-blue-50 ${
                               isSelected
@@ -1108,9 +937,9 @@ const UserManagement = () => {
                                         .charAt(0)
                                         .toUpperCase() + "."}
                                   </div>
-                                  {/* <div className="text-xs text-gray-500 font-mono">
-                                    ID: {userToRegistered?._id.slice(-8)}
-                                  </div> */}
+                                  <div className="text-xs text-gray-500 font-mono">
+                                    ID: {userToRegistered._id.slice(-8)}
+                                  </div>
                                 </div>
                                 {isSelected && (
                                   <div className="ml-auto">
@@ -1140,138 +969,23 @@ const UserManagement = () => {
               <button
                 type="button"
                 onClick={handleCancelSearchUnregisteredUser}
-                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 border border-gray-300 rounded-lg font-medium transition-all duration-200"
                 disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Loading...
-                  </>
-                ) : (
-                  "Cancel"
-                )}
+                Cancel
               </button>
               {selectedUnregisteredUser && (
                 <button
                   type="button"
                   onClick={handleSelectedUnregisteredUser}
-                  className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all duration-200 flex items-center gap-2"
                   disabled={loading}
                 >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <FaCheck />
-                      Select Employee
-                    </>
-                  )}
+                  <FaCheck />
+                  Select Employee
                 </button>
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reset Password Modal */}
-      {resetPasswordModal.open && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-gray-800">
-                Reset Password Confirmation
-              </h2>
-              <button
-                onClick={handleCloseResetPasswordModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <FaTimes />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-gray-600 mb-2">
-                You are about to <strong>reset the password</strong> for:
-              </p>
-              <p className="text-sm text-blue-600 font-medium bg-blue-50 p-2 rounded">
-                {resetPasswordModal.userEmail}
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                This will generate a new temporary password for the user. Please
-                enter your admin password to confirm this action.
-              </p>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleConfirmResetPassword();
-              }}
-            >
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Admin Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showAdminPassword ? "text" : "password"}
-                    className="w-full border border-gray-300 rounded-md p-3 pr-10 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your admin password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowAdminPassword(!showAdminPassword)}
-                  >
-                    {showAdminPassword ? (
-                      <AiOutlineEyeInvisible className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <AiOutlineEye className="h-5 w-5 text-gray-400" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={handleCloseResetPasswordModal}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Loading...
-                    </>
-                  ) : (
-                    "Cancel"
-                  )}
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-md text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-600 hover:bg-red-700 focus:ring-red-500"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                      Processing...
-                    </div>
-                  ) : (
-                    "Confirm Reset Password"
-                  )}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

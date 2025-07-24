@@ -4,26 +4,27 @@ import { useNavigate } from "react-router-dom";
 import {
   fetchEmployees,
   deleteEmployee,
-  messageClear,
 } from "../../../../store/Reducers/employeeReducer";
 import EmployeeSearchDatabase from "../../../../components/EmployeeSearchDatabase";
 import Pagination from "../../../../components/Pagination";
-import toast from "react-hot-toast";
-import { fetchAllDepartments } from "../../../../store/Reducers/departmentReducer";
 
-const HrEmployees = () => {
+const ManagerEmployees = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const { role } = useSelector((state) => state.auth);
-  const { departments } = useSelector((state) => state.department);
+  const { userInfo } = useSelector((state) => state.auth);
+
+  // Extract departments from the new API structure - Memoized for performance
+  const managedDepartments = useMemo(() => 
+    userInfo?.employee?.employmentInformation?.managedDepartments?.map(
+      (item) => item.department
+    ) || [], [userInfo?.employee?.employmentInformation?.managedDepartments]);
 
   const {
     employees,
     totalEmployee,
     loading,
-    successMessage,
-    errorMessage,
+
     statusCounts,
   } = useSelector((state) => state.employee);
 
@@ -110,12 +111,24 @@ const HrEmployees = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(10);
-  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  // Initialize selectedDepartment with first department if we have managed departments
+  // This prevents the "all employees" flash when showEmptySelectOptionValue is false
+  const [selectedDepartment, setSelectedDepartment] = useState(
+    managedDepartments && managedDepartments.length > 0
+      ? managedDepartments[0]._id
+      : null
+  );
 
-  // Fetch departments on component mount
+  // Initialize selectedDepartment when managedDepartments becomes available
   useEffect(() => {
-    dispatch(fetchAllDepartments());
-  }, [dispatch]);
+    if (
+      managedDepartments &&
+      managedDepartments.length > 0 &&
+      !selectedDepartment
+    ) {
+      setSelectedDepartment(managedDepartments[0]._id);
+    }
+  }, [managedDepartments, selectedDepartment]);
 
   // 1️⃣ Reset page to 1 when searchValue or department changes
   useEffect(() => {
@@ -136,18 +149,6 @@ const HrEmployees = () => {
     dispatch(fetchEmployees(obj));
   }, [currentPage, perPage, searchValue, selectedDepartment, dispatch]);
 
-  useEffect(() => {
-    if (successMessage) {
-      toast.success(successMessage);
-      dispatch(messageClear());
-    }
-
-    if (errorMessage) {
-      toast.error(errorMessage);
-      dispatch(messageClear());
-    }
-  }, [successMessage, errorMessage, dispatch]);
-
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
 
@@ -159,34 +160,11 @@ const HrEmployees = () => {
     setDeleteName(null);
   }, [dispatch, deleteId]);
 
-  const handleAddEmployee = useCallback(() => {
-    if (role === "HR_ADMIN") {
-      navigate("/hr/employees/add");
-    } else {
-      toast.error("You are not authorized to add employees.");
-    }
-  }, [navigate, role]);
-
-  const handleEditEmployee = useCallback(
-    (employeeId) => {
-      if (role === "HR_ADMIN") {
-        navigate(`/hr/employees/edit/${employeeId}`);
-      } else {
-        toast.error("You are not authorized to edit employees.");
-      }
-    },
-    [navigate, role]
-  );
-
   const handleViewEmployee = useCallback(
     (employeeId) => {
-      if (role === "HR_ADMIN") {
-        navigate(`/hr/employees/details/${employeeId}`);
-      } else {
-        toast.error("You are not authorized to view this employee.");
-      }
+      navigate(`/manager/employees/details/${employeeId}`);
     },
-    [navigate, role]
+    [navigate]
   );
 
   const handleDepartmentChange = useCallback((e) => {
@@ -274,7 +252,7 @@ const HrEmployees = () => {
             <p className="text-blue-100 text-sm sm:text-base">
               Manage and monitor all employee records and information
             </p>
-            {selectedDepartment && departments && (
+            {selectedDepartment && managedDepartments && (
               <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-600 text-white">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -285,8 +263,9 @@ const HrEmployees = () => {
                   <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
                 </svg>
                 {(
-                  departments.find((dept) => dept._id === selectedDepartment)
-                    ?.name || "Department"
+                  managedDepartments.find(
+                    (dept) => dept._id === selectedDepartment
+                  )?.name || "Department"
                 ).toUpperCase()}
               </div>
             )}
@@ -308,22 +287,6 @@ const HrEmployees = () => {
                 />
               </svg>
             </div>
-            <button
-              onClick={handleAddEmployee}
-              className="bg-white/20 hover:bg-white/30 text-white px-4 sm:px-5 py-2.5 rounded-lg font-medium transition-all duration-200 backdrop-blur-sm border border-white/20 flex items-center gap-2 hover:shadow-lg text-sm sm:text-base"
-              disabled={loading}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 sm:h-5 sm:w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-              </svg>
-              <span className="hidden sm:inline">Add Employee</span>
-              <span className="sm:hidden">Add</span>
-            </button>
           </div>
         </div>
       </div>
@@ -337,10 +300,10 @@ const HrEmployees = () => {
           searchValue={searchValue}
           inputPlaceholder="Search employees by first name, last name, middle name"
           loading={loading}
-          departments={departments || []}
+          departments={managedDepartments || []}
           selectedDepartment={selectedDepartment}
           onDepartmentChange={handleDepartmentChange}
-          showEmptySelectOptionValue={true}
+          showEmptySelectOptionValue={false} // Hide empty select option value
         />
 
         {/* Search Results Info */}
@@ -378,7 +341,7 @@ const HrEmployees = () => {
                     );
                   } else if (selectedDepartment) {
                     const deptName =
-                      departments
+                      managedDepartments
                         .find((dept) => dept._id === selectedDepartment)
                         ?.name?.toUpperCase() || "DEPARTMENT";
                     return (
@@ -667,21 +630,6 @@ const HrEmployees = () => {
                           </svg>
                           View
                         </button>
-                        <button
-                          onClick={() => handleEditEmployee(employee?._id)}
-                          className="inline-flex items-center justify-center px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-800 border border-amber-200 hover:border-amber-300 rounded-md text-sm font-medium transition-all duration-200 min-w-0 flex-shrink-0"
-                          disabled={loading}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 mr-1.5"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
-                          Edit
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -912,21 +860,6 @@ const HrEmployees = () => {
                             </svg>
                             View
                           </button>
-                          <button
-                            onClick={() => handleEditEmployee(employee?._id)}
-                            className="inline-flex items-center px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 hover:text-amber-800 border border-amber-200 hover:border-amber-300 rounded-md text-sm font-medium transition-all duration-200 hover:shadow-sm"
-                            disabled={loading}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3.5 w-3.5 mr-1"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                            Edit
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1060,4 +993,4 @@ const HrEmployees = () => {
   );
 };
 
-export default HrEmployees;
+export default ManagerEmployees;

@@ -236,7 +236,6 @@ const Department = () => {
         manager: null,
         primary: false, // Explicitly set to false boolean
       });
-
       setSelectedManagerObj(null); // Clear selected manager object
       return;
     }
@@ -646,7 +645,6 @@ const Department = () => {
                 </div>
               </div>
             </div>
-
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               <form onSubmit={handleSubmit} className="space-y-6">

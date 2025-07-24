@@ -4,6 +4,14 @@ const DirectorDashboard = lazy(() =>
   import("../../pages/dashboard/director/DirectorDashboard")
 );
 
+const DirectorEmployees = lazy(() =>
+  import("../../pages/dashboard/director/employees/DirectorEmployees")
+);
+
+const DirectorEmployeeDetails = lazy(() =>
+  import("../../pages/dashboard/director/employees/DirectorEmployeeDetails")
+);
+
 const DirectorDutySchedule = lazy(() =>
   import("../../pages/dashboard/director/dutySchedule/DirectorDutySchedule")
 );
@@ -64,29 +72,43 @@ const DirectorDutySchedulePrint = lazy(() =>
 //   import("../../pages/dashboard/director/OrganizationChart")
 // );
 
+const directorRoles = ["DIRECTOR"];
+
 const directorRoutes = [
   {
     path: "/director/dashboard",
     element: <DirectorDashboard />,
-    role: ["DIRECTOR", "SUPER_ADMIN"],
+    role: directorRoles,
+  },
+
+  {
+    path: "/director/employees",
+    element: <DirectorEmployees />,
+    role: directorRoles,
+  },
+
+  {
+    path: "/director/employees/details/:employeeId",
+    element: <DirectorEmployeeDetails />,
+    role: directorRoles,
   },
 
   {
     path: "/director/duty-schedule",
     element: <DirectorDutySchedule />,
-    role: ["DIRECTOR", "SUPER_ADMIN"],
+    role: directorRoles,
   },
 
   {
     path: "/director/duty-schedule/:departmentId/view/:scheduleId",
     element: <DirectorDutyScheduleDetails />,
-    role: ["DIRECTOR", "SUPER_ADMIN"],
+    role: directorRoles,
   },
 
   {
     path: "/director/duty-schedule/print/department/:departmentId/schedule/:scheduleId",
     element: <DirectorDutySchedulePrint />,
-    role: ["DIRECTOR", "SUPER_ADMIN"],
+    role: directorRoles,
   },
 
   // {

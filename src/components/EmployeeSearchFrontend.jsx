@@ -12,6 +12,7 @@ const EmployeeSearchFrontend = ({
   departments = [],
   selectedDepartment = "",
   onDepartmentChange,
+  showEmptySelectOptionValue = true, // Whether to show empty select <option value = "">All Departments</option>
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [showClear, setShowClear] = useState(false);
@@ -24,6 +25,23 @@ const EmployeeSearchFrontend = ({
       setShowClear(false);
     }
   }, [searchValue]);
+
+  // Auto-select first department if showEmptySelectOptionValue is false and we have departments
+  useEffect(() => {
+    if (
+      !showEmptySelectOptionValue &&
+      departments &&
+      departments.length > 0 &&
+      !selectedDepartment
+    ) {
+      onDepartmentChange({ target: { value: departments[0]?._id } });
+    }
+  }, [
+    departments,
+    showEmptySelectOptionValue,
+    selectedDepartment,
+    onDepartmentChange,
+  ]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -169,6 +187,13 @@ const EmployeeSearchFrontend = ({
                   loading ? "bg-gray-50 cursor-not-allowed" : "bg-white"
                 }`}
               >
+                {/* Only show "All Departments" option if showEmptySelectOptionValue is true */}
+                {showEmptySelectOptionValue && (
+                  <option value="" className="text-gray-500">
+                    All Departments
+                  </option>
+                )}
+
                 {departments.map((dept) => (
                   <option key={dept._id} value={dept._id}>
                     {dept.name}

@@ -11,6 +11,7 @@ export const fetchEmployees = createAsyncThunk(
     try {
       const { data } = await api.get(
         `/hris/employees?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&departmentId=${departmentId}`,
+
         { withCredentials: true }
       );
 

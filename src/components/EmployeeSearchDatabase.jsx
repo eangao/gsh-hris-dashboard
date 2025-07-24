@@ -11,9 +11,11 @@ const EmployeeSearchDatabase = ({
   departments = [],
   selectedDepartment = null,
   onDepartmentChange,
+  showEmptySelectOptionValue = true, // Whether to show empty select <option value = "">All Departments</option>
 }) => {
   const [inputValue, setInputValue] = useState("");
   const [showClear, setShowClear] = useState(false);
+  const [hasAutoSelected, setHasAutoSelected] = useState(false); // Track if we've auto-selected
 
   // Reset input value when searchValue changes externally (for clearing)
   useEffect(() => {
@@ -22,6 +24,36 @@ const EmployeeSearchDatabase = ({
       setShowClear(false);
     }
   }, [searchValue]);
+
+  // to load the first department in an array in first component mount
+  // This is useful when we have multiple departments and want to select the first one by default
+  // if showEmptySelectOptionValue is false, we will select the first department
+  // if showEmptySelectOptionValue is true, we will not select any department by default
+  useEffect(() => {
+    if (
+      !showEmptySelectOptionValue &&
+      departments &&
+      departments.length > 0 &&
+      !selectedDepartment &&
+      !hasAutoSelected
+    ) {
+      // Only trigger if no department is currently selected and we haven't auto-selected yet
+      if (onDepartmentChange && departments[0]?._id) {
+        setHasAutoSelected(true);
+        onDepartmentChange({ target: { value: departments[0]._id } });
+      }
+    }
+    // Reset auto-selection flag if showEmptySelectOptionValue changes to true
+    if (showEmptySelectOptionValue && hasAutoSelected) {
+      setHasAutoSelected(false);
+    }
+  }, [
+    departments,
+    showEmptySelectOptionValue,
+    selectedDepartment,
+    hasAutoSelected,
+    onDepartmentChange,
+  ]);
 
   // Function to trigger search
   const triggerSearch = (value) => {
@@ -106,14 +138,22 @@ const EmployeeSearchDatabase = ({
               </label>
               <select
                 id="department"
-                value={selectedDepartment || ""} // Convert null to empty string for select
+                value={
+                  selectedDepartment ||
+                  (!showEmptySelectOptionValue && departments[0]?._id) ||
+                  ""
+                } // Auto-select first department if showEmptySelectOptionValue is false
                 onChange={onDepartmentChange}
                 className="w-full px-4 py-2 focus:border-blue-600 outline-none border border-gray-300 rounded-md shadow-sm text-gray-900 bg-white transition-all font-medium"
                 disabled={loading}
               >
-                <option value="" className="text-gray-500">
-                  All Departments
-                </option>
+                {/* Only show "All Departments" option if showEmptySelectOptionValue is true */}
+                {showEmptySelectOptionValue && (
+                  <option value="" className="text-gray-500">
+                    All Departments
+                  </option>
+                )}
+
                 {departments.map((dept) => (
                   <option
                     key={dept._id}

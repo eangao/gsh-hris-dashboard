@@ -73,13 +73,11 @@ const Department = () => {
     name: "",
     cluster: "",
     manager: null,
-    primary: false, // Add primary flag for manager assignment
   });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [toAssignManager, setToAssignManager] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
-  const [selectedManagerObj, setSelectedManagerObj] = useState(null); // Store selected manager object
 
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
@@ -91,7 +89,6 @@ const Department = () => {
       name: "",
       cluster: "",
       manager: null,
-      primary: false, // Reset primary flag
     });
   }, []);
 
@@ -111,8 +108,6 @@ const Department = () => {
       setIsModalOpen(false);
       setDeleteId(null);
       setToAssignManager(false);
-      setSelectedManagerObj(null); // Clear selected manager object
-      setSelectedId(null); // Clear selected ID
       resetForm();
       dispatch(messageClear());
     }
@@ -132,8 +127,6 @@ const Department = () => {
     if (formData._id) {
       // Editing an existing department
       if (toAssignManager) {
-        // Since backend allows 0 or 1 primary departments, no validation needed
-        // The frontend has complete control over primary assignments
         dispatch(assignDepartmentManager(formData));
       } else {
         dispatch(updateDepartment(formData));
@@ -155,22 +148,10 @@ const Department = () => {
 
   useEffect(() => {
     if (department && department._id === selectedId) {
-      if (toAssignManager) {
-        // When assigning manager, preserve the primary status we already set
-        setFormData((prev) => {
-          const newFormData = {
-            ...department,
-            primary: prev.primary, // Keep the primary status we calculated
-          };
-          return newFormData;
-        });
-      } else {
-        // For regular edit, use department data as-is
-        setFormData(department);
-      }
+      setFormData(department);
       setIsModalOpen(true);
     }
-  }, [department, selectedId, toAssignManager]);
+  }, [department, selectedId]);
   //====edit============
 
   //====Asign manager============
@@ -187,91 +168,10 @@ const Department = () => {
   const handleAssignManager = (dept) => {
     setToAssignManager(true);
     setSelectedId(dept._id);
-
-    // Get current manager if exists and count their departments
-    let currentPrimaryStatus = false;
-    let currentManagerObj = null;
-
-    if (dept.manager) {
-      currentManagerObj = managers.find((m) => m._id === dept.manager._id);
-
-      if (currentManagerObj) {
-        const managedDepartments =
-          currentManagerObj.employmentInformation?.managedDepartments || [];
-
-        // Check if current department is set as primary for this manager
-        const currentDept = managedDepartments.find(
-          (d) => d.department._id === dept._id
-        );
-        currentPrimaryStatus = currentDept?.isPrimary || false;
-      }
-    }
-
-    // Set form data with current manager and their current primary status
-    setFormData((prev) => ({
-      ...prev,
-      _id: dept._id,
-      name: dept.name,
-      cluster: dept.cluster,
-      manager: dept.manager?._id || null,
-      primary: Boolean(currentPrimaryStatus), // Ensure it's always a boolean
-    }));
-
-    // Set the current manager object if exists
-    setSelectedManagerObj(currentManagerObj);
-
     getEmployeesManagers();
     dispatch(fetchDepartmentById(dept._id));
     getAllClusters();
     setIsModalOpen(true);
-  };
-
-  // Handle manager selection change
-  const handleManagerChange = (e) => {
-    const selectedManagerValue = e.target.value;
-
-    if (!selectedManagerValue) {
-      setFormData({
-        ...formData,
-        manager: null,
-        primary: false, // Explicitly set to false boolean
-      });
-
-      setSelectedManagerObj(null); // Clear selected manager object
-      return;
-    }
-
-    // Parse the manager object from the select value
-    const selectedManager = JSON.parse(selectedManagerValue);
-    const managedDepartments =
-      selectedManager.employmentInformation?.managedDepartments || [];
-
-    // Get the original/current manager from the department being edited
-    const currentDept = departments.find((d) => d._id === formData._id);
-    const originalManagerId = currentDept?.manager?._id;
-    const isSameManager =
-      originalManagerId && originalManagerId === selectedManager._id;
-
-    let primaryStatus;
-    if (isSameManager) {
-      // If same manager as originally assigned, check current primary status
-      const currentDeptInManager = managedDepartments.find(
-        (d) => d.department._id === formData._id
-      );
-      primaryStatus = currentDeptInManager?.isPrimary || false;
-    } else {
-      // If different manager, apply default logic (0 primary departments allowed, so default to false)
-      primaryStatus = false;
-    }
-
-    setFormData({
-      ...formData,
-      manager: selectedManager._id, // Store only the ID in formData
-      primary: Boolean(primaryStatus), // Ensure it's always a boolean
-    });
-
-    // Store the selected manager object for reference
-    setSelectedManagerObj(selectedManager);
   };
 
   // Loading skeleton component for better UX (Matching Cluster)
@@ -646,7 +546,6 @@ const Department = () => {
                 </div>
               </div>
             </div>
-
             {/* Modal Content */}
             <div className="p-6 space-y-6">
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -698,159 +597,41 @@ const Department = () => {
 
                 {/* Manager Assignment Field */}
                 {toAssignManager && (
-                  <>
-                    <div className="space-y-2">
-                      <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
-                        <FaUserTie className="text-green-600" />
-                        <span>Select Manager</span>
-                      </label>
-                      <div className="relative">
-                        <select
-                          name="manager"
-                          value={
-                            formData.manager
-                              ? JSON.stringify(
-                                  managers.find(
-                                    (m) =>
-                                      m._id ===
-                                      (formData.manager?._id ||
-                                        formData.manager)
-                                  )
-                                )
-                              : ""
-                          }
-                          onChange={handleManagerChange}
-                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all duration-200 bg-gray-50 focus:bg-white appearance-none capitalize"
-                          required={toAssignManager}
-                          disabled={!toAssignManager}
-                        >
-                          <option value="">Choose a manager...</option>
-                          {managers.map((manager) => {
-                            const { firstName, middleName, lastName } =
-                              manager.personalInformation;
-                            const middleInitial = middleName
-                              ? middleName.charAt(0).toUpperCase() + "."
-                              : "";
-                            const displayName =
-                              `${lastName}, ${firstName} ${middleInitial}`.trim();
-                            return (
-                              <option
-                                key={manager._id}
-                                value={JSON.stringify(manager)}
-                              >
-                                {displayName}
-                              </option>
-                            );
-                          })}
-                        </select>
-                        <FaUserTie className="absolute right-4 top-4 text-gray-400 pointer-events-none" />
-                      </div>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                      <FaUserTie className="text-green-600" />
+                      <span>Select Manager</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        name="manager"
+                        value={formData.manager?._id || formData.manager}
+                        onChange={(e) =>
+                          setFormData({ ...formData, manager: e.target.value })
+                        }
+                        className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring focus:ring-blue-200 transition-all duration-200 bg-gray-50 focus:bg-white appearance-none capitalize"
+                        required={toAssignManager}
+                        disabled={!toAssignManager}
+                      >
+                        <option value="">Choose a manager...</option>
+                        {managers.map((manager) => {
+                          const { firstName, middleName, lastName } =
+                            manager.personalInformation;
+                          const middleInitial = middleName
+                            ? middleName.charAt(0).toUpperCase() + "."
+                            : "";
+                          const displayName =
+                            `${lastName}, ${firstName} ${middleInitial}`.trim();
+                          return (
+                            <option key={manager._id} value={manager._id}>
+                              {displayName}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <FaUserTie className="absolute right-4 top-4 text-gray-400 pointer-events-none" />
                     </div>
-
-                    {/* Primary Department Checkbox */}
-                    {formData.manager && selectedManagerObj && (
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                          <input
-                            type="checkbox"
-                            id="primary"
-                            name="primary"
-                            checked={formData.primary}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                primary: e.target.checked,
-                              })
-                            }
-                            className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                          />
-                          <div className="flex-1">
-                            <label
-                              htmlFor="primary"
-                              className="flex items-center space-x-2 text-sm font-semibold text-gray-700 cursor-pointer"
-                            >
-                              <FaCrown className="text-yellow-600" />
-                              <span>Set as Primary Department</span>
-                            </label>
-                            <p className="text-xs text-gray-600 mt-1">
-                              {(() => {
-                                const managedDepartments =
-                                  selectedManagerObj?.employmentInformation
-                                    ?.managedDepartments || [];
-                                const managedCount = managedDepartments.length;
-                                const currentDept = departments.find(
-                                  (d) => d._id === formData._id
-                                );
-                                const originalManagerId =
-                                  currentDept?.manager?._id;
-                                const isSameManager =
-                                  originalManagerId &&
-                                  originalManagerId === selectedManagerObj?._id;
-
-                                // Find primary department
-                                const primaryDept = managedDepartments.find(
-                                  (d) => d.isPrimary
-                                );
-                                const primaryDeptName = primaryDept
-                                  ? primaryDept.department.name
-                                  : null;
-
-                                // Get department names
-                                const departmentNames = managedDepartments
-                                  .map((d) => d.department.name)
-                                  .join(", ");
-
-                                const managerInfo = `Currently manages ${managedCount} department(s)${
-                                  managedCount > 0 ? `: ${departmentNames}` : ""
-                                }${
-                                  primaryDeptName
-                                    ? `. PRIMARY: ${primaryDeptName}`
-                                    : ". No primary department set"
-                                }.`;
-
-                                if (isSameManager) {
-                                  // Same manager - show what will happen based on checkbox state
-                                  const currentDeptInManager =
-                                    managedDepartments.find(
-                                      (d) => d.department._id === formData._id
-                                    );
-                                  const isCurrentlyPrimary =
-                                    currentDeptInManager?.isPrimary || false;
-
-                                  // Use explicit boolean comparison to avoid any timing issues
-                                  const checkboxIsChecked =
-                                    formData.primary === true;
-
-                                  if (checkboxIsChecked) {
-                                    // Checkbox is checked
-                                    if (isCurrentlyPrimary) {
-                                      return `This department will REMAIN as the manager's PRIMARY department. ${managerInfo}`;
-                                    } else {
-                                      return `This department will be CHANGED to the manager's PRIMARY department. Any existing primary department will be changed to non-primary. ${managerInfo}`;
-                                    }
-                                  } else {
-                                    // Checkbox is unchecked
-                                    if (isCurrentlyPrimary) {
-                                      return `This department will be CHANGED from PRIMARY to NON-PRIMARY. The manager will have NO primary department after this change. ${managerInfo}`;
-                                    } else {
-                                      return `This department will REMAIN as NON-PRIMARY. ${managerInfo}`;
-                                    }
-                                  }
-                                } else {
-                                  // Different manager - show what will happen based on checkbox state
-                                  if (formData.primary) {
-                                    return `This will be set as the manager's PRIMARY department. Any existing primary department will be changed to non-primary. ${managerInfo}`;
-                                  } else {
-                                    return `This will be set as NON-PRIMARY department. Manager can have 0 or 1 primary department. ${managerInfo}`;
-                                  }
-                                }
-                              })()}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  </div>
                 )}
 
                 {/* Modal Actions */}
@@ -860,9 +641,6 @@ const Department = () => {
                     onClick={() => {
                       setIsModalOpen(false);
                       setToAssignManager(false);
-                      setSelectedManagerObj(null); // Clear selected manager object
-                      setSelectedId(null); // Clear selected ID
-                      resetForm(); // Reset form data
                     }}
                     className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200 flex items-center space-x-2"
                     disabled={loading}

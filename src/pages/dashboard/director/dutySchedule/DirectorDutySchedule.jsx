@@ -12,9 +12,9 @@ const DirectorDutySchedule = () => {
   const navigate = useNavigate();
 
   const { userInfo } = useSelector((state) => state.auth);
-  const { employee: employeeId } = userInfo;
 
-  const { managedCluster } = useSelector((state) => state.employee);
+  const managedCluster =
+    userInfo?.employee?.employmentInformation?.managedCluster;
 
   const { dutySchedules, totalDutySchedule, loading } = useSelector(
     (state) => state.dutySchedule
@@ -25,10 +25,6 @@ const DirectorDutySchedule = () => {
   const [perPage, setPerpage] = useState(5);
 
   const [statusFilter, setStatusFilter] = useState("submitted");
-
-  useEffect(() => {
-    dispatch(fetchManagedCluster(employeeId)); // fetch managed cluster for this director
-  }, [employeeId, dispatch]);
 
   // 1️⃣ Reset page to 1 when searchValue changes
   useEffect(() => {

@@ -22,8 +22,10 @@ import {
 const employeeAccessRoles = [
   "EMPLOYEE",
   "MANAGER",
-  "HR_ADMIN",
+  "SUPERVISOR",
   "DIRECTOR",
+  "HR_ADMIN",
+  "MARKETING_ADMIN",
   "ADMIN",
 ];
 

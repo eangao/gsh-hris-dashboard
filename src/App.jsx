@@ -14,24 +14,18 @@ function App() {
 
   const [allroutes, setAllRoutes] = useState([...publicRoutes]);
 
-  // console.log(`App: Current routes count: ${allroutes.length}`);
-
   // Initialize authentication on app start
   useEffect(() => {
     if (token) {
-      // console.log("App: Token exists, fetching user info");
       dispatch(get_user_info());
     }
   }, [token, dispatch]);
 
   useEffect(() => {
     if (role) {
-      // console.log(`App: Getting routes for role "${role}"`);
       const routes = getAllRoutes(role);
-      // console.log(`App: Received routes:`, routes);
-      setAllRoutes([...publicRoutes, ...routes]);
+      setAllRoutes(routes);
     } else {
-      // console.log(`App: No role, using only public routes`);
       setAllRoutes([...publicRoutes]);
     }
   }, [role]);
