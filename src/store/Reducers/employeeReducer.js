@@ -10,7 +10,28 @@ export const fetchEmployees = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/employees?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&departmentId=${departmentId}`,
+        `/hris/employees/getPaginated?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&departmentId=${departmentId}`,
+
+        { withCredentials: true }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Async Thunks
+export const fetchEmployeesByCluster = createAsyncThunk(
+  "employee/fetchEmployeesByCluster",
+  async (
+    { perPage, page, searchValue, clusterId },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const { data } = await api.get(
+        `/hris/employees/getPaginatedByCluster?page=${page}&&searchValue=${searchValue}&&perPage=${perPage}&&clusterId=${clusterId}`,
 
         { withCredentials: true }
       );
@@ -189,6 +210,61 @@ export const fetchEmployeesByDepartment = createAsyncThunk(
   }
 );
 
+// Fetch all employees birthdays for HR dashboard
+export const fetchEmployeesBirthdays = createAsyncThunk(
+  "employee/fetchEmployeesBirthdays",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get("/hris/employees/birthdays", {
+        withCredentials: true,
+      });
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Fetch all employees birthdays by cluster for Director dashboard
+export const fetchEmployeesBirthdaysByCluster = createAsyncThunk(
+  "employee/fetchEmployeesBirthdaysByCluster",
+  async (clusterId, { rejectWithValue, fulfillWithValue }) => {
+    console.log(clusterId);
+    try {
+      const { data } = await api.get(
+        `/hris/employees/birthdays/by-cluster/${clusterId}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+// Fetch all employees birthdays by departments for Manager dashboard
+export const fetchEmployeesBirthdaysByDepartments = createAsyncThunk(
+  "employee/fetchEmployeesBirthdaysByDepartments",
+  async (departments, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post(
+        `/hris/employees/birthdays/by-departments`,
+        { departments },
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 // Fetch managed cluster for directors
 export const fetchManagedCluster = createAsyncThunk(
   "employee/fetchManagedCluster",
@@ -237,6 +313,8 @@ const employeeSlice = createSlice({
     statusCounts: {}, // Add statusCounts to initial state
     managedDepartments: [], // <-- add this
     managedCluster: null, // <-- add this for directors
+    birthdayEmployees: [], // <-- add this for birthday data
+    birthdayLoading: false, // <-- add separate loading for birthdays
   },
   reducers: {
     messageClear: (state) => {
@@ -279,6 +357,17 @@ const employeeSlice = createSlice({
     });
 
     builder.addCase(fetchEmployees.pending, (state) => {
+      state.loading = true;
+    });
+
+    builder.addCase(fetchEmployeesByCluster.fulfilled, (state, { payload }) => {
+      state.totalEmployee = payload.totalEmployee;
+      state.employees = payload.employees;
+      state.statusCounts = payload.statusCounts || {}; // Store statusCounts from backend
+      state.loading = false;
+    });
+
+    builder.addCase(fetchEmployeesByCluster.pending, (state) => {
       state.loading = true;
     });
 
@@ -429,6 +518,60 @@ const employeeSlice = createSlice({
         state.loading = false;
         state.errorMessage = payload?.error;
       });
+
+    // Handle fetchEmployeesBirthdays
+    builder.addCase(fetchEmployeesBirthdays.pending, (state) => {
+      state.birthdayLoading = true;
+    });
+    builder.addCase(fetchEmployeesBirthdays.fulfilled, (state, { payload }) => {
+      state.birthdayEmployees = payload.employees;
+      state.birthdayLoading = false;
+    });
+    builder.addCase(fetchEmployeesBirthdays.rejected, (state, { payload }) => {
+      state.birthdayLoading = false;
+      state.errorMessage =
+        payload?.error || "Failed to fetch employee birthdays";
+    });
+
+    // Handle fetchEmployeesBirthdaysByCluster
+    builder.addCase(fetchEmployeesBirthdaysByCluster.pending, (state) => {
+      state.birthdayLoading = true;
+    });
+    builder.addCase(
+      fetchEmployeesBirthdaysByCluster.fulfilled,
+      (state, { payload }) => {
+        state.birthdayEmployees = payload.employees;
+        state.birthdayLoading = false;
+      }
+    );
+    builder.addCase(
+      fetchEmployeesBirthdaysByCluster.rejected,
+      (state, { payload }) => {
+        state.birthdayLoading = false;
+        state.errorMessage =
+          payload?.error || "Failed to fetch employee birthdays";
+      }
+    );
+
+    // Handle fetchEmployeesBirthdaysByDepartments
+    builder.addCase(fetchEmployeesBirthdaysByDepartments.pending, (state) => {
+      state.birthdayLoading = true;
+    });
+    builder.addCase(
+      fetchEmployeesBirthdaysByDepartments.fulfilled,
+      (state, { payload }) => {
+        state.birthdayEmployees = payload.employees;
+        state.birthdayLoading = false;
+      }
+    );
+    builder.addCase(
+      fetchEmployeesBirthdaysByDepartments.rejected,
+      (state, { payload }) => {
+        state.birthdayLoading = false;
+        state.errorMessage =
+          payload?.error || "Failed to fetch employee birthdays";
+      }
+    );
   },
 });
 

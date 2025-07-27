@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
-import { fetchManagedCluster } from "../../../../store/Reducers/employeeReducer";
 import { fetchDirectorDutySchedulesByClusterStatus } from "../../../../store/Reducers/dutyScheduleReducer";
 import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";

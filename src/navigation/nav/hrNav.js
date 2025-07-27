@@ -28,6 +28,7 @@ import {
   MdSettingsApplications,
 } from "react-icons/md";
 import { RiTimeFill } from "react-icons/ri";
+import { FaBirthdayCake } from "react-icons/fa";
 
 const hrRoles = ["HR_ADMIN"];
 const hrSetupRoles = ["HR_ADMIN"];
@@ -60,6 +61,13 @@ export const hrNav = [
     title: "Duty Schedule",
     icon: <AiOutlineForm />,
     path: "/hr/duty-schedule",
+    role: hrRoles,
+    group: "HR Dashboard",
+  },
+  {
+    title: "Birthdays",
+    icon: <FaBirthdayCake />,
+    path: "/hr/employees/birthdays",
     role: hrRoles,
     group: "HR Dashboard",
   },

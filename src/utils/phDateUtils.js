@@ -44,6 +44,18 @@ export const formatMonthYearPH = (date, includeDay = false) => {
 };
 
 /**
+ * Formats a date into month schedule format (YYYY-MM) for duty schedules.
+ * This format is used for MongoDB indexing and filtering by month/year.
+ *
+ * @param {Date|string} date - Date object or date string
+ * @returns {string} - Formatted month schedule string in YYYY-MM format
+ */
+export const formatMonthSchedulePH = (date) => {
+  if (!date) return "";
+  return moment(date).tz("Asia/Manila").format("YYYY-MM");
+};
+
+/**
  * Returns the PH-local duty schedule range based on a reference date.
  *  - Starts from 26th of the previous month
  *  - Ends on 25th of the current month
@@ -319,4 +331,288 @@ export const formatDateTimeToTimePH = (dateTime) => {
   if (!dateTime) return "";
   const m = moment(dateTime).tz("Asia/Manila");
   return m.format("h:mm A");
+};
+
+/**
+ * Calculates days remaining until next birthday from a birthdate.
+ * Returns negative values for birthdays that have passed this year.
+ * @param {string|Date} birthdate - ISO string or Date object
+ * @returns {number} - Days until birthday (negative if passed this year)
+ */
+export const getDaysUntilBirthdayPH = (birthdate) => {
+  if (!birthdate) return null;
+
+  const today = moment().tz("Asia/Manila").startOf("day");
+  const birth = moment(birthdate).tz("Asia/Manila");
+
+  // Get this year's birthday
+  const thisYearBirthday = birth.clone().year(today.year()).startOf("day");
+
+  // If birthday has passed this year, get next year's birthday
+  const nextBirthday = thisYearBirthday.isBefore(today)
+    ? thisYearBirthday.clone().add(1, "year")
+    : thisYearBirthday;
+
+  return nextBirthday.diff(today, "days");
+};
+
+/**
+ * Gets employees with upcoming birthdays within specified days, sorted by days remaining.
+ * @param {Array} employees - Array of employee objects
+ * @param {number} withinDays - Number of days to look ahead (default: 30)
+ * @returns {Array} - Sorted array of employees with upcoming birthdays
+ */
+export const getUpcomingBirthdaysPH = (employees, withinDays = 30) => {
+  if (!employees || !Array.isArray(employees)) return [];
+
+  const employeesWithBirthdays = employees
+    .filter((emp) => emp.personalInformation?.birthdate)
+    .map((emp) => {
+      const daysUntil = getDaysUntilBirthdayPH(
+        emp.personalInformation.birthdate
+      );
+      return {
+        ...emp,
+        daysUntilBirthday: daysUntil,
+        birthdayThisYear: moment(emp.personalInformation.birthdate)
+          .tz("Asia/Manila")
+          .year(moment().tz("Asia/Manila").year())
+          .format("MMMM D"),
+      };
+    })
+    .filter(
+      (emp) => emp.daysUntilBirthday >= 0 && emp.daysUntilBirthday <= withinDays
+    )
+    .sort((a, b) => a.daysUntilBirthday - b.daysUntilBirthday);
+
+  return employeesWithBirthdays;
+};
+
+/**
+ * Formats days until birthday into a readable string.
+ * @param {number} days - Days until birthday
+ * @returns {string} - Formatted string (e.g., "Today", "Tomorrow", "5 days")
+ */
+export const formatDaysUntilBirthdayPH = (days) => {
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  return `${days} days`;
+};
+
+/**
+ * Gets employees with birthdays in different time periods.
+ * @param {Array} employees - Array of employee objects
+ * @param {string} period - 'yesterday', 'today', 'tomorrow', 'thisWeek', 'lastWeek', 'thisMonth', 'nextMonth', 'lastMonth', 'twoDaysAgo', 'threeDaysAgo', 'twoDaysFromNow', 'threeDaysFromNow', 'fourDaysFromNow', 'fiveDaysFromNow', 'sixDaysFromNow', 'oneWeekFromNow'
+ * @returns {Array} - Filtered and sorted array of employees
+ */
+export const getEmployeesBirthdaysByPeriod = (employees, period) => {
+  if (!employees || !Array.isArray(employees)) return [];
+
+  const today = moment().tz("Asia/Manila").startOf("day");
+  const employeesWithBirthdays = employees
+    .filter((emp) => emp.personalInformation?.birthdate)
+    .map((emp) => {
+      const birthdate = moment(emp.personalInformation.birthdate).tz(
+        "Asia/Manila"
+      );
+
+      // Calculate this year's birthday
+      const thisYearBirthday = birthdate
+        .clone()
+        .year(today.year())
+        .startOf("day");
+
+      // Calculate days difference from today to this year's birthday
+      const daysDiff = thisYearBirthday.diff(today, "days");
+
+      // For broader periods, we might need to consider next year's birthday if it's far in the past
+      let relevantBirthday = thisYearBirthday;
+      let actualDaysFromToday = daysDiff;
+
+      // If birthday was more than 6 months ago, consider next year's birthday for display
+      if (daysDiff < -180) {
+        relevantBirthday = birthdate
+          .clone()
+          .year(today.year() + 1)
+          .startOf("day");
+        actualDaysFromToday = relevantBirthday.diff(today, "days");
+      }
+
+      return {
+        ...emp,
+        daysUntilBirthday: actualDaysFromToday,
+        actualDaysFromToday: actualDaysFromToday,
+        birthdayThisYear: relevantBirthday.format("MMMM D"),
+        relevantBirthday: relevantBirthday.toDate(),
+      };
+    });
+
+  // Filter based on period
+  let filteredEmployees = [];
+
+  switch (period) {
+    case "yesterday":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === -1
+      );
+      break;
+
+    case "today":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 0
+      );
+      break;
+
+    case "tomorrow":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 1
+      );
+      break;
+
+    case "twoDaysAgo":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === -2
+      );
+      break;
+
+    case "threeDaysAgo":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === -3
+      );
+      break;
+
+    case "twoDaysFromNow":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 2
+      );
+      break;
+
+    case "threeDaysFromNow":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 3
+      );
+      break;
+
+    case "fourDaysFromNow":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 4
+      );
+      break;
+
+    case "fiveDaysFromNow":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 5
+      );
+      break;
+
+    case "sixDaysFromNow":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 6
+      );
+      break;
+
+    case "oneWeekFromNow":
+      filteredEmployees = employeesWithBirthdays.filter(
+        (emp) => emp.actualDaysFromToday === 7
+      );
+      break;
+
+    case "thisWeek":
+      const weekStart = today.clone().startOf("week");
+      const weekEnd = today.clone().endOf("week");
+      filteredEmployees = employeesWithBirthdays.filter((emp) => {
+        const birthday = moment(emp.relevantBirthday);
+        return birthday.isBetween(weekStart, weekEnd, "day", "[]");
+      });
+      break;
+
+    case "lastWeek":
+      const lastWeekStart = today.clone().subtract(1, "week").startOf("week");
+      const lastWeekEnd = today.clone().subtract(1, "week").endOf("week");
+      filteredEmployees = employeesWithBirthdays.filter((emp) => {
+        const birthday = moment(emp.relevantBirthday);
+        return birthday.isBetween(lastWeekStart, lastWeekEnd, "day", "[]");
+      });
+      break;
+
+    case "thisMonth":
+      const monthStart = today.clone().startOf("month");
+      const monthEnd = today.clone().endOf("month");
+      filteredEmployees = employeesWithBirthdays.filter((emp) => {
+        const birthday = moment(emp.relevantBirthday);
+        return birthday.isBetween(monthStart, monthEnd, "day", "[]");
+      });
+      break;
+
+    case "lastMonth":
+      const lastMonthStart = today
+        .clone()
+        .subtract(1, "month")
+        .startOf("month");
+      const lastMonthEnd = today.clone().subtract(1, "month").endOf("month");
+      filteredEmployees = employeesWithBirthdays.filter((emp) => {
+        const birthday = moment(emp.relevantBirthday);
+        return birthday.isBetween(lastMonthStart, lastMonthEnd, "day", "[]");
+      });
+      break;
+
+    case "nextMonth":
+      const nextMonthStart = today.clone().add(1, "month").startOf("month");
+      const nextMonthEnd = today.clone().add(1, "month").endOf("month");
+      filteredEmployees = employeesWithBirthdays.filter((emp) => {
+        const birthday = moment(emp.relevantBirthday);
+        return birthday.isBetween(nextMonthStart, nextMonthEnd, "day", "[]");
+      });
+      break;
+
+    default:
+      filteredEmployees = employeesWithBirthdays;
+  }
+
+  // Sort by birthday date from past to future
+  return filteredEmployees.sort((a, b) => {
+    return moment(a.relevantBirthday).diff(moment(b.relevantBirthday));
+  });
+};
+
+/**
+ * Gets birthday statistics for different periods.
+ * @param {Array} employees - Array of employee objects
+ * @returns {Object} - Statistics object with counts for each period
+ */
+export const getBirthdayStatsPH = (employees) => {
+  return {
+    // Past periods
+    threeDaysAgo: getEmployeesBirthdaysByPeriod(employees, "threeDaysAgo")
+      .length,
+    twoDaysAgo: getEmployeesBirthdaysByPeriod(employees, "twoDaysAgo").length,
+    yesterday: getEmployeesBirthdaysByPeriod(employees, "yesterday").length,
+
+    // Present
+    today: getEmployeesBirthdaysByPeriod(employees, "today").length,
+
+    // Future periods
+    tomorrow: getEmployeesBirthdaysByPeriod(employees, "tomorrow").length,
+    twoDaysFromNow: getEmployeesBirthdaysByPeriod(employees, "twoDaysFromNow")
+      .length,
+    threeDaysFromNow: getEmployeesBirthdaysByPeriod(
+      employees,
+      "threeDaysFromNow"
+    ).length,
+    fourDaysFromNow: getEmployeesBirthdaysByPeriod(employees, "fourDaysFromNow")
+      .length,
+    fiveDaysFromNow: getEmployeesBirthdaysByPeriod(employees, "fiveDaysFromNow")
+      .length,
+    sixDaysFromNow: getEmployeesBirthdaysByPeriod(employees, "sixDaysFromNow")
+      .length,
+    oneWeekFromNow: getEmployeesBirthdaysByPeriod(employees, "oneWeekFromNow")
+      .length,
+
+    // Broader periods
+    lastWeek: getEmployeesBirthdaysByPeriod(employees, "lastWeek").length,
+    thisWeek: getEmployeesBirthdaysByPeriod(employees, "thisWeek").length,
+    thisMonth: getEmployeesBirthdaysByPeriod(employees, "thisMonth").length,
+    lastMonth: getEmployeesBirthdaysByPeriod(employees, "lastMonth").length,
+    nextMonth: getEmployeesBirthdaysByPeriod(employees, "nextMonth").length,
+  };
 };

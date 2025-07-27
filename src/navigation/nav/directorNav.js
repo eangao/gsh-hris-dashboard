@@ -17,6 +17,7 @@ import {
   AiOutlineApartment,
   AiOutlineUserSwitch,
 } from "react-icons/ai";
+import { FaBirthdayCake } from "react-icons/fa";
 
 const directorRoles = ["DIRECTOR"];
 
@@ -47,6 +48,14 @@ export const directorNav = [
     title: "Duty Schedule",
     icon: <AiOutlineForm />,
     path: "/director/duty-schedule",
+    role: directorRoles,
+    group: "Director Dashboard",
+  },
+
+  {
+    title: "Birthdays",
+    icon: <FaBirthdayCake />,
+    path: "/director/employees/birthdays",
     role: directorRoles,
     group: "Director Dashboard",
   },

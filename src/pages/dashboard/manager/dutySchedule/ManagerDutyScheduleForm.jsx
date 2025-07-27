@@ -26,6 +26,7 @@ import {
   convertDatePHToUTCISO,
   formatTimeTo12HourPH,
   formatMonthYearPH,
+  formatMonthSchedulePH,
 } from "../../../../utils/phDateUtils";
 
 // Holiday data for 2025
@@ -44,8 +45,6 @@ const HOLIDAYS_2025 = [
 const ManagerDutyScheduleForm = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const { role } = useSelector((state) => state.auth);
 
   const { departmentId, scheduleId } = useParams();
   const isEditMode = !!scheduleId;
@@ -81,6 +80,7 @@ const ManagerDutyScheduleForm = () => {
     department: "",
     startDate: "",
     endDate: "",
+    monthSchedule: "", // Added monthSchedule field (YYYY-MM format)
     entries: [],
     isFinalized: false,
   });
@@ -131,10 +131,11 @@ const ManagerDutyScheduleForm = () => {
 
         setLocalDutySchedule({
           ...dutySchedule,
-          name: `${departmentLabel}${getMonthLabelPH(currentDate)}`.trim(),
+          name: `${departmentLabel}${getMonthLabelPH(endDateObj)}`.trim(),
           department: dutySchedule.department?._id || dutySchedule.department,
           startDate: formatDatePH(startDateObj),
           endDate: formatDatePH(endDateObj),
+          monthSchedule: dutySchedule.monthSchedule, // Use existing or generate from endDate
         });
 
         // Set allEntries state with the entries from dutySchedule
@@ -150,7 +151,8 @@ const ManagerDutyScheduleForm = () => {
         setCurrentDate(endDateObj);
       }
     }
-  }, [dutySchedule, isEditMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dutySchedule, isEditMode, department]);
 
   // this will generate the schedule name.
   // ex.output =>  May 2025, April 2025
@@ -170,6 +172,7 @@ const ManagerDutyScheduleForm = () => {
       department: department?._id || department,
       startDate: formatDatePH(startDate),
       endDate: formatDatePH(endDate),
+      monthSchedule: formatMonthSchedulePH(currentDate), // Added monthSchedule field (YYYY-MM)
     }));
 
     setDays(days);
@@ -188,6 +191,7 @@ const ManagerDutyScheduleForm = () => {
           department: "",
           startDate: "",
           endDate: "",
+          monthSchedule: "", // Reset monthSchedule field
           entries: [],
           isFinalized: false,
         });
@@ -198,7 +202,8 @@ const ManagerDutyScheduleForm = () => {
       toast.error(errorMessage);
       dispatch(messageClear());
     }
-  }, [successMessage, errorMessage, dispatch, isEditMode, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [successMessage, errorMessage, dispatch, isEditMode]);
 
   const isHoliday = (date) => {
     if (!date) return false;
@@ -555,6 +560,7 @@ const ManagerDutyScheduleForm = () => {
       ...localDutySchedule,
       startDate: startDateUTC,
       endDate: endDateUTC,
+      monthSchedule: localDutySchedule.monthSchedule, // Include monthSchedule in payload
       entries: transformedEntries,
     };
 
@@ -575,6 +581,8 @@ const ManagerDutyScheduleForm = () => {
 
   const handleConfirmCancel = () => {
     setShowCancelModal(false);
+
+    // In create mode, go back to previous page
     navigate(-1);
   };
 

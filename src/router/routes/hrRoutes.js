@@ -21,6 +21,10 @@ const HrDutySchedulePrint = lazy(() =>
   import("../../pages/dashboard/hr/dutySchedule/HrDutySchedulePrint")
 );
 
+const HrEmployeesBirthdays = lazy(() =>
+  import("../../pages/dashboard/hr/employees/HrEmployeesBirthdays")
+);
+
 // const DepartmentAttendance = lazy(() =>
 //   import("../../pages/dashboard/hr/DepartmentAttendance")
 // );
@@ -84,48 +88,57 @@ const ShiftTemplates = lazy(() =>
   import("../../pages/dashboard/admin/setup/ShiftTemplates")
 );
 
+const hrRoles = ["HR_ADMIN"];
+
 const hrRoutes = [
   {
     path: "/hr/dashboard",
     element: <HrDashboard />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/employees",
     element: <HrEmployees />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/employees/add",
     element: <HrEmployeeForm />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/employees/edit/:employeeId",
     element: <HrEmployeeForm />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/employees/details/:employeeId",
     element: <HrEmployeeDetails />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
+  },
+
+  {
+    path: "/hr/employees/birthdays",
+    element: <HrEmployeesBirthdays />,
+    role: hrRoles,
   },
 
   {
     path: "/hr/duty-schedule",
     element: <HrDutySchedule />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/duty-schedule/:departmentId/view/:scheduleId",
     element: <HrDutyScheduleDetails />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/duty-schedule/print/department/:departmentId/schedule/:scheduleId",
     element: <HrDutySchedulePrint />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
+
   // {
   //   path: "/hr/department-attendance",
   //   element: <DepartmentAttendance />,

@@ -375,6 +375,7 @@ const ManagerEmployeeAttendance = () => {
             departments={managedDepartments || []}
             selectedDepartment={selectedDepartment}
             onDepartmentChange={handleDepartmentChange}
+            showEmptySelectOptionValue={false} // Hide empty select option value
           />
 
           {/* Search Results Info */}

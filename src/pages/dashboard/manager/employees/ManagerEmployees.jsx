@@ -15,10 +15,13 @@ const ManagerEmployees = () => {
   const { userInfo } = useSelector((state) => state.auth);
 
   // Extract departments from the new API structure - Memoized for performance
-  const managedDepartments = useMemo(() => 
-    userInfo?.employee?.employmentInformation?.managedDepartments?.map(
-      (item) => item.department
-    ) || [], [userInfo?.employee?.employmentInformation?.managedDepartments]);
+  const managedDepartments = useMemo(
+    () =>
+      userInfo?.employee?.employmentInformation?.managedDepartments?.map(
+        (item) => item.department
+      ) || [],
+    [userInfo?.employee?.employmentInformation?.managedDepartments]
+  );
 
   const {
     employees,
@@ -111,6 +114,7 @@ const ManagerEmployees = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(10);
+
   // Initialize selectedDepartment with first department if we have managed departments
   // This prevents the "all employees" flash when showEmptySelectOptionValue is false
   const [selectedDepartment, setSelectedDepartment] = useState(

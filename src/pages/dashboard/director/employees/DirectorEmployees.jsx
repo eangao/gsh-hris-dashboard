@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import {
   fetchEmployees,
   deleteEmployee,
+  fetchEmployeesByCluster,
 } from "../../../../store/Reducers/employeeReducer";
 import EmployeeSearchDatabase from "../../../../components/EmployeeSearchDatabase";
 import Pagination from "../../../../components/Pagination";
@@ -120,24 +121,8 @@ const DirectorEmployees = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");
   const [perPage, setPerpage] = useState(10);
-  // Initialize selectedDepartment with first department if we have managed departments
-  // This prevents the "all employees" flash when showEmptySelectOptionValue is false
-  const [selectedDepartment, setSelectedDepartment] = useState(
-    clusterDepartments && clusterDepartments.length > 0
-      ? clusterDepartments[0]._id
-      : null
-  );
 
-  // Initialize selectedDepartment when clusterDepartments becomes available
-  useEffect(() => {
-    if (
-      clusterDepartments &&
-      clusterDepartments.length > 0 &&
-      !selectedDepartment
-    ) {
-      setSelectedDepartment(clusterDepartments[0]._id);
-    }
-  }, [clusterDepartments, selectedDepartment]);
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
 
   // 1️⃣ Reset page to 1 when searchValue or department changes
   useEffect(() => {
@@ -148,15 +133,35 @@ const DirectorEmployees = () => {
 
   // 2️⃣ Fetch data after currentPage, perPage, searchValue, or selectedDepartment is updated
   useEffect(() => {
-    const obj = {
-      perPage: parseInt(perPage),
-      page: parseInt(currentPage),
-      searchValue,
-      departmentId: selectedDepartment, // Pass directly since it's either null or department ID
-    };
+    if (selectedDepartment) {
+      const obj1 = {
+        perPage: parseInt(perPage),
+        page: parseInt(currentPage),
+        searchValue,
+        departmentId: selectedDepartment, // Pass directly since it's either null or department ID
+      };
 
-    dispatch(fetchEmployees(obj));
-  }, [currentPage, perPage, searchValue, selectedDepartment, dispatch]);
+      dispatch(fetchEmployees(obj1));
+    }
+
+    if (selectedDepartment === null) {
+      const obj2 = {
+        perPage: parseInt(perPage),
+        page: parseInt(currentPage),
+        searchValue,
+        clusterId: managedCluster._id,
+      };
+
+      dispatch(fetchEmployeesByCluster(obj2));
+    }
+  }, [
+    currentPage,
+    perPage,
+    searchValue,
+    selectedDepartment,
+    dispatch,
+    managedCluster,
+  ]);
 
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState(null);
@@ -312,7 +317,7 @@ const DirectorEmployees = () => {
           departments={clusterDepartments || []}
           selectedDepartment={selectedDepartment}
           onDepartmentChange={handleDepartmentChange}
-          showEmptySelectOptionValue={false} // Hide empty select option value
+          showEmptySelectOptionValue={true} // Show empty select option value
         />
 
         {/* Search Results Info */}

@@ -1,4 +1,4 @@
-import { FaUserCog } from "react-icons/fa";
+import { FaBirthdayCake, FaUserCog } from "react-icons/fa";
 import {
   AiOutlineDashboard,
   AiOutlineTeam,
@@ -55,6 +55,14 @@ export const managerNav = [
     title: "Attendance",
     icon: <AiOutlineClockCircle />,
     path: "/manager/employee-attendance",
+    role: managerRoles,
+    group: "Manager Dashboard",
+  },
+
+  {
+    title: "Birthdays",
+    icon: <FaBirthdayCake />,
+    path: "/manager/employees/birthdays",
     role: managerRoles,
     group: "Manager Dashboard",
   },

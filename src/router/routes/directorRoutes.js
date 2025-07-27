@@ -12,6 +12,10 @@ const DirectorEmployeeDetails = lazy(() =>
   import("../../pages/dashboard/director/employees/DirectorEmployeeDetails")
 );
 
+const DirectorEmployeesBirthdays = lazy(() =>
+  import("../../pages/dashboard/director/employees/DirectorEmployeesBirthdays")
+);
+
 const DirectorDutySchedule = lazy(() =>
   import("../../pages/dashboard/director/dutySchedule/DirectorDutySchedule")
 );
@@ -90,6 +94,12 @@ const directorRoutes = [
   {
     path: "/director/employees/details/:employeeId",
     element: <DirectorEmployeeDetails />,
+    role: directorRoles,
+  },
+
+  {
+    path: "/director/employees/birthdays",
+    element: <DirectorEmployeesBirthdays />,
     role: directorRoles,
   },
 
