@@ -109,6 +109,7 @@ export const getRoutes = (role) => {
     case "ADMIN":
       privateRoutes = [
         ...adminRoutes,
+        ...managerRoutes,
         ...employeeRoutes, // Admins have access to personal dashboard
       ];
       break;

@@ -86,7 +86,13 @@ const ManagerEmployeeAttendance = lazy(() =>
 //   import("../../pages/dashboard/manager/OrganizationChart")
 // );
 
-const managerRoles = ["MANAGER", "HR_ADMIN", "MARKETING_ADMIN", "SUPERVISOR"];
+const managerRoles = [
+  "MANAGER",
+  "HR_ADMIN",
+  "MARKETING_ADMIN",
+  "SUPERVISOR",
+  "ADMIN",
+];
 
 const managerRoutes = [
   {

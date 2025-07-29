@@ -16,7 +16,13 @@ import {
   AiOutlineUserSwitch,
 } from "react-icons/ai";
 
-const managerRoles = ["MANAGER", "HR_ADMIN", "MARKETING_ADMIN", "SUPERVISOR"];
+const managerRoles = [
+  "MANAGER",
+  "HR_ADMIN",
+  "MARKETING_ADMIN",
+  "SUPERVISOR",
+  "ADMIN",
+];
 
 export const managerNav = [
   //====================================
