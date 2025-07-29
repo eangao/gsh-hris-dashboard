@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchAttendanceByDepartment,
@@ -18,20 +18,17 @@ import {
 } from "../../../../store/Reducers/dutyScheduleReducer";
 import toast from "react-hot-toast";
 import EmployeeAttendance from "../../../../components/employee/EmployeeAttendance";
+import { fetchAllDepartments } from "../../../../store/Reducers/departmentReducer";
 
-const ManagerEmployeeAttendance = () => {
+const HrEmployeeAttendance = () => {
   const dispatch = useDispatch();
 
-  const { userInfo } = useSelector((state) => state.auth);
+  const { departments } = useSelector((state) => state.department);
 
-  // Extract departments from the new API structure - Memoized for performance
-  const managedDepartments = useMemo(
-    () =>
-      userInfo?.employee?.employmentInformation?.managedDepartments?.map(
-        (item) => item.department
-      ) || [],
-    [userInfo?.employee?.employmentInformation?.managedDepartments]
-  );
+  // Fetch departments on component mount
+  useEffect(() => {
+    dispatch(fetchAllDepartments());
+  }, [dispatch]);
 
   const {
     dutySchedules,
@@ -208,18 +205,14 @@ const ManagerEmployeeAttendance = () => {
 
   // Auto-select first department when managed departments are loaded
   useEffect(() => {
-    if (
-      managedDepartments &&
-      managedDepartments.length > 0 &&
-      !selectedDepartment
-    ) {
+    if (departments && departments.length > 0 && !selectedDepartment) {
       // Only auto-select if no department is currently selected
-      setSelectedDepartment(managedDepartments[0]._id);
-    } else if (managedDepartments && managedDepartments.length === 0) {
+      setSelectedDepartment(departments[0]._id);
+    } else if (departments && departments.length === 0) {
       // Clear selected department if user has no managed departments
       setSelectedDepartment("");
     }
-  }, [managedDepartments, selectedDepartment]);
+  }, [departments, selectedDepartment]);
 
   // if have selected department,
   useEffect(() => {
@@ -415,7 +408,7 @@ const ManagerEmployeeAttendance = () => {
   return (
     <EmployeeAttendance
       // Essential data props
-      departments={managedDepartments}
+      departments={departments}
       employees={employees}
       attendances={filteredAttendances}
       loading={loading}
@@ -441,8 +434,10 @@ const ManagerEmployeeAttendance = () => {
       handlePerPageChange={handlePerPageChange}
       // Error handling
       errorMessage={errorMessage}
+      // Role-based customization
+      userRole="hr"
     />
   );
 };
 
-export default ManagerEmployeeAttendance;
+export default HrEmployeeAttendance;

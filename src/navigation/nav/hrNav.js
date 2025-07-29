@@ -64,6 +64,14 @@ export const hrNav = [
     role: hrRoles,
     group: "HR Dashboard",
   },
+
+  {
+    title: "Attendance",
+    icon: <AiOutlineClockCircle />,
+    path: "/hr/employee-attendance",
+    role: hrRoles,
+    group: "HR Dashboard",
+  },
   {
     title: "Birthdays",
     icon: <FaBirthdayCake />,

@@ -18,20 +18,28 @@ import {
 } from "../../../../store/Reducers/dutyScheduleReducer";
 import toast from "react-hot-toast";
 import EmployeeAttendance from "../../../../components/employee/EmployeeAttendance";
+import { fetchDepartmentsByCluster } from "../../../../store/Reducers/departmentReducer";
 
-const ManagerEmployeeAttendance = () => {
+const DirectorEmployeeAttendance = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
 
   // Extract departments from the new API structure - Memoized for performance
-  const managedDepartments = useMemo(
-    () =>
-      userInfo?.employee?.employmentInformation?.managedDepartments?.map(
-        (item) => item.department
-      ) || [],
-    [userInfo?.employee?.employmentInformation?.managedDepartments]
+  const managedCluster = useMemo(
+    () => userInfo?.employee?.employmentInformation?.managedCluster || {},
+
+    [userInfo?.employee?.employmentInformation?.managedCluster]
   );
+
+  const { departments: clusterDepartments } = useSelector(
+    (state) => state.department
+  );
+
+  // Fetch departments on component mount
+  useEffect(() => {
+    dispatch(fetchDepartmentsByCluster(managedCluster?._id));
+  }, [dispatch, managedCluster]);
 
   const {
     dutySchedules,
@@ -209,17 +217,17 @@ const ManagerEmployeeAttendance = () => {
   // Auto-select first department when managed departments are loaded
   useEffect(() => {
     if (
-      managedDepartments &&
-      managedDepartments.length > 0 &&
+      clusterDepartments &&
+      clusterDepartments.length > 0 &&
       !selectedDepartment
     ) {
       // Only auto-select if no department is currently selected
-      setSelectedDepartment(managedDepartments[0]._id);
-    } else if (managedDepartments && managedDepartments.length === 0) {
+      setSelectedDepartment(clusterDepartments[0]._id);
+    } else if (clusterDepartments && clusterDepartments.length === 0) {
       // Clear selected department if user has no managed departments
       setSelectedDepartment("");
     }
-  }, [managedDepartments, selectedDepartment]);
+  }, [clusterDepartments, selectedDepartment]);
 
   // if have selected department,
   useEffect(() => {
@@ -415,7 +423,7 @@ const ManagerEmployeeAttendance = () => {
   return (
     <EmployeeAttendance
       // Essential data props
-      departments={managedDepartments}
+      departments={clusterDepartments}
       employees={employees}
       attendances={filteredAttendances}
       loading={loading}
@@ -441,8 +449,10 @@ const ManagerEmployeeAttendance = () => {
       handlePerPageChange={handlePerPageChange}
       // Error handling
       errorMessage={errorMessage}
+      // Role-based customization
+      userRole="director"
     />
   );
 };
 
-export default ManagerEmployeeAttendance;
+export default DirectorEmployeeAttendance;

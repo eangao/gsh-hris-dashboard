@@ -16,6 +16,7 @@ import {
   AiOutlineBell,
   AiOutlineApartment,
   AiOutlineUserSwitch,
+  AiOutlineClockCircle,
 } from "react-icons/ai";
 import { FaBirthdayCake } from "react-icons/fa";
 
@@ -48,6 +49,14 @@ export const directorNav = [
     title: "Duty Schedule",
     icon: <AiOutlineForm />,
     path: "/director/duty-schedule",
+    role: directorRoles,
+    group: "Director Dashboard",
+  },
+
+  {
+    title: "Attendance",
+    icon: <AiOutlineClockCircle />,
+    path: "/director/employee-attendance",
     role: directorRoles,
     group: "Director Dashboard",
   },
