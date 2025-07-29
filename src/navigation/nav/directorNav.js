@@ -20,7 +20,7 @@ import {
 } from "react-icons/ai";
 import { FaBirthdayCake } from "react-icons/fa";
 
-const directorRoles = ["DIRECTOR"];
+const directorRoles = ["DIRECTOR", "EXECUTIVE"];
 
 export const directorNav = [
   //====================================

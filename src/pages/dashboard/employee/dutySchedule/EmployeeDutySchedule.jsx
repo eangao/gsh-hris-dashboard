@@ -77,7 +77,7 @@ const EmployeeDutySchedule = () => {
               My Duty Schedules
             </h1>
             <p className="text-blue-100 text-sm sm:text-base">
-              View and download your assigned duty schedules
+              View and print your assigned duty schedules
             </p>
           </div>
 

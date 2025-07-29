@@ -80,7 +80,7 @@ const DirectorEmployeeAttendance = lazy(() =>
 //   import("../../pages/dashboard/director/OrganizationChart")
 // );
 
-const directorRoles = ["DIRECTOR"];
+const directorRoles = ["DIRECTOR", "EXECUTIVE"];
 
 const directorRoutes = [
   {

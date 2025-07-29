@@ -27,6 +27,7 @@ const employeeAccessRoles = [
   "HR_ADMIN",
   "MARKETING_ADMIN",
   "ADMIN",
+  "EXECUTIVE",
 ];
 
 export const employeeNav = [

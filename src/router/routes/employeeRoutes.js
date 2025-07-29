@@ -73,6 +73,7 @@ const employeeAccessRoles = [
   "HR_ADMIN",
   "MARKETING_ADMIN",
   "ADMIN",
+  "EXECUTIVE",
 ];
 
 const employeeRoutes = [

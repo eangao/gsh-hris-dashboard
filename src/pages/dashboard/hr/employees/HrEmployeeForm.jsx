@@ -673,6 +673,30 @@ const HrEmployeeForm = () => {
                   </select>
                 </div>
 
+                {/* Maiden Name Field - Hidden if Civil Status is 'Single' */}
+                {isMaiden && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Maiden Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="maidenName"
+                      value={formData.personalInformation.maidenName}
+                      onChange={(e) =>
+                        handleChange(
+                          "personalInformation",
+                          "maidenName",
+                          e.target.value
+                        )
+                      }
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                      placeholder="Enter maiden name"
+                      required={isMaiden}
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Civil Status <span className="text-red-500">*</span>
@@ -694,7 +718,6 @@ const HrEmployeeForm = () => {
                     <option value="">Select Civil Status</option>
                     <option value="SINGLE">Single</option>
                     <option value="MARRIED">Married</option>
-                    <option value="WIDOWED">Widowed</option>
                   </select>
                 </div>
 
@@ -721,30 +744,6 @@ const HrEmployeeForm = () => {
                     <option value="FEMALE">Female</option>
                   </select>
                 </div>
-
-                {/* Maiden Name Field - Hidden if Civil Status is 'Single' */}
-                {isMaiden && (
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Maiden Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="maidenName"
-                      value={formData.personalInformation.maidenName}
-                      onChange={(e) =>
-                        handleChange(
-                          "personalInformation",
-                          "maidenName",
-                          e.target.value
-                        )
-                      }
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                      placeholder="Enter maiden name"
-                      required={isMaiden}
-                    />
-                  </div>
-                )}
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
@@ -990,7 +989,8 @@ const HrEmployeeForm = () => {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Date Started <span className="text-red-500">*</span>
+                    Date Started
+                    {/* <span className="text-red-500">*</span> */}
                   </label>
                   <FormDatePicker
                     name="dateStarted"
@@ -998,7 +998,7 @@ const HrEmployeeForm = () => {
                     onChange={(field, value) =>
                       handleChange("employmentInformation", field, value)
                     }
-                    required
+                    // required
                     placeholder="Select Date Started"
                     maxDate={getTodayDatePH()}
                   />
@@ -1007,7 +1007,7 @@ const HrEmployeeForm = () => {
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
                     Date Transferred To GSH{" "}
-                    <span className="text-red-500">*</span>
+                    {/* <span className="text-red-500">*</span> */}
                   </label>
                   <FormDatePicker
                     name="dateTransferToGSH"
@@ -1015,7 +1015,7 @@ const HrEmployeeForm = () => {
                     onChange={(field, value) =>
                       handleChange("employmentInformation", field, value)
                     }
-                    required
+                    // required
                     placeholder="Select Date Transfer to GSH"
                     maxDate={getTodayDatePH()}
                   />
@@ -1023,7 +1023,8 @@ const HrEmployeeForm = () => {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Date Employed <span className="text-red-500">*</span>
+                    Date Employed
+                    {/* <span className="text-red-500">*</span> */}
                   </label>
                   <FormDatePicker
                     name="dateEmployed"
@@ -1031,7 +1032,7 @@ const HrEmployeeForm = () => {
                     onChange={(field, value) =>
                       handleChange("employmentInformation", field, value)
                     }
-                    required
+                    // required
                     placeholder="Select Date Employed"
                     maxDate={getTodayDatePH()}
                   />

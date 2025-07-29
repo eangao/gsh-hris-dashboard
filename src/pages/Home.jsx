@@ -12,6 +12,7 @@ const Home = () => {
     role === "EMPLOYEE" ||
     role === "MANAGER" ||
     role === "DIRECTOR" ||
+    role === "EXECUTIVE" ||
     role === "HR_ADMIN" ||
     role === "ADMIN" ||
     role === "MARKETING_ADMIN" ||

@@ -36,11 +36,17 @@ const ROLE_HIERARCHY = {
     inherits: ["EMPLOYEE"],
     description: "Administrative access with employee dashboard",
   },
+  EXECUTIVE: {
+    level: 3,
+    inherits: ["EMPLOYEE"],
+    description: "Executive level access with employee dashboard",
+  },
   HR_ADMIN: {
     level: 3,
     inherits: ["EMPLOYEE"],
     description: "HR management with employee dashboard access",
   },
+
   DIRECTOR: {
     level: 3,
     inherits: ["EMPLOYEE"],
@@ -108,9 +114,10 @@ export const getRoutes = (role) => {
       break;
 
     case "DIRECTOR":
+    case "EXECUTIVE":
       privateRoutes = [
         ...directorRoutes,
-        ...employeeRoutes, // Directors have access to employee features
+        ...employeeRoutes, // Directors and Executives have access to employee features
       ];
       break;
 

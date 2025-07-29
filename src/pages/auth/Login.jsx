@@ -91,19 +91,19 @@ const Login = () => {
                 />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">AHG HRIS</h1>
+            <h1 className="text-xl font-bold text-white mb-2">
+              Human Resource Information System
+            </h1>
             {/* <p className="text-blue-100 text-sm">Adventist Hospital Gingoog</p> */}
           </div>
 
           {/* Form Section */}
           <div className="p-8">
             <div className="mb-6 text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Welcome Back!
-              </h2>
-              <p className="text-gray-600">
-                Please sign in to access the system
-              </p>
+              {/* <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Sign in to access the system
+              </h2> */}
+              <p className="text-gray-600">Sign in to access the system</p>
             </div>
 
             <form onSubmit={login} className="space-y-6">
