@@ -126,10 +126,10 @@ const DirectorEmployees = () => {
 
   // 1️⃣ Reset page to 1 when searchValue or department changes
   useEffect(() => {
-    if ((searchValue || selectedDepartment) && currentPage !== 1) {
+    if (searchValue || selectedDepartment) {
       setCurrentPage(1);
     }
-  }, [searchValue, selectedDepartment, currentPage]);
+  }, [searchValue, selectedDepartment]);
 
   // 2️⃣ Fetch data after currentPage, perPage, searchValue, or selectedDepartment is updated
   useEffect(() => {
@@ -141,6 +141,7 @@ const DirectorEmployees = () => {
         departmentId: selectedDepartment, // Pass directly since it's either null or department ID
       };
 
+      console.log("Fetching employees with params:", obj1);
       dispatch(fetchEmployees(obj1));
     }
 
@@ -152,6 +153,7 @@ const DirectorEmployees = () => {
         clusterId: managedCluster._id,
       };
 
+      console.log("Fetching employees by cluster with params:", obj2);
       dispatch(fetchEmployeesByCluster(obj2));
     }
   }, [
@@ -178,8 +180,13 @@ const DirectorEmployees = () => {
     (employeeId) => {
       navigate(`/director/employees/details/${employeeId}`);
     },
-    [navigate, role]
+    [navigate]
   );
+
+  const handlePageChange = useCallback((page) => {
+    console.log("Page change requested:", page);
+    setCurrentPage(page);
+  }, []);
 
   const handleDepartmentChange = useCallback((e) => {
     const departmentId = e.target.value;
@@ -932,7 +939,7 @@ const DirectorEmployees = () => {
                 </span>
                 <Pagination
                   pageNumber={currentPage}
-                  setPageNumber={setCurrentPage}
+                  setPageNumber={handlePageChange}
                   totalItem={totalEmployee}
                   perPage={perPage}
                   showItem={Math.min(5, Math.ceil(totalEmployee / perPage))}

@@ -80,7 +80,7 @@ const ManagerDutySchedule = () => {
       toast.error(errorMessage);
       dispatch(messageClear());
     }
-  }, [successMessage, errorMessage, dispatch, getDutySchedulesByDepartment]);
+  }, [successMessage, errorMessage]);
 
   // If only one department, set it as selected by default
   useEffect(() => {

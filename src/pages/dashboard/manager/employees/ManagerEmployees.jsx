@@ -136,10 +136,10 @@ const ManagerEmployees = () => {
 
   // 1️⃣ Reset page to 1 when searchValue or department changes
   useEffect(() => {
-    if ((searchValue || selectedDepartment) && currentPage !== 1) {
+    if (searchValue || selectedDepartment) {
       setCurrentPage(1);
     }
-  }, [searchValue, selectedDepartment, currentPage]);
+  }, [searchValue, selectedDepartment]);
 
   // 2️⃣ Fetch data after currentPage, perPage, searchValue, or selectedDepartment is updated
   useEffect(() => {
@@ -150,6 +150,7 @@ const ManagerEmployees = () => {
       departmentId: selectedDepartment, // Pass directly since it's either null or department ID
     };
 
+    console.log("Fetching employees with params:", obj);
     dispatch(fetchEmployees(obj));
   }, [currentPage, perPage, searchValue, selectedDepartment, dispatch]);
 
@@ -170,6 +171,11 @@ const ManagerEmployees = () => {
     },
     [navigate]
   );
+
+  const handlePageChange = useCallback((page) => {
+    console.log("Page change requested:", page);
+    setCurrentPage(page);
+  }, []);
 
   const handleDepartmentChange = useCallback((e) => {
     const departmentId = e.target.value;
@@ -922,7 +928,7 @@ const ManagerEmployees = () => {
                 </span>
                 <Pagination
                   pageNumber={currentPage}
-                  setPageNumber={setCurrentPage}
+                  setPageNumber={handlePageChange}
                   totalItem={totalEmployee}
                   perPage={perPage}
                   showItem={Math.min(5, Math.ceil(totalEmployee / perPage))}

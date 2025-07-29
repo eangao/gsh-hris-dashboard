@@ -243,16 +243,13 @@ export const hrApproval = createAsyncThunk(
   }
 );
 
-export const fetchDutyScheduleByDepartmentAndDate = createAsyncThunk(
-  "dutySchedule/fetchDutyScheduleByDepartmentAndDate",
-  async (
-    { departmentId, currentDate },
-    { rejectWithValue, fulfillWithValue }
-  ) => {
+export const fetchDutyScheduleByDepartmentForAttendance = createAsyncThunk(
+  "dutySchedule/fetchDutyScheduleByDepartmentForAttendance",
+  async ({ departmentId }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const { data } = await api.post(
-        `/hris/duty-schedules/by-department-date/${departmentId}`,
-        { currentDate },
+      const { data } = await api.get(
+        `/hris/duty-schedules/department/${departmentId}/attendance`,
+
         {
           withCredentials: true,
         }
@@ -442,20 +439,20 @@ const dutyScheduleSlice = createSlice({
         state.errorMessage = payload.error;
       });
 
-    // Handle fetchDutyScheduleByDepartmentAndDate
+    // Handle fetchDutyScheduleByDepartmentForAttendance
     builder
-      .addCase(fetchDutyScheduleByDepartmentAndDate.pending, (state) => {
+      .addCase(fetchDutyScheduleByDepartmentForAttendance.pending, (state) => {
         state.loading = true;
       })
       .addCase(
-        fetchDutyScheduleByDepartmentAndDate.fulfilled,
+        fetchDutyScheduleByDepartmentForAttendance.fulfilled,
         (state, { payload }) => {
           state.loading = false;
-          state.dutySchedule = payload.dutySchedule;
+          state.dutySchedules = payload.dutySchedules;
         }
       )
       .addCase(
-        fetchDutyScheduleByDepartmentAndDate.rejected,
+        fetchDutyScheduleByDepartmentForAttendance.rejected,
         (state, { payload }) => {
           state.loading = false;
           state.errorMessage = payload.error;
