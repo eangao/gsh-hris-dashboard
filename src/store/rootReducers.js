@@ -18,7 +18,7 @@ const rootReducer = {
   employmentStatus: employmentStatusReducer,
   religion: religionReducer,
   attendance: attendanceReducer,
-  holidays: holidayReducer,
+  holiday: holidayReducer,
   role: roleReducer,
   dutySchedule: dutyScheduleReducer,
   shiftTemplate: shiftTemplateReducer,

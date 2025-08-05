@@ -37,7 +37,7 @@ const HolidayManagement = () => {
   const dispatch = useDispatch();
 
   const { holidays, totalHoliday, loading, successMessage, errorMessage } =
-    useSelector((state) => state.holidays);
+    useSelector((state) => state.holiday);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchValue, setSearchValue] = useState("");

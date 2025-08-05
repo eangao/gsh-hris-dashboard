@@ -150,7 +150,6 @@ const ManagerEmployees = () => {
       departmentId: selectedDepartment, // Pass directly since it's either null or department ID
     };
 
-    console.log("Fetching employees with params:", obj);
     dispatch(fetchEmployees(obj));
   }, [currentPage, perPage, searchValue, selectedDepartment, dispatch]);
 
@@ -173,7 +172,6 @@ const ManagerEmployees = () => {
   );
 
   const handlePageChange = useCallback((page) => {
-    console.log("Page change requested:", page);
     setCurrentPage(page);
   }, []);
 

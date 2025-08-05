@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "jsx": "react-jsx",
+    "baseUrl": "src"
+  },
+  "exclude": ["node_modules", "build"]
+}

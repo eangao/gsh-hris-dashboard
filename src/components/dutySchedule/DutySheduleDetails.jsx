@@ -8,6 +8,7 @@ import {
   messageClear,
   submitDutyScheduleForApproval,
 } from "../../store/Reducers/dutyScheduleReducer";
+import { fetchHolidaysForLocation } from "../../store/Reducers/holidayReducer";
 
 import toast from "react-hot-toast";
 import { FaTimes } from "react-icons/fa";
@@ -21,19 +22,6 @@ import {
   getCalendarDaysInRangePH,
 } from "../../utils/phDateUtils";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-
-// Holiday data for 2025
-const HOLIDAYS_2025 = [
-  { date: "2025-01-01", name: "New Year's Day" },
-  { date: "2025-04-18", name: "Good Friday" },
-  { date: "2025-05-01", name: "Labor Day" },
-  { date: "2025-06-12", name: "Independence Day" },
-  { date: "2025-08-21", name: "Ninoy Aquino Day" },
-  { date: "2025-08-25", name: "National Heroes Day" },
-  { date: "2025-11-30", name: "Bonifacio Day" },
-  { date: "2025-12-25", name: "Christmas Day" },
-  { date: "2025-12-30", name: "Rizal Day" },
-];
 
 //approvalType = "" if employee
 // is viewing their own schedule, otherwise it will be the employeeId of the schedule being viewed
@@ -51,6 +39,8 @@ const DutyScheduleDetails = ({
   const { dutySchedule, loading, errorMessage, successMessage } = useSelector(
     (state) => state.dutySchedule
   );
+
+  const { holidays } = useSelector((state) => state.holiday);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
   const [days, setDays] = useState([]);
@@ -80,7 +70,19 @@ const DutyScheduleDetails = ({
   useEffect(() => {
     //for duty schedule
     dispatch(fetchDutyScheduleById({ scheduleId, employeeId }));
-  }, [dispatch, scheduleId]);
+  }, [dispatch, scheduleId, employeeId]);
+
+  // Fetch holidays when dutySchedule is loaded
+  useEffect(() => {
+    if (dutySchedule?.startDate && dutySchedule?.endDate) {
+      dispatch(
+        fetchHolidaysForLocation({
+          startDate: dutySchedule.startDate,
+          endDate: dutySchedule.endDate,
+        })
+      );
+    }
+  }, [dispatch, dutySchedule?.startDate, dutySchedule?.endDate]);
 
   // Update local state when duty schedule data is loaded
   useEffect(() => {
@@ -131,18 +133,26 @@ const DutyScheduleDetails = ({
       dispatch(messageClear());
       // Do NOT close modal or reset input here!
     }
-  }, [successMessage, errorMessage]);
+  }, [successMessage, errorMessage, dispatch, navigate]);
 
   const isHoliday = (date) => {
-    if (!date) return false;
+    if (!date || !holidays?.length) return false;
     const dateStr = formatDatePH(date);
-    return HOLIDAYS_2025.some((holiday) => holiday.date === dateStr);
+    return holidays.some((holiday) => {
+      // Convert holiday date from API to PH date format for comparison
+      const holidayDatePH = formatDatePH(new Date(holiday.date));
+      return holidayDatePH === dateStr;
+    });
   };
 
   const getHolidayName = (date) => {
-    if (!date) return null;
+    if (!date || !holidays?.length) return null;
     const dateStr = formatDatePH(date);
-    const holiday = HOLIDAYS_2025?.find((h) => h.date === dateStr);
+    const holiday = holidays?.find((h) => {
+      // Convert holiday date from API to PH date format for comparison
+      const holidayDatePH = formatDatePH(new Date(h.date));
+      return holidayDatePH === dateStr;
+    });
     return holiday ? holiday.name : null;
   };
 
@@ -700,9 +710,14 @@ const DutyScheduleDetails = ({
                               const dateObj = weekDates[i];
                               const isHoliday =
                                 dateObj &&
-                                HOLIDAYS_2025.some(
-                                  (h) => h.date === formatDatePH(dateObj)
-                                );
+                                holidays?.some((h) => {
+                                  const holidayDatePH = formatDatePH(
+                                    new Date(h.date)
+                                  );
+                                  return (
+                                    holidayDatePH === formatDatePH(dateObj)
+                                  );
+                                });
                               const isWeekend = i === 0 || i === 6;
                               return (
                                 <th

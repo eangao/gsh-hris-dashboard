@@ -102,6 +102,41 @@ export const deleteHoliday = createAsyncThunk(
   }
 );
 
+export const fetchHolidaysForLocation = createAsyncThunk(
+  "holiday/fetchHolidaysForLocation",
+  async (
+    { startDate, endDate, province = "", city = "" },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      if (!startDate || !endDate) {
+        return rejectWithValue({
+          error: "startDate and endDate are required",
+        });
+      }
+
+      const params = new URLSearchParams({
+        startDate: startDate,
+        endDate: endDate,
+      });
+
+      if (province) params.append("province", province);
+      if (city) params.append("city", city);
+
+      const { data } = await api.get(
+        `/hris/reference-data/holidays/location?${params.toString()}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const holidaySlice = createSlice({
   name: "holiday",
   initialState: {
@@ -124,6 +159,7 @@ const holidaySlice = createSlice({
       state.holidays = [];
       state.holiday = null;
       state.totalHoliday = 0;
+      state.locationHolidays = [];
     },
   },
   extraReducers: (builder) => {
@@ -183,6 +219,20 @@ const holidaySlice = createSlice({
         state.holidays = state.holidays.filter(
           (holiday) => holiday._id !== payload.holidayId
         );
+      });
+
+    // Fetch Holidays For Location
+    builder
+      .addCase(fetchHolidaysForLocation.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchHolidaysForLocation.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(fetchHolidaysForLocation.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.holidays = payload.holidays;
       });
   },
 });

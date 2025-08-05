@@ -1,0 +1,13 @@
+{
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/build/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/build": true
+  },
+  "javascript.implicitProjectConfig.checkJs": false,
+  "typescript.tsserver.log": "off",
+  "eslint.validate": ["javascript", "javascriptreact"]
+}
