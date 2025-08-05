@@ -6,15 +6,15 @@ import {
   updateReligion,
   deleteReligion,
   messageClear,
-} from "./../../../../store/Reducers/religionReducer";
+} from "../../../../store/Reducers/religionReducer";
 
-import Pagination from "./../../../../components/Pagination";
-import Search from "./../../../../components/Search";
+import Pagination from "../../../../components/Pagination";
+import Search from "../../../../components/Search";
 
 import toast from "react-hot-toast";
 import { FaEdit, FaTrashAlt, FaPlus, FaPray, FaUsers } from "react-icons/fa";
 
-import { buttonOverrideStyle } from "./../../../../utils/utils";
+import { buttonOverrideStyle } from "../../../../utils/utils";
 import { PropagateLoader } from "react-spinners";
 
 const Religion = () => {

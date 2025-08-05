@@ -6,10 +6,10 @@ import {
   updateEmploymentStatus,
   deleteEmploymentStatus,
   messageClear,
-} from "./../../../../store/Reducers/employmentStatusReducer";
+} from "../../../../store/Reducers/employmentStatusReducer";
 
-import Pagination from "./../../../../components/Pagination";
-import Search from "./../../../../components/Search";
+import Pagination from "../../../../components/Pagination";
+import Search from "../../../../components/Search";
 
 import toast from "react-hot-toast";
 import {
@@ -22,7 +22,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 
-import { buttonOverrideStyle } from "./../../../../utils/utils";
+import { buttonOverrideStyle } from "../../../../utils/utils";
 import { PropagateLoader } from "react-spinners";
 
 const EmploymentStatus = () => {

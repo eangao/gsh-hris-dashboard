@@ -8,11 +8,11 @@ import {
   deleteCluster,
   messageClear,
   assignClusterDirector,
-} from "./../../../../store/Reducers/clusterReducer";
-import { fetchEmployeesDirectors } from "./../../../../store/Reducers/employeeReducer";
+} from "../../../../store/Reducers/clusterReducer";
+import { fetchEmployeesDirectors } from "../../../../store/Reducers/employeeReducer";
 
-import Pagination from "./../../../../components/Pagination";
-import Search from "./../../../../components/Search";
+import Pagination from "../../../../components/Pagination";
+import Search from "../../../../components/Search";
 
 import toast from "react-hot-toast";
 import {
@@ -25,7 +25,7 @@ import {
   FaBuilding,
 } from "react-icons/fa";
 
-import { buttonOverrideStyle } from "./../../../../utils/utils";
+import { buttonOverrideStyle } from "../../../../utils/utils";
 import { PropagateLoader } from "react-spinners";
 
 const Cluster = () => {

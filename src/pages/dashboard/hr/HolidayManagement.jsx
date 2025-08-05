@@ -6,10 +6,10 @@ import {
   updateHoliday,
   deleteHoliday,
   messageClear,
-} from "./../../../../store/Reducers/holidayReducer";
+} from "../../../store/Reducers/holidayReducer";
 
-import Pagination from "./../../../../components/Pagination";
-import Search from "./../../../../components/Search";
+import Pagination from "../../../components/Pagination";
+import Search from "../../../components/Search";
 
 import toast from "react-hot-toast";
 import {
@@ -25,13 +25,13 @@ import {
   FaShieldAlt,
 } from "react-icons/fa";
 
-import { buttonOverrideStyle } from "./../../../../utils/utils";
+import { buttonOverrideStyle } from "../../../utils/utils";
 import { PropagateLoader } from "react-spinners";
 import {
   formatDatePH,
   convertDatePHToUTCISO,
   formatReadableDatePH,
-} from "./../../../../utils/phDateUtils";
+} from "../../../utils/phDateUtils";
 
 const HolidayManagement = () => {
   const dispatch = useDispatch();
@@ -490,14 +490,17 @@ const HolidayManagement = () => {
               onChange={(e) => setYearFilter(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             >
-              {Array.from({ length: 10 }, (_, i) => {
-                const year = new Date().getFullYear() - 5 + i;
-                return (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                );
-              })}
+              {Array.from(
+                { length: new Date().getFullYear() - 2025 + 2 },
+                (_, i) => {
+                  const year = 2025 + i;
+                  return (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  );
+                }
+              )}
             </select>
           </div>
           <div className="flex items-end">

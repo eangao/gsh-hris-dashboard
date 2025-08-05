@@ -79,6 +79,14 @@ export const hrNav = [
     role: hrRoles,
     group: "HR Dashboard",
   },
+
+  {
+    title: "Holiday Calendar",
+    icon: <MdHolidayVillage />,
+    path: "/hr/holidays",
+    role: hrRoles,
+    group: "HR Dashboard",
+  },
   // {
   //   title: "Department Attendance",
   //   icon: <AiOutlineCalendar />,
@@ -229,11 +237,10 @@ export const hrNav = [
     role: hrSetupRoles,
     group: "Setups",
   },
-
   {
-    title: "Holiday Calendar",
-    icon: <MdHolidayVillage />,
-    path: "/hr/setup/holiday",
+    title: "Leave Templates",
+    icon: <AiOutlineCalendar />,
+    path: "/hr/setup/leave-templates",
     role: hrSetupRoles,
     group: "Setups",
   },

@@ -10,6 +10,7 @@ import holidayReducer from "./Reducers/holidayReducer";
 import roleReducer from "./Reducers/roleReducer";
 import dutyScheduleReducer from "./Reducers/dutyScheduleReducer";
 import shiftTemplateReducer from "./Reducers/shiftTemplateReducer";
+import leaveTemplateReducer from "./Reducers/leaveTemplateReducer";
 
 const rootReducer = {
   auth: authReducer,
@@ -24,6 +25,7 @@ const rootReducer = {
   position: positionReducer,
   cluster: clusterReducer,
   department: departmentReducer,
+  leaveTemplates: leaveTemplateReducer,
 };
 
 export default rootReducer;

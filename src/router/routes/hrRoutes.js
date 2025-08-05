@@ -30,6 +30,10 @@ const HrEmployeeAttendance = lazy(() =>
   import("../../pages/dashboard/hr/employees/HrEmployeeAttendance")
 );
 
+const HolidayManagement = lazy(() =>
+  import("../../pages/dashboard/hr/HolidayManagement")
+);
+
 // const DepartmentAttendance = lazy(() =>
 //   import("../../pages/dashboard/hr/DepartmentAttendance")
 // );
@@ -73,26 +77,22 @@ const HrEmployeeAttendance = lazy(() =>
 //================================
 // setup
 
-const Cluster = lazy(() => import("../../pages/dashboard/admin/setup/Cluster"));
+const Cluster = lazy(() => import("../../pages/dashboard/hr/setup/Cluster"));
 const Department = lazy(() =>
-  import("../../pages/dashboard/admin/setup/Department")
+  import("../../pages/dashboard/hr/setup/Department")
 );
 
 const EmploymentStatus = lazy(() =>
-  import("../../pages/dashboard/admin/setup/EmploymentStatus")
-);
-const Holiday = lazy(() =>
-  import("../../pages/dashboard/admin/setup/HolidayManagement")
+  import("../../pages/dashboard/hr/setup/EmploymentStatus")
 );
 
-const Position = lazy(() =>
-  import("../../pages/dashboard/admin/setup/Position")
-);
-const Religion = lazy(() =>
-  import("../../pages/dashboard/admin/setup/Religion")
-);
+const Position = lazy(() => import("../../pages/dashboard/hr/setup/Position"));
+const Religion = lazy(() => import("../../pages/dashboard/hr/setup/Religion"));
 const ShiftTemplates = lazy(() =>
-  import("../../pages/dashboard/admin/setup/ShiftTemplates")
+  import("../../pages/dashboard/hr/setup/ShiftTemplates")
+);
+const LeaveTemplates = lazy(() =>
+  import("../../pages/dashboard/hr/setup/LeaveTemplates")
 );
 
 const hrRoles = ["HR_ADMIN"];
@@ -149,6 +149,12 @@ const hrRoutes = [
   {
     path: "/hr/employee-attendance",
     element: <HrEmployeeAttendance />,
+    role: hrRoles,
+  },
+
+  {
+    path: "/hr/holidays",
+    element: <HolidayManagement />,
     role: hrRoles,
   },
 
@@ -257,10 +263,9 @@ const hrRoutes = [
     element: <ShiftTemplates />,
     role: hrRoles,
   },
-
   {
-    path: "/hr/setup/holiday",
-    element: <Holiday />,
+    path: "/hr/setup/leave-templates",
+    element: <LeaveTemplates />,
     role: hrRoles,
   },
 ];

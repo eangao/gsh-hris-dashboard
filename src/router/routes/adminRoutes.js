@@ -33,28 +33,22 @@ const SystemLogs = lazy(() => import("../../pages/dashboard/admin/SystemLogs"));
 //================================
 // setup
 
-const Cluster = lazy(() => import("../../pages/dashboard/admin/setup/Cluster"));
+const Cluster = lazy(() => import("../../pages/dashboard/hr/setup/Cluster"));
 const Department = lazy(() =>
-  import("../../pages/dashboard/admin/setup/Department")
+  import("../../pages/dashboard/hr/setup/Department")
 );
 
 const EmploymentStatus = lazy(() =>
-  import("../../pages/dashboard/admin/setup/EmploymentStatus")
+  import("../../pages/dashboard/hr/setup/EmploymentStatus")
 );
-const Holiday = lazy(() =>
-  import("../../pages/dashboard/admin/setup/HolidayManagement")
-);
+
 const NotificationSettings = lazy(() =>
-  import("../../pages/dashboard/admin/setup/NotificationSettings")
+  import("../../pages/dashboard/hr/setup/NotificationSettings")
 );
-const Position = lazy(() =>
-  import("../../pages/dashboard/admin/setup/Position")
-);
-const Religion = lazy(() =>
-  import("../../pages/dashboard/admin/setup/Religion")
-);
+const Position = lazy(() => import("../../pages/dashboard/hr/setup/Position"));
+const Religion = lazy(() => import("../../pages/dashboard/hr/setup/Religion"));
 const ShiftTemplates = lazy(() =>
-  import("../../pages/dashboard/admin/setup/ShiftTemplates")
+  import("../../pages/dashboard/hr/setup/ShiftTemplates")
 );
 
 const adminRoles = ["ADMIN", "SUPER_ADMIN"];
@@ -117,46 +111,41 @@ const adminRoutes = [
 
   // System Setup page
 
-  {
-    path: "/admin/setup/cluster",
-    element: <Cluster />,
-    role: adminRoles,
-  },
-  {
-    path: "/admin/setup/department",
-    element: <Department />,
-    role: adminRoles,
-  },
-  {
-    path: "/admin/setup/position",
-    element: <Position />,
-    role: adminRoles,
-  },
-  {
-    path: "/admin/setup/employment-status",
-    element: <EmploymentStatus />,
-    role: adminRoles,
-  },
-  {
-    path: "/admin/setup/religion",
-    element: <Religion />,
-    role: adminRoles,
-  },
-  {
-    path: "/admin/setup/shift-templates",
-    element: <ShiftTemplates />,
-    role: adminRoles,
-  },
-  {
-    path: "/admin/setup/notification-settings",
-    element: <NotificationSettings />,
-    role: adminRoles,
-  },
-  {
-    path: "/admin/setup/holiday",
-    element: <Holiday />,
-    role: adminRoles,
-  },
+  // {
+  //   path: "/admin/setup/cluster",
+  //   element: <Cluster />,
+  //   role: adminRoles,
+  // },
+  // {
+  //   path: "/admin/setup/department",
+  //   element: <Department />,
+  //   role: adminRoles,
+  // },
+  // {
+  //   path: "/admin/setup/position",
+  //   element: <Position />,
+  //   role: adminRoles,
+  // },
+  // {
+  //   path: "/admin/setup/employment-status",
+  //   element: <EmploymentStatus />,
+  //   role: adminRoles,
+  // },
+  // {
+  //   path: "/admin/setup/religion",
+  //   element: <Religion />,
+  //   role: adminRoles,
+  // },
+  // {
+  //   path: "/admin/setup/shift-templates",
+  //   element: <ShiftTemplates />,
+  //   role: adminRoles,
+  // },
+  // {
+  //   path: "/admin/setup/notification-settings",
+  //   element: <NotificationSettings />,
+  //   role: adminRoles,
+  // },
 ];
 
 export default adminRoutes;

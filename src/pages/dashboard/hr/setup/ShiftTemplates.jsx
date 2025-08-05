@@ -19,9 +19,9 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { PropagateLoader } from "react-spinners";
-import { buttonOverrideStyle } from "./../../../../utils/utils";
-import Search from "./../../../../components/Search";
-import Pagination from "./../../../../components/Pagination";
+import { buttonOverrideStyle } from "../../../../utils/utils";
+import Search from "../../../../components/Search";
+import Pagination from "../../../../components/Pagination";
 import { formatTimeTo12HourPH } from "../../../../utils/phDateUtils";
 
 const shiftColors = [
