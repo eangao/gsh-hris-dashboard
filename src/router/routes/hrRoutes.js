@@ -81,7 +81,9 @@ const Department = lazy(() =>
 const EmploymentStatus = lazy(() =>
   import("../../pages/dashboard/admin/setup/EmploymentStatus")
 );
-const Holiday = lazy(() => import("../../pages/dashboard/admin/setup/Holiday"));
+const Holiday = lazy(() =>
+  import("../../pages/dashboard/admin/setup/HolidayManagement")
+);
 
 const Position = lazy(() =>
   import("../../pages/dashboard/admin/setup/Position")
@@ -228,38 +230,38 @@ const hrRoutes = [
   {
     path: "/hr/setup/cluster",
     element: <Cluster />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/setup/department",
     element: <Department />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/setup/position",
     element: <Position />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/setup/employment-status",
     element: <EmploymentStatus />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/setup/religion",
     element: <Religion />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
   {
     path: "/hr/setup/shift-templates",
     element: <ShiftTemplates />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
 
   {
     path: "/hr/setup/holiday",
     element: <Holiday />,
-    role: ["HR_ADMIN", "SUPER_ADMIN"],
+    role: hrRoles,
   },
 ];
 

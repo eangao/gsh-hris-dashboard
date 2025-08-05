@@ -41,7 +41,9 @@ const Department = lazy(() =>
 const EmploymentStatus = lazy(() =>
   import("../../pages/dashboard/admin/setup/EmploymentStatus")
 );
-const Holiday = lazy(() => import("../../pages/dashboard/admin/setup/Holiday"));
+const Holiday = lazy(() =>
+  import("../../pages/dashboard/admin/setup/HolidayManagement")
+);
 const NotificationSettings = lazy(() =>
   import("../../pages/dashboard/admin/setup/NotificationSettings")
 );
@@ -55,61 +57,62 @@ const ShiftTemplates = lazy(() =>
   import("../../pages/dashboard/admin/setup/ShiftTemplates")
 );
 
+const adminRoles = ["ADMIN", "SUPER_ADMIN"];
 const adminRoutes = [
   {
     path: "/admin/dashboard",
     element: <AdminDashboard />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/analytics",
     element: <DashboardAnalytics />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/notifications",
     element: <AdminNotifications />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/users",
     element: <UserManagement />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/login-activity",
     element: <LoginActivity />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/audit-logs",
     element: <AuditLogs />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/system-settings",
     element: <SystemSettings />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/integrations",
     element: <IntegrationSettings />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/feature-toggle",
     element: <FeatureToggleManager />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/backup-recovery",
     element: <BackupRecovery />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/system-logs",
     element: <SystemLogs />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
 
   // System Setup page
@@ -117,42 +120,42 @@ const adminRoutes = [
   {
     path: "/admin/setup/cluster",
     element: <Cluster />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/setup/department",
     element: <Department />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/setup/position",
     element: <Position />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/setup/employment-status",
     element: <EmploymentStatus />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/setup/religion",
     element: <Religion />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/setup/shift-templates",
     element: <ShiftTemplates />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/setup/notification-settings",
     element: <NotificationSettings />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
   {
     path: "/admin/setup/holiday",
     element: <Holiday />,
-    role: ["ADMIN", "SUPER_ADMIN"],
+    role: adminRoles,
   },
 ];
 

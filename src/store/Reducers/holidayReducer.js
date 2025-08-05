@@ -1,13 +1,48 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../api/api";
 
-// Async thunks for API calls
+// Async Thunks
 export const fetchHolidays = createAsyncThunk(
-  "holidays/fetchHolidays",
-  async (_, { rejectWithValue }) => {
+  "holiday/fetchHolidays",
+  async (
+    { perPage, page, searchValue, type, scope, status, year },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
     try {
-      const response = await api.get("/holidays");
-      return response.data;
+      const params = new URLSearchParams({
+        page: page.toString(),
+        perPage: perPage.toString(),
+        searchValue: searchValue || "",
+      });
+
+      if (type) params.append("type", type);
+      if (scope) params.append("scope", scope);
+      if (status) params.append("status", status);
+      if (year) params.append("year", year);
+
+      const { data } = await api.get(
+        `/hris/reference-data/holidays?${params.toString()}`,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const fetchAllHolidays = createAsyncThunk(
+  "holiday/fetchAllHolidays",
+  async (_, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.get("/hris/reference-data/holidays/options", {
+        withCredentials: true,
+      });
+
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -15,11 +50,18 @@ export const fetchHolidays = createAsyncThunk(
 );
 
 export const createHoliday = createAsyncThunk(
-  "holidays/createHoliday",
-  async (holidayData, { rejectWithValue }) => {
+  "holiday/createHoliday",
+  async (holidayData, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const response = await api.post("/holidays", holidayData);
-      return response.data;
+      const { data } = await api.post(
+        "/hris/reference-data/holidays",
+        holidayData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -27,11 +69,18 @@ export const createHoliday = createAsyncThunk(
 );
 
 export const updateHoliday = createAsyncThunk(
-  "holidays/updateHoliday",
-  async ({ id, holidayData }, { rejectWithValue }) => {
+  "holiday/updateHoliday",
+  async ({ _id, ...holidayData }, { rejectWithValue, fulfillWithValue }) => {
     try {
-      const response = await api.put(`/holidays/${id}`, holidayData);
-      return response.data;
+      const { data } = await api.put(
+        `/hris/reference-data/holidays/${_id}`,
+        holidayData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -39,11 +88,14 @@ export const updateHoliday = createAsyncThunk(
 );
 
 export const deleteHoliday = createAsyncThunk(
-  "holidays/deleteHoliday",
-  async (id, { rejectWithValue }) => {
+  "holiday/deleteHoliday",
+  async (id, { rejectWithValue, fulfillWithValue }) => {
     try {
-      await api.delete(`/holidays/${id}`);
-      return id;
+      const { data } = await api.delete(`/hris/reference-data/holidays/${id}`, {
+        withCredentials: true,
+      });
+
+      return fulfillWithValue(data);
     } catch (error) {
       return rejectWithValue(error.response.data);
     }
@@ -51,94 +103,86 @@ export const deleteHoliday = createAsyncThunk(
 );
 
 const holidaySlice = createSlice({
-  name: "holidays",
+  name: "holiday",
   initialState: {
-    holidays: [],
     loading: false,
-    error: null,
-    success: false,
-    message: "",
+    successMessage: "",
+    errorMessage: "",
+    holidays: [],
+    holiday: null,
+    totalHoliday: 0,
   },
   reducers: {
     messageClear: (state) => {
-      state.error = null;
-      state.success = false;
-      state.message = "";
+      state.errorMessage = "";
+      state.successMessage = "";
     },
     clearState: (state) => {
-      state.holidays = [];
       state.loading = false;
-      state.error = null;
-      state.success = false;
-      state.message = "";
+      state.successMessage = "";
+      state.errorMessage = "";
+      state.holidays = [];
+      state.holiday = null;
+      state.totalHoliday = 0;
     },
   },
   extraReducers: (builder) => {
+    // Fetch Holidays
+    builder.addCase(fetchHolidays.fulfilled, (state, { payload }) => {
+      state.totalHoliday = payload.totalHolidays;
+      state.holidays = payload.holidays;
+    });
+
+    // Fetch All Holidays
+    builder.addCase(fetchAllHolidays.fulfilled, (state, { payload }) => {
+      state.holidays = payload.holidays;
+    });
+
+    // Create Holiday
     builder
-      // Fetch holidays
-      .addCase(fetchHolidays.pending, (state) => {
+      .addCase(createHoliday.pending, (state, { payload }) => {
         state.loading = true;
-        state.error = null;
       })
-      .addCase(fetchHolidays.fulfilled, (state, action) => {
+      .addCase(createHoliday.rejected, (state, { payload }) => {
         state.loading = false;
-        state.holidays = Array.isArray(action.payload) ? action.payload : [];
+        state.errorMessage = payload.error;
       })
-      .addCase(fetchHolidays.rejected, (state, action) => {
+      .addCase(createHoliday.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.error = action.payload?.message;
-      })
-      // Create holiday
-      .addCase(createHoliday.pending, (state) => {
+        state.successMessage = payload.message;
+      });
+
+    // Update Holiday
+    builder
+      .addCase(updateHoliday.pending, (state, { payload }) => {
         state.loading = true;
-        state.error = null;
       })
-      .addCase(createHoliday.fulfilled, (state, action) => {
+      .addCase(updateHoliday.rejected, (state, { payload }) => {
         state.loading = false;
-        state.success = true;
-        state.message = "Holiday created successfully";
-        state.holidays.push(action.payload);
+        state.errorMessage = payload.error;
       })
-      .addCase(createHoliday.rejected, (state, action) => {
+      .addCase(updateHoliday.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.error = action.payload?.message;
-      })
-      // Update holiday
-      .addCase(updateHoliday.pending, (state) => {
+        state.successMessage = payload.message;
+      });
+
+    // Delete Holiday
+    builder
+      .addCase(deleteHoliday.pending, (state, { payload }) => {
         state.loading = true;
-        state.error = null;
       })
-      .addCase(updateHoliday.fulfilled, (state, action) => {
+      .addCase(deleteHoliday.rejected, (state, { payload }) => {
         state.loading = false;
-        state.success = true;
-        state.message = "Holiday updated successfully";
-        const index = state.holidays.findIndex(
-          (holiday) => holiday.id === action.payload.id
-        );
-        if (index !== -1) {
-          state.holidays[index] = action.payload;
-        }
+        state.errorMessage = payload.error;
       })
-      .addCase(updateHoliday.rejected, (state, action) => {
+      .addCase(deleteHoliday.fulfilled, (state, { payload }) => {
         state.loading = false;
-        state.error = action.payload?.message;
-      })
-      // Delete holiday
-      .addCase(deleteHoliday.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deleteHoliday.fulfilled, (state, action) => {
-        state.loading = false;
-        state.success = true;
-        state.message = "Holiday deleted successfully";
+        state.successMessage = payload.message;
+
+        // Remove the deleted holiday from the state
         state.holidays = state.holidays.filter(
-          (holiday) => holiday.id !== action.payload
+          (holiday) => holiday._id !== payload.holidayId
         );
-      })
-      .addCase(deleteHoliday.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.message;
       });
   },
 });
