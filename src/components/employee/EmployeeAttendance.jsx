@@ -10,6 +10,240 @@ import Pagination from "../Pagination";
 import EmployeeSearchFrontend from "../EmployeeSearchFrontend";
 import LoadingIndicator from "../LoadingIndicator";
 
+// Helper function to format schedule based on scheduleType
+const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
+  if (!attendance.scheduleType) {
+    return (
+      <div className="text-gray-500 text-sm">
+        {attendance.scheduleString || "-"}
+      </div>
+    );
+  }
+
+  const baseClasses = isDesktop ? "text-sm" : "font-semibold";
+
+  switch (attendance.scheduleType) {
+    case "duty":
+      if (attendance.shiftTemplate) {
+        if (attendance.shiftTemplate.type === "Standard") {
+          const morningIn = formatTimeTo12HourPH(
+            attendance.shiftTemplate.morningIn
+          );
+          const morningOut = formatTimeTo12HourPH(
+            attendance.shiftTemplate.morningOut
+          );
+          const afternoonIn = formatTimeTo12HourPH(
+            attendance.shiftTemplate.afternoonIn
+          );
+          const afternoonOut = formatTimeTo12HourPH(
+            attendance.shiftTemplate.afternoonOut
+          );
+
+          return (
+            <div className={`${baseClasses} space-y-1`}>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                <span className="text-blue-800">
+                  {morningIn} - {morningOut}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
+                <span className="text-blue-800">
+                  {afternoonIn} - {afternoonOut}
+                </span>
+              </div>
+              {!isDesktop && (
+                <div className="flex items-center gap-1 mt-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3 w-3 text-blue-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-xs text-blue-600 font-medium">
+                    Standard Shift
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        } else if (attendance.shiftTemplate.type === "Shifting") {
+          const startTime = formatTimeTo12HourPH(
+            attendance.shiftTemplate.startTime
+          );
+          const endTime = formatTimeTo12HourPH(
+            attendance.shiftTemplate.endTime
+          );
+
+          return (
+            <div className={`${baseClasses}`}>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-cyan-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-cyan-800 whitespace-nowrap">
+                    {startTime} - {endTime}
+                  </span>
+                </div>
+              </div>
+              {!isDesktop && (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-xs text-cyan-600 font-medium">
+                    Shifting Schedule
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+      }
+      return (
+        <div className={`${baseClasses} flex items-center gap-2`}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 text-blue-600"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-blue-800 font-medium">Duty</span>
+        </div>
+      );
+
+    case "off":
+      return (
+        <div className={`${baseClasses} flex items-center gap-2`}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 text-gray-500"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span className="text-gray-800 font-medium">Off</span>
+        </div>
+      );
+
+    case "holiday_off":
+      return (
+        <div className={`${baseClasses} space-y-1`}>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-red-500"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732L14.146 12.8l-1.179 4.456a1 1 0 01-1.934 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732L9.854 7.2l1.179-4.456A1 1 0 0112 2z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
+            </div>
+            <span className="text-red-700 font-semibold uppercase text-xs">
+              Holiday Off
+            </span>
+          </div>
+        </div>
+      );
+
+    case "leave":
+      return (
+        <div className={`${baseClasses} space-y-1`}>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-amber-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                <path
+                  fillRule="evenodd"
+                  d="M4 5a2 2 0 012-2v1a2 2 0 002 2h4a2 2 0 002-2V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+            <span className="text-amber-700 font-semibold uppercase text-xs">
+              {attendance.leaveTemplate?.name || "Leave"}
+            </span>
+          </div>
+          {attendance.leaveTemplate?.category && (
+            <div className="text-xs pl-6 space-y-0.5">
+              <div className="text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded-md border-l-2 border-amber-300 capitalize">
+                🏖️ {attendance.leaveTemplate.category}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
+    default:
+      return (
+        <div className={`${baseClasses} text-gray-500`}>
+          {attendance.scheduleString || "-"}
+        </div>
+      );
+  }
+};
+
+// Helper function to get row background color based on schedule type
+const getRowBackgroundColor = (attendance, holidays) => {
+  // Removed holiday background logic per user request
+  // Apply default background for all rows
+  return "bg-white hover:bg-gray-50";
+};
+
+// Helper function to get holiday information for a specific date
+const getHolidayInfo = (attendance, holidays) => {
+  if (!attendance?.datePH || !holidays?.length) return null;
+
+  // Use formatDatePH to get consistent YYYY-MM-DD format from attendance datePH
+  const attendanceDateFormatted = formatDatePH(attendance.datePH);
+  if (!attendanceDateFormatted) return null;
+
+  const holiday = holidays.find((holiday) => {
+    // Use formatDatePH to format holiday date for consistent comparison
+    const holidayDateFormatted = formatDatePH(holiday.date);
+    return holidayDateFormatted === attendanceDateFormatted;
+  });
+
+  return holiday || null;
+};
+
 const EmployeeAttendance = ({
   // Essential data props
   departments,
@@ -43,6 +277,9 @@ const EmployeeAttendance = ({
 
   // Error handling
   errorMessage,
+
+  // Holiday data
+  holidays,
 
   // View type - determines if this is individual employee view
   isIndividualView = false,
@@ -87,26 +324,40 @@ const EmployeeAttendance = ({
   const StatusBadge = ({ status, lateMinutes = 0 }) => {
     const getStatusConfig = (status, lateMinutes) => {
       switch (status) {
-        case "Present":
-          return {
-            bg: "bg-green-100",
-            text: "text-green-800",
-            border: "border-green-200",
-            label: "Present",
-          };
-        case "On Duty":
+        case "Duty":
           return {
             bg: "bg-blue-100",
             text: "text-blue-800",
             border: "border-blue-200",
+            label: "Duty",
+          };
+        case "On Duty":
+          return {
+            bg: "bg-cyan-100",
+            text: "text-cyan-800",
+            border: "border-cyan-200",
             label: "On Duty",
           };
-        case "Late":
+        case "Off":
+          return {
+            bg: "bg-gray-100",
+            text: "text-gray-800",
+            border: "border-gray-200",
+            label: "Off",
+          };
+        case "Holiday Off":
+          return {
+            bg: "bg-orange-100",
+            text: "text-orange-800",
+            border: "border-orange-200",
+            label: "Holiday Off",
+          };
+        case "Leave":
           return {
             bg: "bg-yellow-100",
             text: "text-yellow-800",
             border: "border-yellow-200",
-            label: `Late (${lateMinutes}m)`,
+            label: "Leave",
           };
         case "Absent":
           return {
@@ -115,12 +366,20 @@ const EmployeeAttendance = ({
             border: "border-red-200",
             label: "Absent",
           };
-        case "Off":
+        // Legacy status handling for backward compatibility
+        case "Present":
           return {
-            bg: "bg-gray-100",
-            text: "text-gray-800",
-            border: "border-gray-200",
-            label: "Off",
+            bg: "bg-green-100",
+            text: "text-green-800",
+            border: "border-green-200",
+            label: "Present",
+          };
+        case "Late":
+          return {
+            bg: "bg-yellow-100",
+            text: "text-yellow-800",
+            border: "border-yellow-200",
+            label: `Late (${lateMinutes}m)`,
           };
         case "Incomplete":
           return {
@@ -145,10 +404,10 @@ const EmployeeAttendance = ({
           };
         default:
           return {
-            bg: "bg-gray-100",
-            text: "text-gray-800",
-            border: "border-gray-200",
-            label: status || "Unknown", // Use the actual status from backend or "Unknown" as fallback
+            bg: "bg-purple-100",
+            text: "text-purple-800",
+            border: "border-purple-200",
+            label: status || "Others", // Use the actual status from backend or "Others" as fallback
           };
       }
     };
@@ -495,101 +754,146 @@ const EmployeeAttendance = ({
             {attendances && attendances.length > 0 && !loading && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-4 border-b border-gray-200">
                 <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-gray-700">
-                      Present:{" "}
-                      <span className="font-semibold text-green-700">
-                        {
-                          attendances.filter((a) => {
-                            return a.status === "Present";
-                          }).length
-                        }
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-gray-700">
-                      Late:{" "}
-                      <span className="font-semibold text-yellow-700">
-                        {
-                          attendances.filter((a) => {
-                            return a.status === "Late";
-                          }).length
-                        }
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-gray-700">
-                      Absent:{" "}
-                      <span className="font-semibold text-red-700">
-                        {
-                          attendances.filter((a) => {
-                            return a.status === "Absent";
-                          }).length
-                        }
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gray-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-gray-700">
-                      Off:{" "}
-                      <span className="font-semibold text-gray-700">
-                        {
-                          attendances.filter((a) => {
-                            return a.status === "Off";
-                          }).length
-                        }
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-gray-700">
-                      On Duty:{" "}
-                      <span className="font-semibold text-blue-700">
-                        {
-                          attendances.filter((a) => {
-                            return a.status === "On Duty";
-                          }).length
-                        }
-                      </span>
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-gray-700">
-                      Other:{" "}
-                      <span className="font-semibold text-orange-700">
-                        {
-                          attendances.filter((a) => {
-                            return (
-                              a.status === "Incomplete" ||
-                              a.status === "No Show" ||
-                              a.status === "Scheduled" ||
-                              ![
-                                "Present",
-                                "Late",
-                                "Absent",
-                                "Off",
-                                "On Duty",
-                              ].includes(a.status)
-                            );
-                          }).length
-                        }
-                      </span>
-                    </span>
-                  </div>
+                  {/* Duty */}
+                  {(() => {
+                    const count = attendances.filter(
+                      (a) => a.status === "Duty"
+                    ).length;
+                    return count > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700">
+                          Duty:{" "}
+                          <span className="font-semibold text-blue-700">
+                            {count}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* On Duty */}
+                  {(() => {
+                    const count = attendances.filter(
+                      (a) => a.status === "On Duty"
+                    ).length;
+                    return count > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-cyan-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700">
+                          On Duty:{" "}
+                          <span className="font-semibold text-cyan-700">
+                            {count}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Off */}
+                  {(() => {
+                    const count = attendances.filter(
+                      (a) => a.status === "Off"
+                    ).length;
+                    return count > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gray-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700">
+                          Off:{" "}
+                          <span className="font-semibold text-gray-700">
+                            {count}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Holiday Off */}
+                  {(() => {
+                    const count = attendances.filter(
+                      (a) => a.status === "Holiday Off"
+                    ).length;
+                    return count > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700">
+                          Holiday Off:{" "}
+                          <span className="font-semibold text-orange-700">
+                            {count}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Leave */}
+                  {(() => {
+                    const count = attendances.filter(
+                      (a) => a.status === "Leave"
+                    ).length;
+                    return count > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700">
+                          Leave:{" "}
+                          <span className="font-semibold text-yellow-700">
+                            {count}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Absent */}
+                  {(() => {
+                    const count = attendances.filter(
+                      (a) => a.status === "Absent"
+                    ).length;
+                    return count > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700">
+                          Absent:{" "}
+                          <span className="font-semibold text-red-700">
+                            {count}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
+                  {/* Others */}
+                  {(() => {
+                    const count = attendances.filter(
+                      (a) =>
+                        ![
+                          "Duty",
+                          "On Duty",
+                          "Off",
+                          "Holiday Off",
+                          "Leave",
+                          "Absent",
+                        ].includes(a.status)
+                    ).length;
+                    return count > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
+                        <span className="text-gray-700">
+                          Others:{" "}
+                          <span className="font-semibold text-purple-700">
+                            {count}
+                          </span>
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
+
                   {/* Total Count */}
                   <div className="flex items-center gap-2 border-l border-gray-300 pl-4 col-span-2 sm:col-span-1">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                    <div className="w-3 h-3 bg-indigo-500 rounded-full flex-shrink-0"></div>
                     <span className="text-gray-700">
                       Total:{" "}
-                      <span className="font-semibold text-blue-700">
+                      <span className="font-semibold text-indigo-700">
                         {attendances.length}
                       </span>
                     </span>
@@ -604,7 +908,7 @@ const EmployeeAttendance = ({
                 <div
                   className="grid gap-2 text-sm font-semibold text-gray-700"
                   style={{
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                    gridTemplateColumns: "2fr 1fr 1.2fr 1fr 1fr 1fr 1fr 1fr",
                   }}
                 >
                   <div className="flex items-center">
@@ -742,7 +1046,10 @@ const EmployeeAttendance = ({
                           attendance._id ||
                           `${attendance.datePH || attendance.date}-${idx}`
                         }
-                        className="p-4 border-b border-gray-200 last:border-b-0"
+                        className={`p-4 border-b border-gray-200 last:border-b-0 transition-colors ${getRowBackgroundColor(
+                          attendance,
+                          holidays
+                        )}`}
                       >
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-3">
                           {/* Employee Info Header */}
@@ -809,6 +1116,22 @@ const EmployeeAttendance = ({
                                 "dddd"
                               )}
                             </div>
+                            {(() => {
+                              const holidayInfo = getHolidayInfo(
+                                attendance,
+                                holidays
+                              );
+                              return holidayInfo ? (
+                                <div className="mt-2">
+                                  <div className="text-xs font-semibold text-red-600 uppercase">
+                                    {holidayInfo.name}
+                                  </div>
+                                  <div className="text-xs text-red-400 font-medium">
+                                    {holidayInfo.type}
+                                  </div>
+                                </div>
+                              ) : null;
+                            })()}
                           </div>
 
                           {/* Schedule */}
@@ -830,21 +1153,10 @@ const EmployeeAttendance = ({
                                 Schedule
                               </span>
                             </div>
-                            <div className="font-semibold text-gray-900">
-                              {attendance.scheduleString ||
-                                (attendance.dutySchedule &&
-                                attendance.dutySchedule[0]?.workSchedule
-                                  ? `${formatTimeTo12HourPH(
-                                      attendance.dutySchedule[0].workSchedule
-                                        .startTime
-                                    )} - ${formatTimeTo12HourPH(
-                                      attendance.dutySchedule[0].workSchedule
-                                        .endTime
-                                    )}`
-                                  : attendance.status === "Off"
-                                  ? "Off"
-                                  : "-")}
-                            </div>
+                            <ScheduleDisplay
+                              attendance={attendance}
+                              isDesktop={false}
+                            />
                           </div>
 
                           {/* Time In */}
@@ -867,37 +1179,48 @@ const EmployeeAttendance = ({
                               </span>
                             </div>
                             <div>
-                              {attendance.shiftType === "Standard" ? (
+                              {attendance.shiftTemplate?.type === "Standard" ? (
                                 <div className="space-y-1">
-                                  {attendance.morningInLog && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs text-gray-600 font-medium min-w-[65px]">
-                                        Morning:
-                                      </span>
-                                      <TimeDisplay
-                                        time={attendance.morningInLog}
-                                        type="in"
-                                      />
-                                    </div>
-                                  )}
-                                  {attendance.afternoonInLog && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs text-gray-600 font-medium min-w-[65px]">
-                                        Afternoon:
-                                      </span>
-                                      <TimeDisplay
-                                        time={attendance.afternoonInLog}
-                                        type="in"
-                                      />
-                                    </div>
-                                  )}
-                                  {!attendance.morningInLog &&
-                                    !attendance.afternoonInLog && (
-                                      <TimeDisplay
-                                        time={attendance.timeIn}
-                                        type="in"
-                                      />
-                                    )}
+                                  {/* Morning In - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-yellow-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      AM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.morningInLog}
+                                      type="in"
+                                    />
+                                  </div>
+                                  {/* Afternoon In - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-blue-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                      </svg>
+                                      PM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.afternoonInLog}
+                                      type="in"
+                                    />
+                                  </div>
                                 </div>
                               ) : (
                                 <TimeDisplay
@@ -928,37 +1251,48 @@ const EmployeeAttendance = ({
                               </span>
                             </div>
                             <div>
-                              {attendance.shiftType === "Standard" ? (
+                              {attendance.shiftTemplate?.type === "Standard" ? (
                                 <div className="space-y-1">
-                                  {attendance.morningOutLog && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs text-gray-600 font-medium min-w-[65px]">
-                                        Morning:
-                                      </span>
-                                      <TimeDisplay
-                                        time={attendance.morningOutLog}
-                                        type="out"
-                                      />
-                                    </div>
-                                  )}
-                                  {attendance.afternoonOutLog && (
-                                    <div className="flex items-center gap-1">
-                                      <span className="text-xs text-gray-600 font-medium min-w-[65px]">
-                                        Afternoon:
-                                      </span>
-                                      <TimeDisplay
-                                        time={attendance.afternoonOutLog}
-                                        type="out"
-                                      />
-                                    </div>
-                                  )}
-                                  {!attendance.morningOutLog &&
-                                    !attendance.afternoonOutLog && (
-                                      <TimeDisplay
-                                        time={attendance.timeOut}
-                                        type="out"
-                                      />
-                                    )}
+                                  {/* Morning Out - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-yellow-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      AM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.morningOutLog}
+                                      type="out"
+                                    />
+                                  </div>
+                                  {/* Afternoon Out - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-blue-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                      </svg>
+                                      PM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.afternoonOutLog}
+                                      type="out"
+                                    />
+                                  </div>
                                 </div>
                               ) : (
                                 <TimeDisplay
@@ -999,12 +1333,37 @@ const EmployeeAttendance = ({
                                 <div className="space-y-1">
                                   {attendance.morningLateMinutes > 0 && (
                                     <div className="text-sm text-red-700 font-semibold">
-                                      Morning: {attendance.morningLateMinutes}m
+                                      <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded mr-2 inline-flex items-center gap-0.5">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3 text-yellow-200"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                        AM
+                                      </span>
+                                      {attendance.morningLateMinutes}m
                                     </div>
                                   )}
                                   {attendance.afternoonLateMinutes > 0 && (
                                     <div className="text-sm text-red-700 font-semibold">
-                                      Afternoon:{" "}
+                                      <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded mr-2 inline-flex items-center gap-0.5">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3 text-blue-200"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
+                                        >
+                                          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                        </svg>
+                                        PM
+                                      </span>
                                       {attendance.afternoonLateMinutes}m
                                     </div>
                                   )}
@@ -1056,13 +1415,16 @@ const EmployeeAttendance = ({
                           attendance._id ||
                           `${attendance.datePH || attendance.date}-${idx}`
                         }
-                        className="px-6 py-4 hover:bg-gray-50 transition-colors"
+                        className={`px-6 py-4 transition-colors ${getRowBackgroundColor(
+                          attendance,
+                          holidays
+                        )}`}
                       >
                         <div
                           className="grid gap-4 items-center text-sm"
                           style={{
                             gridTemplateColumns:
-                              "2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                              "2fr 1fr 1.2fr 1fr 1fr 1fr 1fr 1fr",
                           }}
                         >
                           {/* Employee Name */}
@@ -1103,59 +1465,77 @@ const EmployeeAttendance = ({
                                 "dddd"
                               )}
                             </div>
+                            {(() => {
+                              const holidayInfo = getHolidayInfo(
+                                attendance,
+                                holidays
+                              );
+                              return holidayInfo ? (
+                                <div className="mt-1">
+                                  <div className="text-xs font-semibold text-red-600 uppercase">
+                                    {holidayInfo.name}
+                                  </div>
+                                  <div className="text-xs text-red-400 font-medium">
+                                    {holidayInfo.type}
+                                  </div>
+                                </div>
+                              ) : null;
+                            })()}
                           </div>
 
                           {/* Schedule */}
-                          <div className="text-gray-700 ">
-                            {attendance.scheduleString ||
-                              (attendance.dutySchedule &&
-                              attendance.dutySchedule[0]?.workSchedule
-                                ? `${formatTimeTo12HourPH(
-                                    attendance.dutySchedule[0].workSchedule
-                                      .startTime
-                                  )} - ${formatTimeTo12HourPH(
-                                    attendance.dutySchedule[0].workSchedule
-                                      .endTime
-                                  )}`
-                                : attendance.status === "Off"
-                                ? "Off"
-                                : "-")}
+                          <div className="text-gray-700">
+                            <ScheduleDisplay
+                              attendance={attendance}
+                              isDesktop={true}
+                            />
                           </div>
 
                           {/* Time In */}
                           <div>
-                            {attendance.shiftType === "Standard" ? (
+                            {attendance.shiftTemplate?.type === "Standard" ? (
                               // For Standard shifts, show morning and afternoon separately
                               <div className="space-y-1">
-                                {attendance.morningInLog && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-gray-500 font-medium min-w-[60px]">
-                                      Morning:
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.morningInLog}
-                                      type="in"
-                                    />
-                                  </div>
-                                )}
-                                {attendance.afternoonInLog && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-gray-500 font-medium min-w-[60px]">
-                                      Afternoon:
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.afternoonInLog}
-                                      type="in"
-                                    />
-                                  </div>
-                                )}
-                                {!attendance.morningInLog &&
-                                  !attendance.afternoonInLog && (
-                                    <TimeDisplay
-                                      time={attendance.timeIn}
-                                      type="in"
-                                    />
-                                  )}
+                                {/* Morning In - Always show for Standard */}
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3 w-3 text-yellow-200"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                    AM
+                                  </span>
+                                  <TimeDisplay
+                                    time={attendance.morningInLog}
+                                    type="in"
+                                  />
+                                </div>
+                                {/* Afternoon In - Always show for Standard */}
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3 w-3 text-blue-200"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                    >
+                                      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                    </svg>
+                                    PM
+                                  </span>
+                                  <TimeDisplay
+                                    time={attendance.afternoonInLog}
+                                    type="in"
+                                  />
+                                </div>
                               </div>
                             ) : (
                               // For Shifting shifts, show single time in
@@ -1165,38 +1545,49 @@ const EmployeeAttendance = ({
 
                           {/* Time Out */}
                           <div>
-                            {attendance.shiftType === "Standard" ? (
+                            {attendance.shiftTemplate?.type === "Standard" ? (
                               // For Standard shifts, show morning and afternoon separately
                               <div className="space-y-1">
-                                {attendance.morningOutLog && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-gray-500 min-w-[60px]">
-                                      Morning:
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.morningOutLog}
-                                      type="out"
-                                    />
-                                  </div>
-                                )}
-                                {attendance.afternoonOutLog && (
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-gray-500  min-w-[60px]">
-                                      Afternoon:
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.afternoonOutLog}
-                                      type="out"
-                                    />
-                                  </div>
-                                )}
-                                {!attendance.morningOutLog &&
-                                  !attendance.afternoonOutLog && (
-                                    <TimeDisplay
-                                      time={attendance.timeOut}
-                                      type="out"
-                                    />
-                                  )}
+                                {/* Morning Out - Always show for Standard */}
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3 w-3 text-yellow-200"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                    >
+                                      <path
+                                        fillRule="evenodd"
+                                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                        clipRule="evenodd"
+                                      />
+                                    </svg>
+                                    AM
+                                  </span>
+                                  <TimeDisplay
+                                    time={attendance.morningOutLog}
+                                    type="out"
+                                  />
+                                </div>
+                                {/* Afternoon Out - Always show for Standard */}
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-3 w-3 text-blue-200"
+                                      viewBox="0 0 20 20"
+                                      fill="currentColor"
+                                    >
+                                      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                    </svg>
+                                    PM
+                                  </span>
+                                  <TimeDisplay
+                                    time={attendance.afternoonOutLog}
+                                    type="out"
+                                  />
+                                </div>
                               </div>
                             ) : (
                               // For Shifting shifts, show single time out
@@ -1221,14 +1612,43 @@ const EmployeeAttendance = ({
                             attendance.afternoonLateMinutes > 0 ? (
                               <div className="space-y-1">
                                 {attendance.morningLateMinutes > 0 && (
-                                  <div className="text-xs text-red-600 font-medium">
-                                    Morning: {attendance.morningLateMinutes}m
+                                  <div className="text-xs text-red-600 font-medium flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded inline-flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-yellow-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      AM
+                                    </span>
+                                    <span>
+                                      {attendance.morningLateMinutes}m
+                                    </span>
                                   </div>
                                 )}
                                 {attendance.afternoonLateMinutes > 0 && (
-                                  <div className="text-xs text-red-600 font-medium">
-                                    Afternoon: {attendance.afternoonLateMinutes}
-                                    m
+                                  <div className="text-xs text-red-600 font-medium flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-blue-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                      </svg>
+                                      PM
+                                    </span>
+                                    <span>
+                                      {attendance.afternoonLateMinutes}m
+                                    </span>
                                   </div>
                                 )}
                               </div>

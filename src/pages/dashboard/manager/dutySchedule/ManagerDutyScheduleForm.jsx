@@ -10,7 +10,7 @@ import {
 import { fetchAllShiftTemplates } from "../../../../store/Reducers/shiftTemplateReducer";
 import { fetchEmployeesByDepartment } from "../../../../store/Reducers/employeeReducer";
 import { fetchDepartmentById } from "../../../../store/Reducers/departmentReducer";
-import { fetchHolidaysForLocation } from "../../../../store/Reducers/holidayReducer";
+import { fetchHolidaysDateRange } from "../../../../store/Reducers/holidayReducer";
 
 import toast from "react-hot-toast";
 import { PropagateLoader } from "react-spinners";
@@ -29,6 +29,7 @@ import {
   formatMonthYearPH,
   formatMonthSchedulePH,
 } from "../../../../utils/phDateUtils";
+import { fetchAllLeaveTemplates } from "store/Reducers/leaveTemplateReducer";
 
 const ManagerDutyScheduleForm = () => {
   const dispatch = useDispatch();
@@ -52,8 +53,9 @@ const ManagerDutyScheduleForm = () => {
   const { employees } = useSelector((state) => state.employee); // Only for select options
   const { shiftTemplates } = useSelector((state) => state.shiftTemplate); // Only for select options
   const { department } = useSelector((state) => state.department);
-
   const { holidays } = useSelector((state) => state.holiday);
+
+  const { leaveTemplates } = useSelector((state) => state.leaveTemplates);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
   const [days, setDays] = useState([]);
@@ -62,7 +64,9 @@ const ManagerDutyScheduleForm = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [employeeInput, setEmployeeInput] = useState("");
+  const [scheduleType, setScheduleType] = useState("duty"); // New: duty, off, leave, holiday_off
   const [selectedShift, setSelectedShift] = useState("");
+  const [selectedLeave, setSelectedLeave] = useState(""); // New: for leave template
   const [description, setDescription] = useState("");
 
   const [localDutySchedule, setLocalDutySchedule] = useState({
@@ -79,6 +83,8 @@ const ManagerDutyScheduleForm = () => {
 
   const [shiftError, setShiftError] = useState("");
   const [employeeError, setEmployeeError] = useState("");
+  const [typeError, setTypeError] = useState(""); // New: for schedule type validation
+  const [leaveError, setLeaveError] = useState(""); // New: for leave template validation
 
   const weekDays = [
     { day: "Sun", isWeekend: true },
@@ -93,6 +99,7 @@ const ManagerDutyScheduleForm = () => {
   // Load initial data and duty schedule if in edit mode
   useEffect(() => {
     dispatch(fetchAllShiftTemplates());
+    dispatch(fetchAllLeaveTemplates());
 
     if (departmentId) {
       dispatch(fetchEmployeesByDepartment(departmentId));
@@ -107,28 +114,18 @@ const ManagerDutyScheduleForm = () => {
   // Fetch holidays when localDutySchedule dates are available
   useEffect(() => {
     if (localDutySchedule.startDate && localDutySchedule.endDate) {
-      console.log("=== Testing fetchHolidaysForLocation ===");
-      console.log("Fetching holidays for duty schedule date range:", {
-        startDate: localDutySchedule.startDate,
-        endDate: localDutySchedule.endDate,
-      });
+      // console.log("=== Testing fetchHolidaysDateRange ===");
+      // console.log("Fetching holidays for duty schedule date range:", {
+      //   startDate: localDutySchedule.startDate,
+      //   endDate: localDutySchedule.endDate,
+      // });
 
       dispatch(
-        fetchHolidaysForLocation({
+        fetchHolidaysDateRange({
           startDate: localDutySchedule.startDate,
           endDate: localDutySchedule.endDate,
         })
-      )
-        .then((result) => {
-          console.log("fetchHolidaysForLocation result:", result);
-          if (result.payload && result.payload.holidays) {
-            console.log("Holidays received:", result.payload.holidays);
-            console.log("Number of holidays:", result.payload.holidays.length);
-          }
-        })
-        .catch((error) => {
-          console.error("fetchHolidaysForLocation error:", error);
-        });
+      );
     }
   }, [dispatch, localDutySchedule.startDate, localDutySchedule.endDate]);
 
@@ -261,8 +258,16 @@ const ManagerDutyScheduleForm = () => {
     setSelectedDate(date);
     setShowAddModal(true);
     setEmployeeInput("");
+    setScheduleType("duty"); // Reset to default
     setSelectedShift("");
+    setSelectedLeave(""); // Reset leave template
     setDescription("");
+
+    // Clear all error states
+    setEmployeeError("");
+    setTypeError("");
+    setShiftError("");
+    setLeaveError("");
   };
 
   const getEmployeesForDate = (date) => {
@@ -281,44 +286,76 @@ const ManagerDutyScheduleForm = () => {
         const employee =
           typeof es.employee === "object" && es.employee?._id
             ? es.employee
-            : employees.find((emp) => emp._id === empId); // Fallback to Redux store for select options compatibility
+            : employees.find((emp) => emp._id === empId);
 
-        const wsId =
-          typeof es.shiftTemplate === "string"
-            ? es.shiftTemplate
-            : es.shiftTemplate?._id;
+        // Handle different schedule types
+        let displayInfo = {
+          shift: "N/A",
+          shiftName: "unknown",
+          startIn: "",
+          type: es.type || "duty",
+        };
 
-        // Try to get shift template from the entry first (if it's populated)
-        const shiftTemplate =
-          typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
-            ? es.shiftTemplate
-            : shiftTemplates.find((ws) => ws._id === wsId); // Fallback to Redux store for select options compatibility
+        if (es.type === "duty" && es.shiftTemplate) {
+          const wsId =
+            typeof es.shiftTemplate === "string"
+              ? es.shiftTemplate
+              : es.shiftTemplate?._id;
 
-        const shiftName = shiftTemplate?.name?.toLowerCase() || "unknown";
+          const shiftTemplate =
+            typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
+              ? es.shiftTemplate
+              : shiftTemplates.find((ws) => ws._id === wsId);
 
-        const shiftTime = shiftTemplate
-          ? shiftTemplate.status === "off"
-            ? "off"
-            : shiftTemplate.type === "Standard"
-            ? `${formatTimeTo12HourPH(
-                shiftTemplate.morningIn
-              )}-${formatTimeTo12HourPH(
-                shiftTemplate.morningOut
-              )}, ${formatTimeTo12HourPH(
-                shiftTemplate.afternoonIn
-              )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
-            : `${formatTimeTo12HourPH(
-                shiftTemplate.startTime
-              )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`
-          : "";
+          if (shiftTemplate) {
+            displayInfo.shiftName =
+              shiftTemplate.name?.toLowerCase() || "unknown";
+            displayInfo.shift =
+              shiftTemplate.type === "Standard"
+                ? `${formatTimeTo12HourPH(
+                    shiftTemplate.morningIn
+                  )}-${formatTimeTo12HourPH(
+                    shiftTemplate.morningOut
+                  )}, ${formatTimeTo12HourPH(
+                    shiftTemplate.afternoonIn
+                  )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
+                : `${formatTimeTo12HourPH(
+                    shiftTemplate.startTime
+                  )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`;
+            displayInfo.startIn =
+              shiftTemplate.type === "Standard"
+                ? shiftTemplate.morningIn
+                : shiftTemplate.startTime;
+          }
+        } else if (es.type === "leave" && es.leaveTemplate) {
+          const leaveId =
+            typeof es.leaveTemplate === "string"
+              ? es.leaveTemplate
+              : es.leaveTemplate?._id;
 
-        const startIn = shiftTemplate
-          ? shiftTemplate.status === "off"
-            ? "off"
-            : shiftTemplate.type === "Standard"
-            ? shiftTemplate.morningIn
-            : shiftTemplate.startTime
-          : "";
+          const leaveTemplate =
+            typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
+              ? es.leaveTemplate
+              : leaveTemplates.find((lt) => lt._id === leaveId);
+
+          if (leaveTemplate) {
+            displayInfo.shift = "LEAVE";
+            displayInfo.shiftName = "leave";
+            displayInfo.startIn = "leave";
+            displayInfo.leaveAbbreviation = getLeaveAbbreviation(
+              leaveTemplate.name
+            );
+            displayInfo.leaveTemplateName = leaveTemplate.name;
+          }
+        } else if (es.type === "off") {
+          displayInfo.shift = "Day Off";
+          displayInfo.shiftName = "off";
+          displayInfo.startIn = "off";
+        } else if (es.type === "holiday_off") {
+          displayInfo.shift = "Day Off";
+          displayInfo.shiftName = "holiday_off";
+          displayInfo.startIn = "holiday_off";
+        }
 
         return {
           id: empId,
@@ -330,52 +367,76 @@ const ManagerDutyScheduleForm = () => {
                 .toUpperCase()}`
             : "Unknown Employee",
           lastName: employee?.personalInformation?.lastName || "Unknown",
-          shiftName,
-          shift: shiftTime,
+          shiftName: displayInfo.shiftName,
+          shift: displayInfo.shift,
           description: es.remarks || "",
-          startIn,
+          startIn: displayInfo.startIn,
+          type: es.type || "duty",
+          leaveAbbreviation: displayInfo.leaveAbbreviation || null,
+          leaveTemplateName: displayInfo.leaveTemplateName || null,
         };
       })
-      // Optional: sort flat list by startIn (not required if grouping handles it)
       .sort((a, b) => {
-        if (a.startIn === "off") return 1;
-        if (b.startIn === "off") return -1;
-        if (!a.startIn) return 1;
-        if (!b.startIn) return -1;
+        // Sort by type first (duty, leave, off, holiday_off)
+        const typeOrder = { duty: 1, leave: 2, off: 3, holiday_off: 4 };
+        const typeComparison =
+          (typeOrder[a.type] || 5) - (typeOrder[b.type] || 5);
+        if (typeComparison !== 0) return typeComparison;
 
-        const [hA, mA] = a.startIn.split(":").map(Number);
-        const [hB, mB] = b.startIn.split(":").map(Number);
-        return hA * 60 + mA - (hB * 60 + mB);
+        // Then sort by start time for duty schedules
+        if (a.type === "duty" && b.type === "duty") {
+          if (a.startIn === "off" || a.startIn === "") return 1;
+          if (b.startIn === "off" || b.startIn === "") return -1;
+          if (!a.startIn) return 1;
+          if (!b.startIn) return -1;
+
+          const [hA, mA] = a.startIn.split(":").map(Number);
+          const [hB, mB] = b.startIn.split(":").map(Number);
+          return hA * 60 + mA - (hB * 60 + mB);
+        }
+
+        // Finally sort by last name
+        return a.lastName.localeCompare(b.lastName);
       });
 
-    // ✅ Group by shift
+    // Group by type and shift - consolidate all leave types into one group
     const grouped = employeesForDate.reduce((acc, emp) => {
-      if (!acc[emp.shift]) {
-        acc[emp.shift] = {
-          shift: emp.shift,
-          shiftName: emp.shiftName,
+      let groupKey;
+
+      if (emp.type === "duty") {
+        groupKey = emp.shift;
+      } else if (emp.type === "leave") {
+        // Consolidate all leave types into one "LEAVE" group
+        groupKey = "LEAVE";
+      } else if (emp.type === "off") {
+        groupKey = "Day Off";
+      } else if (emp.type === "holiday_off") {
+        groupKey = "Holiday Off";
+      } else {
+        groupKey = `${emp.type}: ${emp.shift}`;
+      }
+
+      if (!acc[groupKey]) {
+        acc[groupKey] = {
+          shift: groupKey,
+          shiftName:
+            emp.type === "leave"
+              ? "leave"
+              : emp.type === "off"
+              ? "day-off"
+              : emp.type === "holiday_off"
+              ? "holiday-off"
+              : emp.shiftName,
+          type: emp.type,
           employees: [],
         };
       }
 
-      acc[emp.shift].employees.push(emp);
+      acc[groupKey].employees.push(emp);
       return acc;
     }, {});
 
-    // ✅ Helper to get earliest start time in minutes
-    const getEarliestStart = (group) => {
-      const validTimes = group.employees
-        .filter((emp) => emp.startIn && emp.startIn !== "off")
-        .map((emp) => {
-          const [h, m] = emp.startIn.split(":").map(Number);
-          return h * 60 + m;
-        });
-
-      return validTimes.length ? Math.min(...validTimes) : Infinity;
-    };
-
-    // ✅ Sort each group's employees by last name
-    // ✅ Sort the groups by earliest employee startIn time
+    // Sort groups by type and start time
     return Object.values(grouped)
       .map((group) => ({
         ...group,
@@ -383,23 +444,72 @@ const ManagerDutyScheduleForm = () => {
           a.lastName.localeCompare(b.lastName)
         ),
       }))
-      .sort((a, b) => getEarliestStart(a) - getEarliestStart(b));
+      .sort((a, b) => {
+        const typeOrder = { duty: 1, leave: 2, off: 3, holiday_off: 4 };
+        const typeComparison =
+          (typeOrder[a.type] || 5) - (typeOrder[b.type] || 5);
+        if (typeComparison !== 0) return typeComparison;
+
+        if (a.type === "duty" && b.type === "duty") {
+          const getEarliestStart = (group) => {
+            const validTimes = group.employees
+              .filter(
+                (emp) =>
+                  emp.startIn && emp.startIn !== "off" && emp.startIn !== ""
+              )
+              .map((emp) => {
+                const [h, m] = emp.startIn.split(":").map(Number);
+                return h * 60 + m;
+              });
+            return validTimes.length ? Math.min(...validTimes) : Infinity;
+          };
+          return getEarliestStart(a) - getEarliestStart(b);
+        }
+
+        return 0;
+      });
   };
 
   const handleEmployeeAdd = () => {
     let valid = true;
+
+    // Clear all errors first
     setEmployeeError("");
+    setTypeError("");
     setShiftError("");
+    setLeaveError("");
+
+    // Validate employee selection
     if (!employeeInput) {
       setEmployeeError("Employee is required.");
       valid = false;
     }
-    if (!selectedShift) {
-      setShiftError("Shift is required.");
+
+    // Validate schedule type
+    if (!scheduleType) {
+      setTypeError("Schedule type is required.");
       valid = false;
     }
-    if (!selectedDate) return;
-    if (!valid) return;
+
+    // Validate based on schedule type
+    if (scheduleType === "duty" && !selectedShift) {
+      setShiftError("Shift template is required for duty schedule.");
+      valid = false;
+    }
+
+    if (scheduleType === "leave" && !selectedLeave) {
+      setLeaveError("Leave template is required for leave schedule.");
+      valid = false;
+    }
+
+    // Check if date is a holiday and type is holiday_off
+    const isDateHoliday = isHoliday(selectedDate);
+    if (scheduleType === "holiday_off" && !isDateHoliday) {
+      setTypeError("Holiday Off can only be selected on actual holiday dates.");
+      valid = false;
+    }
+
+    if (!selectedDate || !valid) return;
 
     const dateKey = formatDatePH(selectedDate);
 
@@ -409,18 +519,40 @@ const ManagerDutyScheduleForm = () => {
     // Check if there's already an entry for the selected date
     let entryIndex = entries.findIndex((e) => formatDatePH(e.date) === dateKey);
 
+    // Build new schedule object based on type
     const newSchedule = {
       employee: employeeInput,
-      shiftTemplate: selectedShift,
+      type: scheduleType,
       remarks: description,
     };
 
+    // Add type-specific fields
+    if (scheduleType === "duty") {
+      newSchedule.shiftTemplate = selectedShift;
+    } else if (scheduleType === "leave") {
+      newSchedule.leaveTemplate = selectedLeave;
+    }
+    // For "off" and "holiday_off", no additional fields needed
+
     if (entryIndex === -1) {
       // No entry for the date → create a new one
-      entries.push({
+      const newEntry = {
         date: selectedDate,
         employeeSchedules: [newSchedule],
-      });
+      };
+
+      // Add holiday reference if date is a holiday
+      if (isDateHoliday) {
+        const holiday = holidays?.find((h) => {
+          const holidayDatePH = formatDatePH(new Date(h.date));
+          return holidayDatePH === formatDatePH(selectedDate);
+        });
+        if (holiday) {
+          newEntry.holiday = holiday._id;
+        }
+      }
+
+      entries.push(newEntry);
     } else {
       const employeeSchedules = entries[entryIndex].employeeSchedules;
       const existingIndex = employeeSchedules.findIndex(
@@ -435,14 +567,13 @@ const ManagerDutyScheduleForm = () => {
         employeeSchedules[existingIndex] = newSchedule;
       }
 
-      // Optional: sort by last name (optional but good for consistency in data)
+      // Sort by employee last name for consistency
       employeeSchedules.sort((a, b) => {
         const getEmployeeData = (empSched) => {
           const empId =
             typeof empSched.employee === "string"
               ? empSched.employee
               : empSched.employee?._id;
-          // Try to get from entry first, then fallback to Redux store
           return typeof empSched.employee === "object" && empSched.employee?._id
             ? empSched.employee
             : employees.find((e) => e._id === empId);
@@ -457,14 +588,27 @@ const ManagerDutyScheduleForm = () => {
       });
 
       entries[entryIndex].employeeSchedules = employeeSchedules;
+
+      // Add holiday reference if date is a holiday and not already set
+      if (isDateHoliday && !entries[entryIndex].holiday) {
+        const holiday = holidays?.find((h) => {
+          const holidayDatePH = formatDatePH(new Date(h.date));
+          return holidayDatePH === formatDatePH(selectedDate);
+        });
+        if (holiday) {
+          entries[entryIndex].holiday = holiday._id;
+        }
+      }
     }
 
     setAllEntries(entries);
     setShowAddModal(false);
 
-    // Optional: reset form values if needed
-    setEmployeeInput(null);
-    setSelectedShift(null);
+    // Reset form values
+    setEmployeeInput("");
+    setScheduleType("duty");
+    setSelectedShift("");
+    setSelectedLeave("");
     setSelectedDate(null);
     setDescription("");
   };
@@ -496,20 +640,28 @@ const ManagerDutyScheduleForm = () => {
   };
 
   const getShiftColor = (shiftName) => {
-    // First try to find the shift template in entries
+    // Handle special cases for non-duty types
+    if (shiftName === "day-off") return "bg-gray-200";
+    if (shiftName === "holiday-off") return "bg-orange-200";
+    if (shiftName === "leave" || shiftName.startsWith("leave_"))
+      return "bg-yellow-200";
+
+    // First try to find the shift template in entries (only for duty type)
     let schedule = null;
     for (const entry of allEntries) {
       for (const es of entry.employeeSchedules) {
-        const shiftTemplate =
-          typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
-            ? es.shiftTemplate
-            : null;
-        if (
-          shiftTemplate &&
-          shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
-        ) {
-          schedule = shiftTemplate;
-          break;
+        if (es.type === "duty" && es.shiftTemplate) {
+          const shiftTemplate =
+            typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
+              ? es.shiftTemplate
+              : null;
+          if (
+            shiftTemplate &&
+            shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
+          ) {
+            schedule = shiftTemplate;
+            break;
+          }
         }
       }
       if (schedule) break;
@@ -653,52 +805,102 @@ const ManagerDutyScheduleForm = () => {
 
     // console.log("Dragged Item:", draggedItem);
     if (draggedItem.type === "employee") {
-      // Only add the single employee to the target date
+      // Handle single employee drag and drop with new backend structure
       const emp = draggedItem.data;
-      // Defensive: ensure emp has id and shiftId
-      if (!emp || !emp.id || !emp.shiftId) {
+
+      if (!emp || !emp.id) {
         setDraggedItem(null);
         return;
       }
+
+      // Handle holiday_off type validation
+      if (emp.type === "holiday_off") {
+        const isTargetHoliday = isHoliday(targetDate);
+        if (!isTargetHoliday) {
+          // Skip dragging holiday_off to non-holiday dates
+          setDraggedItem(null);
+          return;
+        }
+      }
+
       setSelectedDate(targetDate);
       setEmployeeInput(emp.id);
-      setSelectedShift(emp.shiftId);
+      setScheduleType(emp.type || "duty");
+
+      // Set appropriate template based on type
+      if (emp.type === "duty") {
+        setSelectedShift(emp.shiftTemplate || "");
+        setSelectedLeave("");
+      } else if (emp.type === "leave") {
+        setSelectedLeave(emp.leaveTemplate || "");
+        setSelectedShift("");
+      } else {
+        setSelectedShift("");
+        setSelectedLeave("");
+      }
+
       setDescription(emp.description || "");
       setTimeout(() => {
         handleEmployeeAdd();
-        setEmployeeInput(null);
-        setSelectedShift(null);
+        setEmployeeInput("");
+        setScheduleType("duty");
+        setSelectedShift("");
+        setSelectedLeave("");
         setSelectedDate(null);
         setDescription("");
         setDraggedItem(null);
       }, 0);
     } else if (draggedItem.type === "group") {
-      // Add each employee in the group to the target date, one by one
+      // Handle group drag and drop with new backend structure
       const group = draggedItem.data;
-      if (!group || !Array.isArray(group.employees) || !group.shiftId) {
+      if (!group || !Array.isArray(group.employees)) {
         setDraggedItem(null);
         return;
       }
+
+      const isTargetHoliday = isHoliday(targetDate);
+
       group.employees.forEach((emp, idx) => {
+        // Skip holiday_off schedules if target is not a holiday
+        if (emp.type === "holiday_off" && !isTargetHoliday) {
+          return;
+        }
+
         setTimeout(() => {
           setSelectedDate(targetDate);
           setEmployeeInput(emp.id);
-          setSelectedShift(group.shiftId);
+          setScheduleType(emp.type || "duty");
+
+          // Set appropriate template based on type
+          if (emp.type === "duty") {
+            setSelectedShift(emp.shiftTemplate || "");
+            setSelectedLeave("");
+          } else if (emp.type === "leave") {
+            setSelectedLeave(emp.leaveTemplate || "");
+            setSelectedShift("");
+          } else {
+            setSelectedShift("");
+            setSelectedLeave("");
+          }
+
           setDescription(emp.description || "");
           handleEmployeeAdd();
-          setEmployeeInput(null);
-          setSelectedShift(null);
+          setEmployeeInput("");
+          setScheduleType("duty");
+          setSelectedShift("");
+          setSelectedLeave("");
           setSelectedDate(null);
           setDescription("");
           if (idx === group.employees.length - 1) setDraggedItem(null);
         }, idx * 10);
       });
     } else if (draggedItem.type === "dateBox") {
-      // Add all employees from the source date to the target date, preserving shift/group
+      // Add all employees from the source date to the target date, preserving all schedule types
       const sourceDate = draggedItem.data.date;
       const sourceDateKey = formatDatePH(sourceDate);
       const targetDateKey = formatDatePH(targetDate);
       let entries = JSON.parse(JSON.stringify(allEntries));
+
       // Find source entry
       const sourceEntry = entries.find(
         (e) => formatDatePH(e.date) === sourceDateKey
@@ -707,59 +909,87 @@ const ManagerDutyScheduleForm = () => {
         setDraggedItem(null);
         return;
       }
+
       // Find or create target entry
       let targetEntry = entries.find(
         (e) => formatDatePH(e.date) === targetDateKey
       );
       if (!targetEntry) {
-        targetEntry = { date: targetDate, employeeSchedules: [] };
+        targetEntry = {
+          date: targetDate,
+          employeeSchedules: [],
+        };
+
+        // Add holiday reference if target date is a holiday
+        const isTargetHoliday = isHoliday(targetDate);
+        if (isTargetHoliday) {
+          const holiday = holidays?.find((h) => {
+            const holidayDatePH = formatDatePH(new Date(h.date));
+            return holidayDatePH === formatDatePH(targetDate);
+          });
+          if (holiday) {
+            targetEntry.holiday = holiday._id;
+          }
+        }
+
         entries.push(targetEntry);
       }
+
       // Get all employee IDs already scheduled for this date
       const scheduledEmpIds = new Set(
         targetEntry.employeeSchedules.map((es) =>
           typeof es.employee === "string" ? es.employee : es.employee?._id
         )
       );
+
+      const isTargetHoliday = isHoliday(targetDate);
+
       sourceEntry.employeeSchedules.forEach((sched) => {
         const empId =
           typeof sched.employee === "string"
             ? sched.employee
             : sched.employee?._id;
-        // Prevent copying 'Office Friday' shift to non-Friday days
-        const shiftTemplate =
-          typeof sched.shiftTemplate === "object" && sched.shiftTemplate?._id
-            ? sched.shiftTemplate
-            : shiftTemplates.find(
-                (ws) =>
-                  ws._id === sched.shiftTemplate ||
-                  ws._id === sched.shiftTemplate?._id
-              );
-        // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "office friday" &&
-          targetDate.getDay() !== 5
-        ) {
-          // Skip copying this shift if not Friday
+
+        // Skip if employee is already scheduled for this date
+        if (scheduledEmpIds.has(empId)) {
           return;
         }
-        // Prevent copying 'Billing Sat' to non-Saturday days
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "billing sat" &&
-          targetDate.getDay() !== 6
-        ) {
-          // Skip copying this shift if not Saturday
+
+        // Handle holiday_off type validation
+        if (sched.type === "holiday_off" && !isTargetHoliday) {
+          // Skip copying holiday_off to non-holiday dates
           return;
         }
-        if (!scheduledEmpIds.has(empId)) {
-          targetEntry.employeeSchedules.push({ ...sched });
-          scheduledEmpIds.add(empId);
+
+        // Handle duty schedule day-specific validations
+        if (sched.type === "duty" && sched.shiftTemplate) {
+          const shiftTemplate =
+            typeof sched.shiftTemplate === "object" && sched.shiftTemplate?._id
+              ? sched.shiftTemplate
+              : shiftTemplates.find(
+                  (ws) =>
+                    ws._id === sched.shiftTemplate ||
+                    ws._id === sched.shiftTemplate?._id
+                );
+
+          // Skip if copying 'Office Friday' to non-Friday or 'Billing Sat' to non-Saturday
+          if (
+            shiftTemplate &&
+            shiftTemplate.name &&
+            ((shiftTemplate.name.toLowerCase() === "office friday" &&
+              targetDate.getDay() !== 5) ||
+              (shiftTemplate.name.toLowerCase() === "billing sat" &&
+                targetDate.getDay() !== 6))
+          ) {
+            return;
+          }
         }
+
+        // Copy the schedule (all types: duty, off, leave, holiday_off)
+        targetEntry.employeeSchedules.push({ ...sched });
+        scheduledEmpIds.add(empId);
       });
+
       setAllEntries(entries);
       setDraggedItem(null);
     }
@@ -805,65 +1035,130 @@ const ManagerDutyScheduleForm = () => {
       setShowCopyToModal(false);
       return;
     }
+
     copyTargetDates.forEach((targetDate) => {
       const targetDateKey = formatDatePH(targetDate);
       let targetEntry = entries.find(
         (e) => formatDatePH(e.date) === targetDateKey
       );
       if (!targetEntry) {
-        targetEntry = { date: targetDate, employeeSchedules: [] };
+        targetEntry = {
+          date: targetDate,
+          employeeSchedules: [],
+        };
+
+        // Add holiday reference if target date is a holiday
+        const isTargetHoliday = isHoliday(targetDate);
+        if (isTargetHoliday) {
+          const holiday = holidays?.find((h) => {
+            const holidayDatePH = formatDatePH(new Date(h.date));
+            return holidayDatePH === formatDatePH(targetDate);
+          });
+          if (holiday) {
+            targetEntry.holiday = holiday._id;
+          }
+        }
+
         entries.push(targetEntry);
       }
+
       // Get all employee IDs already scheduled for this date
       const scheduledEmpIds = new Set(
         targetEntry.employeeSchedules.map((es) =>
           typeof es.employee === "string" ? es.employee : es.employee?._id
         )
       );
+
       sourceEntry.employeeSchedules.forEach((sched) => {
         const empId =
           typeof sched.employee === "string"
             ? sched.employee
             : sched.employee?._id;
-        // Prevent copying 'Office Friday' shift to non-Friday days
-        const shiftTemplate =
-          typeof sched.shiftTemplate === "object" && sched.shiftTemplate?._id
-            ? sched.shiftTemplate
-            : shiftTemplates.find(
-                (ws) =>
-                  ws._id === sched.shiftTemplate ||
-                  ws._id === sched.shiftTemplate?._id
-              );
-        // Fix: Only skip if copying 'Office Friday' to non-Friday, but DO NOT skip any other shift
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "office friday" &&
-          targetDate.getDay() !== 5
-        ) {
-          // Skip copying this shift if not Friday
+
+        // Skip if employee is already scheduled for this date
+        if (scheduledEmpIds.has(empId)) {
           return;
         }
-        // Prevent copying 'Billing Sat' to non-Saturday days
-        if (
-          shiftTemplate &&
-          shiftTemplate.name &&
-          shiftTemplate.name.toLowerCase() === "billing sat" &&
-          targetDate.getDay() !== 6
-        ) {
-          // Skip copying this shift if not Saturday
+
+        // Handle holiday_off type validation
+        const isTargetHoliday = isHoliday(targetDate);
+        if (sched.type === "holiday_off" && !isTargetHoliday) {
+          // Skip copying holiday_off to non-holiday dates
           return;
         }
-        if (!scheduledEmpIds.has(empId)) {
-          targetEntry.employeeSchedules.push({ ...sched });
-          scheduledEmpIds.add(empId);
+
+        // Handle different schedule types during copy
+        if (sched.type === "duty" && sched.shiftTemplate) {
+          const shiftTemplate =
+            typeof sched.shiftTemplate === "object" && sched.shiftTemplate?._id
+              ? sched.shiftTemplate
+              : shiftTemplates.find(
+                  (ws) =>
+                    ws._id === sched.shiftTemplate ||
+                    ws._id === sched.shiftTemplate?._id
+                );
+
+          // Skip if copying 'Office Friday' to non-Friday or 'Billing Sat' to non-Saturday
+          if (
+            shiftTemplate &&
+            shiftTemplate.name &&
+            ((shiftTemplate.name.toLowerCase() === "office friday" &&
+              targetDate.getDay() !== 5) ||
+              (shiftTemplate.name.toLowerCase() === "billing sat" &&
+                targetDate.getDay() !== 6))
+          ) {
+            return;
+          }
         }
+
+        // Copy the schedule (all types: duty, off, leave, holiday_off)
+        targetEntry.employeeSchedules.push({ ...sched });
+        scheduledEmpIds.add(empId);
       });
     });
+
     setAllEntries(entries);
     setShowCopyToModal(false);
     setCopySourceDate(null);
     setCopyTargetDates([]);
+  };
+
+  // Helper: Generate abbreviation for leave types
+  const getLeaveAbbreviation = (leaveName) => {
+    if (!leaveName) return "L";
+
+    // Common leave type abbreviations
+    const commonAbbreviations = {
+      "sick leave": "SL",
+      "vacation leave": "VL",
+      "maternity leave": "ML",
+      "paternity leave": "PL",
+      "emergency leave": "EL",
+      "bereavement leave": "BL",
+      "special leave": "SPL",
+      "study leave": "STL",
+      "compensatory leave": "CL",
+      "personal leave": "PL",
+      "annual leave": "AL",
+      "casual leave": "CL",
+    };
+
+    const normalizedName = leaveName.toLowerCase().trim();
+
+    // Check for common abbreviations first
+    if (commonAbbreviations[normalizedName]) {
+      return commonAbbreviations[normalizedName];
+    }
+
+    // Generate abbreviation from words
+    const words = normalizedName.split(/\s+/);
+    if (words.length === 1) {
+      // Single word: take first two characters
+      return words[0].substring(0, 2).toUpperCase();
+    } else {
+      // Multiple words: take first letter of each word
+      return words.map((word) => word.charAt(0).toUpperCase()).join("");
+    }
   };
 
   // getShiftHours,  getWeeklySummary and formatHoursAndMinutes in dutyScheduleForm are different in dutyScheduleDetails and dutySchedulePrint
@@ -1336,32 +1631,104 @@ const ManagerDutyScheduleForm = () => {
                                       {group.shift}
                                     </div>
 
-                                    {group.employees.map((emp) => (
-                                      <div
-                                        key={emp.id}
-                                        className="text-sm mb-1 p-1 rounded bg-white/50"
-                                        // Remove draggable and drag handlers from employee
-                                      >
-                                        <div className="flex justify-between items-center">
-                                          <span>{emp.name}</span>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleEmployeeRemove(day, emp.id);
-                                            }}
-                                            className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
-                                            type="button"
+                                    {group.type === "leave"
+                                      ? // Special rendering for consolidated leave group
+                                        (() => {
+                                          // Group leave employees by their leave type name
+                                          const leaveGroups =
+                                            group.employees.reduce(
+                                              (acc, emp) => {
+                                                const leaveTypeName =
+                                                  emp.leaveTemplateName ||
+                                                  "Leave";
+                                                if (!acc[leaveTypeName]) {
+                                                  acc[leaveTypeName] = [];
+                                                }
+                                                acc[leaveTypeName].push(emp);
+                                                return acc;
+                                              },
+                                              {}
+                                            );
+
+                                          return Object.entries(
+                                            leaveGroups
+                                          ).map(
+                                            ([leaveTypeName, employees]) => (
+                                              <div
+                                                key={leaveTypeName}
+                                                className="mb-2"
+                                              >
+                                                <div className="text-xs font-medium text-blue-700 mb-1 capitalize">
+                                                  {leaveTypeName.toLowerCase()}
+                                                </div>
+                                                {employees.map((emp) => (
+                                                  <div
+                                                    key={emp.id}
+                                                    className="text-sm mb-1 p-1 rounded bg-white/50 ml-2"
+                                                  >
+                                                    <div className="flex justify-between items-center">
+                                                      <span
+                                                        title={
+                                                          emp.leaveTemplateName
+                                                        }
+                                                      >
+                                                        {emp.name}
+                                                      </span>
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          handleEmployeeRemove(
+                                                            day,
+                                                            emp.id
+                                                          );
+                                                        }}
+                                                        className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
+                                                        type="button"
+                                                      >
+                                                        <FaTimes />
+                                                      </button>
+                                                    </div>
+                                                    {emp.description && (
+                                                      <div className="text-gray-600 mt-1 text-xs italic">
+                                                        {emp.description}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            )
+                                          );
+                                        })()
+                                      : // Regular rendering for non-leave groups
+                                        group.employees.map((emp) => (
+                                          <div
+                                            key={emp.id}
+                                            className="text-sm mb-1 p-1 rounded bg-white/50"
+                                            // Remove draggable and drag handlers from employee
                                           >
-                                            <FaTimes />
-                                          </button>
-                                        </div>
-                                        {emp.description && (
-                                          <div className="text-gray-600 mt-1 text-xs italic">
-                                            {emp.description}
+                                            <div className="flex justify-between items-center">
+                                              <span>{emp.name}</span>
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleEmployeeRemove(
+                                                    day,
+                                                    emp.id
+                                                  );
+                                                }}
+                                                className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
+                                                type="button"
+                                              >
+                                                <FaTimes />
+                                              </button>
+                                            </div>
+                                            {emp.description && (
+                                              <div className="text-gray-600 mt-1 text-xs italic">
+                                                {emp.description}
+                                              </div>
+                                            )}
                                           </div>
-                                        )}
-                                      </div>
-                                    ))}
+                                        ))}
                                   </div>
                                 ))}
                               </div>
@@ -2010,6 +2377,7 @@ const ManagerDutyScheduleForm = () => {
             </div>
 
             <form className="px-6 py-6 space-y-6">
+              {/* Employee Selection */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <svg
@@ -2093,6 +2461,7 @@ const ManagerDutyScheduleForm = () => {
                 )}
               </div>
 
+              {/* Schedule Type Selection */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <svg
@@ -2106,64 +2475,32 @@ const ManagerDutyScheduleForm = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                     />
                   </svg>
-                  Shift Schedule
+                  Schedule Type
                 </label>
                 <select
                   required
-                  value={selectedShift}
-                  onChange={(e) => setSelectedShift(e.target.value)}
+                  value={scheduleType}
+                  onChange={(e) => {
+                    setScheduleType(e.target.value);
+                    // Reset dependent fields when type changes
+                    setSelectedShift("");
+                    setSelectedLeave("");
+                    setShiftError("");
+                    setLeaveError("");
+                  }}
                   className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
                 >
-                  <option value="" className="text-gray-500">
-                    -- Select Schedule --
-                  </option>
-                  {shiftTemplates &&
-                    [...shiftTemplates]
-                      .sort((a, b) => {
-                        if (a.status === "off") return -1;
-                        if (b.status === "off") return 1;
-                        return 0;
-                      })
-                      .filter((schedule) => {
-                        // If the shift is 'Office Friday', only show if selectedDate is Friday
-                        if (schedule.name.toLowerCase() === "office friday") {
-                          return selectedDate && selectedDate.getDay() === 5; // 5 = Friday
-                        }
-                        // If the shift is 'Billing Sat', only show if selectedDate is Saturday
-                        if (schedule.name.toLowerCase() === "billing sat") {
-                          return selectedDate && selectedDate.getDay() === 6; // 6 = Saturday
-                        }
-                        return true;
-                      })
-                      .map((schedule) => (
-                        <option
-                          key={schedule._id}
-                          value={schedule._id}
-                          className="py-2"
-                        >
-                          {schedule.name}
-                          {schedule.status === "off"
-                            ? ""
-                            : schedule.type === "Standard"
-                            ? ` (${formatTimeTo12HourPH(
-                                schedule.morningIn
-                              )}-${formatTimeTo12HourPH(
-                                schedule.morningOut
-                              )}, ${formatTimeTo12HourPH(
-                                schedule.afternoonIn
-                              )}-${formatTimeTo12HourPH(
-                                schedule.afternoonOut
-                              )})`
-                            : ` (${formatTimeTo12HourPH(
-                                schedule.startTime
-                              )}-${formatTimeTo12HourPH(schedule.endTime)})`}
-                        </option>
-                      ))}
+                  <option value="duty">Duty Schedule</option>
+                  <option value="off">Day Off</option>
+                  <option value="leave">Leave</option>
+                  {isHoliday(selectedDate) && (
+                    <option value="holiday_off">Holiday Off</option>
+                  )}
                 </select>
-                {shiftError && (
+                {typeError && (
                   <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
                     <svg
                       className="w-4 h-4"
@@ -2178,11 +2515,186 @@ const ManagerDutyScheduleForm = () => {
                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    {shiftError}
+                    {typeError}
+                  </div>
+                )}
+
+                {/* Show holiday info if date is holiday */}
+                {isHoliday(selectedDate) && (
+                  <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-orange-700">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium">
+                        Holiday: {getHolidayName(selectedDate)}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
 
+              {/* Shift Template Selection - Only for Duty */}
+              {scheduleType === "duty" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Shift Schedule
+                  </label>
+                  <select
+                    required
+                    value={selectedShift}
+                    onChange={(e) => setSelectedShift(e.target.value)}
+                    className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
+                  >
+                    <option value="" className="text-gray-500">
+                      -- Select Schedule --
+                    </option>
+                    {shiftTemplates &&
+                      [...shiftTemplates]
+                        .filter((schedule) => {
+                          // Remove OFF shift templates as they're now handled by type="off"
+                          if (schedule.status === "off") return false;
+
+                          // If the shift is 'Office Friday', only show if selectedDate is Friday
+                          if (schedule.name.toLowerCase() === "office friday") {
+                            return selectedDate && selectedDate.getDay() === 5; // 5 = Friday
+                          }
+                          // If the shift is 'Billing Sat', only show if selectedDate is Saturday
+                          if (schedule.name.toLowerCase() === "billing sat") {
+                            return selectedDate && selectedDate.getDay() === 6; // 6 = Saturday
+                          }
+                          return true;
+                        })
+                        .map((schedule) => (
+                          <option
+                            key={schedule._id}
+                            value={schedule._id}
+                            className="py-2"
+                          >
+                            {schedule.name}
+                            {schedule.type === "Standard"
+                              ? ` (${formatTimeTo12HourPH(
+                                  schedule.morningIn
+                                )}-${formatTimeTo12HourPH(
+                                  schedule.morningOut
+                                )}, ${formatTimeTo12HourPH(
+                                  schedule.afternoonIn
+                                )}-${formatTimeTo12HourPH(
+                                  schedule.afternoonOut
+                                )})`
+                              : ` (${formatTimeTo12HourPH(
+                                  schedule.startTime
+                                )}-${formatTimeTo12HourPH(schedule.endTime)})`}
+                          </option>
+                        ))}
+                  </select>
+                  {shiftError && (
+                    <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {shiftError}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Leave Template Selection - Only for Leave */}
+              {scheduleType === "leave" && (
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Leave Type
+                  </label>
+                  <select
+                    required
+                    value={selectedLeave}
+                    onChange={(e) => setSelectedLeave(e.target.value)}
+                    className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
+                  >
+                    <option value="" className="text-gray-500">
+                      -- Select Leave Type --
+                    </option>
+                    {leaveTemplates?.map((leave) => (
+                      <option
+                        key={leave._id}
+                        value={leave._id}
+                        className="py-2"
+                      >
+                        {leave.name}{" "}
+                        {leave.description && `- ${leave.description}`}
+                      </option>
+                    ))}
+                  </select>
+                  {leaveError && (
+                    <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      {leaveError}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Description/Remarks */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
                   <svg
@@ -2199,7 +2711,7 @@ const ManagerDutyScheduleForm = () => {
                       d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
                     />
                   </svg>
-                  Description{" "}
+                  Remarks{" "}
                   <span className="font-normal text-gray-400">(Optional)</span>
                 </label>
                 <textarea
@@ -2218,9 +2730,15 @@ const ManagerDutyScheduleForm = () => {
                   type="button"
                   onClick={() => {
                     setShowAddModal(false);
+                    setEmployeeInput("");
+                    setScheduleType("duty");
+                    setSelectedShift("");
+                    setSelectedLeave("");
                     setDescription("");
                     setEmployeeError("");
+                    setTypeError("");
                     setShiftError("");
+                    setLeaveError("");
                   }}
                   className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300 flex items-center gap-2 justify-center"
                 >

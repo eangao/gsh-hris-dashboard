@@ -10,6 +10,7 @@ import {
 import { fetchAllShiftTemplates } from "../../../../store/Reducers/shiftTemplateReducer";
 import { fetchEmployeesByDepartment } from "../../../../store/Reducers/employeeReducer";
 import { fetchDepartmentById } from "../../../../store/Reducers/departmentReducer";
+import { fetchHolidaysForLocation } from "../../../../store/Reducers/holidayReducer";
 
 import toast from "react-hot-toast";
 import { PropagateLoader } from "react-spinners";
@@ -28,19 +29,6 @@ import {
   formatMonthYearPH,
   formatMonthSchedulePH,
 } from "../../../../utils/phDateUtils";
-
-// Holiday data for 2025
-const HOLIDAYS_2025 = [
-  { date: "2025-01-01", name: "New Year's Day" },
-  { date: "2025-04-18", name: "Good Friday" },
-  { date: "2025-05-01", name: "Labor Day" },
-  { date: "2025-06-12", name: "Independence Day" },
-  { date: "2025-08-21", name: "Ninoy Aquino Day" },
-  { date: "2025-08-25", name: "National Heroes Day" },
-  { date: "2025-11-30", name: "Bonifacio Day" },
-  { date: "2025-12-25", name: "Christmas Day" },
-  { date: "2025-12-30", name: "Rizal Day" },
-];
 
 const ManagerDutyScheduleForm = () => {
   const dispatch = useDispatch();
@@ -64,6 +52,8 @@ const ManagerDutyScheduleForm = () => {
   const { employees } = useSelector((state) => state.employee); // Only for select options
   const { shiftTemplates } = useSelector((state) => state.shiftTemplate); // Only for select options
   const { department } = useSelector((state) => state.department);
+
+  const { holidays } = useSelector((state) => state.holiday);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
   const [days, setDays] = useState([]);
@@ -103,6 +93,7 @@ const ManagerDutyScheduleForm = () => {
   // Load initial data and duty schedule if in edit mode
   useEffect(() => {
     dispatch(fetchAllShiftTemplates());
+
     if (departmentId) {
       dispatch(fetchEmployeesByDepartment(departmentId));
       dispatch(fetchDepartmentById(departmentId));
@@ -112,6 +103,34 @@ const ManagerDutyScheduleForm = () => {
       dispatch(fetchDutyScheduleById({ scheduleId }));
     }
   }, [dispatch, isEditMode, scheduleId, departmentId]);
+
+  // Fetch holidays when localDutySchedule dates are available
+  useEffect(() => {
+    if (localDutySchedule.startDate && localDutySchedule.endDate) {
+      console.log("=== Testing fetchHolidaysForLocation ===");
+      console.log("Fetching holidays for duty schedule date range:", {
+        startDate: localDutySchedule.startDate,
+        endDate: localDutySchedule.endDate,
+      });
+
+      dispatch(
+        fetchHolidaysForLocation({
+          startDate: localDutySchedule.startDate,
+          endDate: localDutySchedule.endDate,
+        })
+      )
+        .then((result) => {
+          console.log("fetchHolidaysForLocation result:", result);
+          if (result.payload && result.payload.holidays) {
+            console.log("Holidays received:", result.payload.holidays);
+            console.log("Number of holidays:", result.payload.holidays.length);
+          }
+        })
+        .catch((error) => {
+          console.error("fetchHolidaysForLocation error:", error);
+        });
+    }
+  }, [dispatch, localDutySchedule.startDate, localDutySchedule.endDate]);
 
   // Update local state when duty schedule data is loaded
   useEffect(() => {
@@ -206,15 +225,23 @@ const ManagerDutyScheduleForm = () => {
   }, [successMessage, errorMessage, dispatch, isEditMode]);
 
   const isHoliday = (date) => {
-    if (!date) return false;
+    if (!date || !holidays?.length) return false;
     const dateStr = formatDatePH(date);
-    return HOLIDAYS_2025.some((holiday) => holiday.date === dateStr);
+    return holidays.some((holiday) => {
+      // Convert holiday date from API to PH date format for comparison
+      const holidayDatePH = formatDatePH(new Date(holiday.date));
+      return holidayDatePH === dateStr;
+    });
   };
 
   const getHolidayName = (date) => {
-    if (!date) return null;
+    if (!date || !holidays?.length) return null;
     const dateStr = formatDatePH(date);
-    const holiday = HOLIDAYS_2025?.find((h) => h.date === dateStr);
+    const holiday = holidays?.find((h) => {
+      // Convert holiday date from API to PH date format for comparison
+      const holidayDatePH = formatDatePH(new Date(h.date));
+      return holidayDatePH === dateStr;
+    });
     return holiday ? holiday.name : null;
   };
 
@@ -1544,9 +1571,15 @@ const ManagerDutyScheduleForm = () => {
                                     // Check if this date is a holiday
                                     const isHoliday =
                                       dateObj &&
-                                      HOLIDAYS_2025.some(
-                                        (h) => h.date === formatDatePH(dateObj)
-                                      );
+                                      holidays?.some((h) => {
+                                        const holidayDatePH = formatDatePH(
+                                          new Date(h.date)
+                                        );
+                                        return (
+                                          holidayDatePH ===
+                                          formatDatePH(dateObj)
+                                        );
+                                      });
                                     const isWeekend = i === 0 || i === 6;
                                     return (
                                       <th
@@ -1879,9 +1912,10 @@ const ManagerDutyScheduleForm = () => {
                   const isSource =
                     formatDatePH(date) === formatDatePH(copySourceDate);
                   // Check if this date is a holiday
-                  const isHoliday = HOLIDAYS_2025.some(
-                    (h) => h.date === formatDatePH(date)
-                  );
+                  const isHoliday = holidays?.some((h) => {
+                    const holidayDatePH = formatDatePH(new Date(h.date));
+                    return holidayDatePH === formatDatePH(date);
+                  });
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6;
 
                   return (

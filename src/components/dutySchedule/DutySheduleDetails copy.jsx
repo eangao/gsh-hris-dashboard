@@ -8,8 +8,7 @@ import {
   messageClear,
   submitDutyScheduleForApproval,
 } from "../../store/Reducers/dutyScheduleReducer";
-import { fetchHolidaysDateRange } from "../../store/Reducers/holidayReducer";
-import { fetchAllLeaveTemplates } from "../../store/Reducers/leaveTemplateReducer";
+import { fetchHolidaysForLocation } from "../../store/Reducers/holidayReducer";
 
 import toast from "react-hot-toast";
 import { FaTimes } from "react-icons/fa";
@@ -42,7 +41,6 @@ const DutyScheduleDetails = ({
   );
 
   const { holidays } = useSelector((state) => state.holiday);
-  const { leaveTemplates } = useSelector((state) => state.leaveTemplates);
 
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
   const [days, setDays] = useState([]);
@@ -72,14 +70,13 @@ const DutyScheduleDetails = ({
   useEffect(() => {
     //for duty schedule
     dispatch(fetchDutyScheduleById({ scheduleId, employeeId }));
-    dispatch(fetchAllLeaveTemplates());
   }, [dispatch, scheduleId, employeeId]);
 
   // Fetch holidays when dutySchedule is loaded
   useEffect(() => {
     if (dutySchedule?.startDate && dutySchedule?.endDate) {
       dispatch(
-        fetchHolidaysDateRange({
+        fetchHolidaysForLocation({
           startDate: dutySchedule.startDate,
           endDate: dutySchedule.endDate,
         })
@@ -170,44 +167,6 @@ const DutyScheduleDetails = ({
     return isWeekend(date) || isHoliday(date);
   };
 
-  // Helper: Generate abbreviation for leave types
-  const getLeaveAbbreviation = (leaveName) => {
-    if (!leaveName) return "L";
-
-    // Common leave type abbreviations
-    const commonAbbreviations = {
-      "sick leave": "SL",
-      "vacation leave": "VL",
-      "maternity leave": "ML",
-      "paternity leave": "PL",
-      "emergency leave": "EL",
-      "bereavement leave": "BL",
-      "special leave": "SPL",
-      "study leave": "STL",
-      "compensatory leave": "CL",
-      "personal leave": "PL",
-      "annual leave": "AL",
-      "casual leave": "CL",
-    };
-
-    const normalizedName = leaveName.toLowerCase().trim();
-
-    // Check for common abbreviations first
-    if (commonAbbreviations[normalizedName]) {
-      return commonAbbreviations[normalizedName];
-    }
-
-    // Generate abbreviation from words
-    const words = normalizedName.split(/\s+/);
-    if (words.length === 1) {
-      // Single word: take first two characters
-      return words[0].substring(0, 2).toUpperCase();
-    } else {
-      // Multiple words: take first letter of each word
-      return words.map((word) => word.charAt(0).toUpperCase()).join("");
-    }
-  };
-
   const getEmployeesForDate = (date) => {
     if (!date) return [];
     const dateKey = formatDatePH(date);
@@ -217,62 +176,29 @@ const DutyScheduleDetails = ({
 
     const employeesForDate = entry.employeeSchedules
       .map((es) => {
-        // Handle different schedule types
-        let displayInfo = {
-          shift: "N/A",
-          shiftName: "unknown",
-          startIn: "",
-          type: es.type || "duty",
-        };
+        const shiftTime = es.shiftTemplate
+          ? es.shiftTemplate.status === "off"
+            ? "off"
+            : es.shiftTemplate.type === "Standard"
+            ? `${formatTimeTo12HourPH(
+                es.shiftTemplate.morningIn
+              )}-${formatTimeTo12HourPH(
+                es.shiftTemplate.morningOut
+              )}, ${formatTimeTo12HourPH(
+                es.shiftTemplate.afternoonIn
+              )}-${formatTimeTo12HourPH(es.shiftTemplate.afternoonOut)}`
+            : `${formatTimeTo12HourPH(
+                es.shiftTemplate.startTime
+              )}-${formatTimeTo12HourPH(es.shiftTemplate.endTime)}`
+          : "";
 
-        if (es.type === "duty" && es.shiftTemplate) {
-          displayInfo.shiftName =
-            es.shiftTemplate.name?.toLowerCase() || "unknown";
-          displayInfo.shift =
-            es.shiftTemplate.type === "Standard"
-              ? `${formatTimeTo12HourPH(
-                  es.shiftTemplate.morningIn
-                )}-${formatTimeTo12HourPH(
-                  es.shiftTemplate.morningOut
-                )}, ${formatTimeTo12HourPH(
-                  es.shiftTemplate.afternoonIn
-                )}-${formatTimeTo12HourPH(es.shiftTemplate.afternoonOut)}`
-              : `${formatTimeTo12HourPH(
-                  es.shiftTemplate.startTime
-                )}-${formatTimeTo12HourPH(es.shiftTemplate.endTime)}`;
-          displayInfo.startIn =
-            es.shiftTemplate.type === "Standard"
-              ? es.shiftTemplate.morningIn
-              : es.shiftTemplate.startTime;
-        } else if (es.type === "leave" && es.leaveTemplate) {
-          const leaveId =
-            typeof es.leaveTemplate === "string"
-              ? es.leaveTemplate
-              : es.leaveTemplate?._id;
-
-          const leaveTemplate =
-            typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
-              ? es.leaveTemplate
-              : leaveTemplates.find((lt) => lt._id === leaveId);
-
-          if (leaveTemplate) {
-            displayInfo.shift = "LEAVE";
-            displayInfo.shiftName = "leave";
-            displayInfo.startIn = "leave";
-            displayInfo.leaveAbbreviation = getLeaveAbbreviation(
-              leaveTemplate.name
-            );
-            displayInfo.leaveTemplateName = leaveTemplate.name;
-          }
-        } else if (es.type === "off") {
-          displayInfo.shift = "Day Off";
-          displayInfo.shiftName = "off";
-          displayInfo.startIn = "off";
-        } else if (es.type === "holiday_off") {
-          displayInfo.shift = "Holiday Off";
-          displayInfo.shiftName = "holiday_off";
-          displayInfo.startIn = "holiday_off";
-        }
+        const startIn = es.shiftTemplate
+          ? es.shiftTemplate.status === "off"
+            ? "off"
+            : es.shiftTemplate.type === "Standard"
+            ? es.shiftTemplate.morningIn
+            : es.shiftTemplate.startTime
+          : "";
 
         return {
           id: es?.employee?._id,
@@ -282,77 +208,53 @@ const DutyScheduleDetails = ({
             .charAt(0)
             .toUpperCase()}.`,
           lastName: es?.employee?.personalInformation?.lastName || "",
-          shiftName: displayInfo.shiftName,
-          shift: displayInfo.shift,
+          shiftName: es?.shiftTemplate?.name?.toLowerCase() || "",
+          shift: shiftTime,
           description: es?.remarks || "",
           shiftColor: es?.shiftTemplate?.shiftColor || "",
-          startIn: displayInfo.startIn,
-          type: es.type || "duty",
-          leaveAbbreviation: displayInfo.leaveAbbreviation || null,
-          leaveTemplateName: displayInfo.leaveTemplateName || null,
+          startIn,
         };
-      })
+      }) // Optional: sort flat list by startIn (not required if grouping handles it)
       .sort((a, b) => {
-        // Sort by type first (duty, leave, off, holiday_off)
-        const typeOrder = { duty: 1, leave: 2, off: 3, holiday_off: 4 };
-        const typeComparison =
-          (typeOrder[a.type] || 5) - (typeOrder[b.type] || 5);
-        if (typeComparison !== 0) return typeComparison;
+        if (a.startIn === "off") return 1;
+        if (b.startIn === "off") return -1;
+        if (!a.startIn) return 1;
+        if (!b.startIn) return -1;
 
-        // Then sort by start time for duty schedules
-        if (a.type === "duty" && b.type === "duty") {
-          if (a.startIn === "off" || a.startIn === "") return 1;
-          if (b.startIn === "off" || b.startIn === "") return -1;
-          if (!a.startIn) return 1;
-          if (!b.startIn) return -1;
-
-          const [hA, mA] = a.startIn.split(":").map(Number);
-          const [hB, mB] = b.startIn.split(":").map(Number);
-          return hA * 60 + mA - (hB * 60 + mB);
-        }
-
-        // Finally sort by last name
-        return a.lastName.localeCompare(b.lastName);
+        const [hA, mA] = a.startIn.split(":").map(Number);
+        const [hB, mB] = b.startIn.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
       });
 
-    // Group by type and shift - consolidate all leave types into one group
+    // Group by shift
     const grouped = employeesForDate.reduce((acc, emp) => {
-      let groupKey;
-
-      if (emp.type === "duty") {
-        groupKey = emp.shift;
-      } else if (emp.type === "leave") {
-        // Consolidate all leave types into one "LEAVE" group
-        groupKey = "LEAVE";
-      } else if (emp.type === "off") {
-        groupKey = "Day Off";
-      } else if (emp.type === "holiday_off") {
-        groupKey = "Holiday Off";
-      } else {
-        groupKey = `${emp.type}: ${emp.shift}`;
-      }
-
-      if (!acc[groupKey]) {
-        acc[groupKey] = {
-          shift: groupKey,
-          shiftName:
-            emp.type === "leave"
-              ? "leave"
-              : emp.type === "off"
-              ? "day-off"
-              : emp.type === "holiday_off"
-              ? "holiday-off"
-              : emp.shiftName,
-          type: emp.type,
+      if (!acc[emp.shift]) {
+        acc[emp.shift] = {
+          shift: emp.shift,
+          shiftName: emp.shiftName,
+          shiftColor: emp.shiftColor,
           employees: [],
         };
       }
 
-      acc[groupKey].employees.push(emp);
+      acc[emp.shift].employees.push(emp);
       return acc;
     }, {});
 
-    // Sort groups by type and start time
+    // ✅ Helper to get earliest start time in minutes
+    const getEarliestStart = (group) => {
+      const validTimes = group.employees
+        .filter((emp) => emp.startIn && emp.startIn !== "off")
+        .map((emp) => {
+          const [h, m] = emp.startIn.split(":").map(Number);
+          return h * 60 + m;
+        });
+
+      return validTimes.length ? Math.min(...validTimes) : Infinity;
+    };
+
+    // ✅ Sort each group's employees by last name
+    // ✅ Sort the groups by earliest employee startIn time
     return Object.values(grouped)
       .map((group) => ({
         ...group,
@@ -360,58 +262,7 @@ const DutyScheduleDetails = ({
           a.lastName.localeCompare(b.lastName)
         ),
       }))
-      .sort((a, b) => {
-        const typeOrder = { duty: 1, leave: 2, off: 3, holiday_off: 4 };
-        const typeComparison =
-          (typeOrder[a.type] || 5) - (typeOrder[b.type] || 5);
-        if (typeComparison !== 0) return typeComparison;
-
-        if (a.type === "duty" && b.type === "duty") {
-          const getEarliestStart = (group) => {
-            const validTimes = group.employees
-              .filter(
-                (emp) =>
-                  emp.startIn && emp.startIn !== "off" && emp.startIn !== ""
-              )
-              .map((emp) => {
-                const [h, m] = emp.startIn.split(":").map(Number);
-                return h * 60 + m;
-              });
-            return validTimes.length ? Math.min(...validTimes) : Infinity;
-          };
-          return getEarliestStart(a) - getEarliestStart(b);
-        }
-
-        return 0;
-      });
-  };
-
-  const getShiftColor = (shiftName) => {
-    // Handle special cases for non-duty types
-    if (shiftName === "day-off") return "bg-gray-200";
-    if (shiftName === "holiday-off") return "bg-orange-200";
-    if (shiftName === "leave" || shiftName.startsWith("leave_"))
-      return "bg-yellow-200";
-
-    // First try to find the shift template in entries (only for duty type)
-    let schedule = null;
-    for (const entry of allEntries) {
-      for (const es of entry.employeeSchedules) {
-        if (es.type === "duty" && es.shiftTemplate) {
-          const shiftTemplate = es.shiftTemplate;
-          if (
-            shiftTemplate &&
-            shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
-          ) {
-            schedule = shiftTemplate;
-            break;
-          }
-        }
-      }
-      if (schedule) break;
-    }
-
-    return schedule?.shiftColor || "bg-white"; // fallback to white if not found or no color set
+      .sort((a, b) => getEarliestStart(a) - getEarliestStart(b));
   };
 
   const handleCancel = () => {
@@ -606,85 +457,26 @@ const DutyScheduleDetails = ({
                             {getEmployeesForDate(day).map((group) => (
                               <div
                                 key={group.shift}
-                                className={`rounded p-1 ${getShiftColor(
-                                  group.shiftName
-                                )}`}
+                                className={`rounded p-1 ${group?.shiftColor}`}
                               >
                                 <div className="text-xs font-bold mb-1 uppercase text-gray-700">
                                   {group.shift}
                                 </div>
-                                
-                                {group.type === "leave"
-                                  ? // Special rendering for consolidated leave group
-                                    (() => {
-                                      // Group leave employees by their leave type name
-                                      const leaveGroups =
-                                        group.employees.reduce(
-                                          (acc, emp) => {
-                                            const leaveTypeName =
-                                              emp.leaveTemplateName ||
-                                              "Leave";
-                                            if (!acc[leaveTypeName]) {
-                                              acc[leaveTypeName] = [];
-                                            }
-                                            acc[leaveTypeName].push(emp);
-                                            return acc;
-                                          },
-                                          {}
-                                        );
-
-                                      return Object.entries(
-                                        leaveGroups
-                                      ).map(
-                                        ([leaveTypeName, employees]) => (
-                                          <div
-                                            key={leaveTypeName}
-                                            className="mb-2"
-                                          >
-                                            <div className="text-xs font-medium text-blue-700 mb-1 capitalize">
-                                              {leaveTypeName.toLowerCase()}
-                                            </div>
-                                            {employees.map((emp) => (
-                                              <div
-                                                key={emp.id}
-                                                className="text-sm mb-1 p-1 rounded bg-white/50 ml-2"
-                                              >
-                                                <div className="flex justify-between items-center">
-                                                  <span
-                                                    title={
-                                                      emp.leaveTemplateName
-                                                    }
-                                                  >
-                                                    {emp.name}
-                                                  </span>
-                                                </div>
-                                                {emp.description && (
-                                                  <div className="text-gray-600 mt-1 text-xs italic">
-                                                    {emp.description}
-                                                  </div>
-                                                )}
-                                              </div>
-                                            ))}
-                                          </div>
-                                        )
-                                      );
-                                    })()
-                                  : // Regular rendering for non-leave groups
-                                    group.employees.map((emp) => (
-                                      <div
-                                        key={emp.id}
-                                        className="text-sm mb-1 p-1 rounded bg-white/50"
-                                      >
-                                        <div className="flex justify-between items-center">
-                                          <span>{emp.name}</span>
-                                        </div>
-                                        {emp.description && (
-                                          <div className="text-gray-600 mt-1 text-xs italic">
-                                            {emp.description}
-                                          </div>
-                                        )}
+                                {group.employees.map((emp) => (
+                                  <div
+                                    key={emp.id}
+                                    className="text-sm mb-1 p-1 rounded bg-white/50"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <span>{emp.name}</span>
+                                    </div>
+                                    {emp.description && (
+                                      <div className="text-gray-600 mt-1 text-xs italic">
+                                        {emp.description}
                                       </div>
-                                    ))}
+                                    )}
+                                  </div>
+                                ))}
                               </div>
                             ))}
                           </div>
@@ -787,91 +579,31 @@ const DutyScheduleDetails = ({
                                   key={`${formatDatePH(day)}-${
                                     group.shift
                                   }-${groupIndex}`}
-                                  className={`rounded p-1 ${getShiftColor(
-                                    group.shiftName
-                                  )}`}
+                                  className={`rounded p-1 ${group?.shiftColor}`}
                                 >
                                   <div className="text-xs font-bold mb-1 uppercase text-gray-700">
                                     {group.shift}
                                   </div>
-
-                                  {group.type === "leave"
-                                    ? // Special rendering for consolidated leave group
-                                      (() => {
-                                        // Group leave employees by their leave type name
-                                        const leaveGroups =
-                                          group.employees.reduce((acc, emp) => {
-                                            const leaveTypeName =
-                                              emp.leaveTemplateName || "Leave";
-                                            if (!acc[leaveTypeName]) {
-                                              acc[leaveTypeName] = [];
-                                            }
-                                            acc[leaveTypeName].push(emp);
-                                            return acc;
-                                          }, {});
-
-                                        return Object.entries(leaveGroups).map(
-                                          ([leaveTypeName, employees]) => (
-                                            <div
-                                              key={leaveTypeName}
-                                              className="mb-2"
-                                            >
-                                              <div className="text-xs font-medium text-blue-700 mb-1 capitalize">
-                                                {leaveTypeName.toLowerCase()}
-                                              </div>
-                                              {employees.map(
-                                                (emp, empIndex) => (
-                                                  <div
-                                                    key={
-                                                      emp.id ||
-                                                      `${formatDatePH(day)}-${
-                                                        group.shift
-                                                      }-${empIndex}-${emp.name}`
-                                                    }
-                                                    className="text-sm mb-1 p-1 rounded bg-white/50 ml-2"
-                                                  >
-                                                    <div className="flex justify-between items-center">
-                                                      <span
-                                                        title={
-                                                          emp.leaveTemplateName
-                                                        }
-                                                      >
-                                                        {emp.name}
-                                                      </span>
-                                                    </div>
-                                                    {emp.description && (
-                                                      <div className="text-gray-600 mt-1 text-xs italic">
-                                                        {emp.description}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                )
-                                              )}
-                                            </div>
-                                          )
-                                        );
-                                      })()
-                                    : // Regular rendering for non-leave groups
-                                      group.employees.map((emp, empIndex) => (
-                                        <div
-                                          key={
-                                            emp.id ||
-                                            `${formatDatePH(day)}-${
-                                              group.shift
-                                            }-${empIndex}-${emp.name}`
-                                          }
-                                          className="text-sm mb-1 p-1 rounded bg-white/50"
-                                        >
-                                          <div className="flex justify-between items-center">
-                                            <span>{emp.name}</span>
-                                          </div>
-                                          {emp.description && (
-                                            <div className="text-gray-600 mt-1 text-xs italic">
-                                              {emp.description}
-                                            </div>
-                                          )}
+                                  {group.employees.map((emp, empIndex) => (
+                                    <div
+                                      key={
+                                        emp.id ||
+                                        `${formatDatePH(day)}-${
+                                          group.shift
+                                        }-${empIndex}-${emp.name}`
+                                      }
+                                      className="text-sm mb-1 p-1 rounded bg-white/50"
+                                    >
+                                      <div className="flex justify-between items-center">
+                                        <span>{emp.name}</span>
+                                      </div>
+                                      {emp.description && (
+                                        <div className="text-gray-600 mt-1 text-xs italic">
+                                          {emp.description}
                                         </div>
-                                      ))}
+                                      )}
+                                    </div>
+                                  ))}
                                 </div>
                               )
                             )}

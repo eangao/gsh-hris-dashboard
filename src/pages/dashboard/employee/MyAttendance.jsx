@@ -15,6 +15,7 @@ import {
   fetchDutyScheduleByDepartmentForAttendance,
   messageClear,
 } from "../../../store/Reducers/dutyScheduleReducer";
+import { fetchHolidaysDateRange } from "../../../store/Reducers/holidayReducer";
 import toast from "react-hot-toast";
 import EmployeeAttendance from "../../../components/employee/EmployeeAttendance";
 
@@ -38,8 +39,11 @@ const MyAttendance = () => {
   const {
     attendances,
     loading: attendanceLoading,
+    dutyScheduleInfo,
     errorMessage,
   } = useSelector((state) => state.attendance);
+
+  const { holidays } = useSelector((state) => state.holiday);
 
   const loading = attendanceLoading || dutyScheduleLoading || employeeLoading;
 
@@ -378,6 +382,22 @@ const MyAttendance = () => {
     }
   }, [attendances]);
 
+  // Fetch holidays when dutyScheduleInfo is available
+  useEffect(() => {
+    if (
+      dutyScheduleInfo &&
+      dutyScheduleInfo.startDate &&
+      dutyScheduleInfo.endDate
+    ) {
+      dispatch(
+        fetchHolidaysDateRange({
+          startDate: dutyScheduleInfo.startDate,
+          endDate: dutyScheduleInfo.endDate,
+        })
+      );
+    }
+  }, [dispatch, dutyScheduleInfo]);
+
   // Same search filtering as manager
   useEffect(() => {
     if (originalAttendances && originalAttendances.length > 0) {
@@ -445,6 +465,8 @@ const MyAttendance = () => {
       handlePerPageChange={handlePerPageChange}
       // Error handling
       errorMessage={errorMessage}
+      // Holiday data
+      holidays={holidays}
       // View type - indicates this is individual employee view
       isIndividualView={true}
       // Role-based customization

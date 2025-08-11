@@ -16,6 +16,7 @@ import {
   messageClear,
   clearDutySchedule,
 } from "../../../../store/Reducers/dutyScheduleReducer";
+import { fetchHolidaysDateRange } from "../../../../store/Reducers/holidayReducer";
 import toast from "react-hot-toast";
 import EmployeeAttendance from "../../../../components/employee/EmployeeAttendance";
 import { fetchAllDepartments } from "../../../../store/Reducers/departmentReducer";
@@ -39,12 +40,15 @@ const HrEmployeeAttendance = () => {
   const {
     attendances,
     loading: attendanceLoading,
+    dutyScheduleInfo,
     errorMessage,
   } = useSelector((state) => state.attendance);
 
   const { employees, loading: employeesLoading } = useSelector(
     (state) => state.employee
   );
+
+  const { holidays } = useSelector((state) => state.holiday);
 
   const loading = attendanceLoading || dutyScheduleLoading || employeesLoading;
 
@@ -353,6 +357,22 @@ const HrEmployeeAttendance = () => {
     }
   }, [attendances]);
 
+  // Fetch holidays when dutyScheduleInfo is available
+  useEffect(() => {
+    if (
+      dutyScheduleInfo &&
+      dutyScheduleInfo.startDate &&
+      dutyScheduleInfo.endDate
+    ) {
+      dispatch(
+        fetchHolidaysDateRange({
+          startDate: dutyScheduleInfo.startDate,
+          endDate: dutyScheduleInfo.endDate,
+        })
+      );
+    }
+  }, [dispatch, dutyScheduleInfo]);
+
   // Search filtering effect
   useEffect(() => {
     if (originalAttendances && originalAttendances.length > 0) {
@@ -434,6 +454,8 @@ const HrEmployeeAttendance = () => {
       handlePerPageChange={handlePerPageChange}
       // Error handling
       errorMessage={errorMessage}
+      // Holiday data
+      holidays={holidays}
       // Role-based customization
       userRole="hr"
     />

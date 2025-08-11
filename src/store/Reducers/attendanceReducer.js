@@ -9,7 +9,7 @@ export const fetchAttendanceByDepartment = createAsyncThunk(
   ) => {
     try {
       const { data } = await api.get(
-        `/hris/attendances/schedule-attendance-preview/${scheduleId}`,
+        `/hris/attendances/schedule-attendance-preview-v2/${scheduleId}`,
         {
           params: {
             perPage,
@@ -37,6 +37,7 @@ const attendanceSlice = createSlice({
     attendances: [],
     attendance: "",
     totalAttendance: 0,
+    dutyScheduleInfo: {},
   },
   reducers: {
     messageClear: (state) => {
@@ -50,6 +51,7 @@ const attendanceSlice = createSlice({
       state.errorMessage = "";
       state.successMessage = "";
       state.loading = false;
+      state.dutyScheduleInfo = {};
     },
     clearState: (state) => {
       state.loading = false;
@@ -58,6 +60,7 @@ const attendanceSlice = createSlice({
       state.attendances = [];
       state.attendance = "";
       state.totalAttendance = 0;
+      state.dutyScheduleInfo = {};
     },
   },
   extraReducers: (builder) => {
@@ -68,16 +71,19 @@ const attendanceSlice = createSlice({
         state.errorMessage = "";
         state.attendances = [];
         state.totalAttendance = 0;
+        state.dutyScheduleInfo = {};
       })
       .addCase(fetchAttendanceByDepartment.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.attendances = payload.attendances;
         state.totalAttendance = payload.totalAttendance;
+        state.dutyScheduleInfo = payload.dutyScheduleInfo;
       })
       .addCase(fetchAttendanceByDepartment.rejected, (state, { payload }) => {
         state.loading = false;
         state.attendances = [];
         state.totalAttendance = 0;
+        state.dutyScheduleInfo = {};
         state.errorMessage = payload?.error || "Failed to load attendance data";
       });
   },

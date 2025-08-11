@@ -1,32 +1,36 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchAttendanceByDepartment,
   clearAttendance,
-} from "../../../store/Reducers/attendanceReducer";
+} from "../../../../store/Reducers/attendanceReducer";
 import {
   formatDatePH,
   getCurrentDatePH,
   getTodayDatePH,
   parseDatePH,
-} from "../../../utils/phDateUtils";
-import { fetchEmployeeDepartmentId } from "../../../store/Reducers/employeeReducer";
+} from "../../../../utils/phDateUtils";
+import { fetchEmployeesByDepartment } from "../../../../store/Reducers/employeeReducer";
 import {
   fetchDutyScheduleByDepartmentForAttendance,
   messageClear,
-} from "../../../store/Reducers/dutyScheduleReducer";
+  clearDutySchedule,
+} from "../../../../store/Reducers/dutyScheduleReducer";
 import toast from "react-hot-toast";
-import EmployeeAttendance from "../../../components/employee/EmployeeAttendance";
+import EmployeeAttendance from "../../../../components/employee/EmployeeAttendance";
 
-const MyAttendance = () => {
+const ManagerEmployeeAttendance = () => {
   const dispatch = useDispatch();
 
   const { userInfo } = useSelector((state) => state.auth);
-  const employeeId = userInfo?.employee?._id;
 
-  // For individual employee, we get their department
-  const { employee, loading: employeeLoading } = useSelector(
-    (state) => state.employee
+  // Extract departments from the new API structure - Memoized for performance
+  const managedDepartments = useMemo(
+    () =>
+      userInfo?.employee?.employmentInformation?.managedDepartments?.map(
+        (item) => item.department
+      ) || [],
+    [userInfo?.employee?.employmentInformation?.managedDepartments]
   );
 
   const {
@@ -41,9 +45,13 @@ const MyAttendance = () => {
     errorMessage,
   } = useSelector((state) => state.attendance);
 
-  const loading = attendanceLoading || dutyScheduleLoading || employeeLoading;
+  const { employees, loading: employeesLoading } = useSelector(
+    (state) => state.employee
+  );
 
-  // State variables - same as manager but for individual employee
+  const loading = attendanceLoading || dutyScheduleLoading || employeesLoading;
+
+  // State variables
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [currentDate, setCurrentDate] = useState(getCurrentDatePH());
   const [availableDutySchedules, setAvailableDutySchedules] = useState([]);
@@ -57,35 +65,58 @@ const MyAttendance = () => {
   const [filteredAttendances, setFilteredAttendances] = useState([]);
   const [totalFilteredAttendance, setTotalFilteredAttendance] = useState(0);
 
-  // Helper function - same as manager
+  // Helper function to determine if a date falls within a schedule period
   const isDateInSchedulePeriod = useCallback((date, startDate, endDate) => {
+    // Convert all dates to PH date strings for consistent comparison (YYYY-MM-DD format)
     const checkDateStr = formatDatePH(date);
     const startDateStr = formatDatePH(startDate);
     const endDateStr = formatDatePH(endDate);
+
+    // Compare as date strings (YYYY-MM-DD format ensures correct lexicographic comparison)
     const result = checkDateStr >= startDateStr && checkDateStr <= endDateStr;
     return result;
   }, []);
 
-  // Modified function for individual employee - includes employeeId
-  const getDutyScheduleByDepartmentForAttendance = useCallback(
-    (departmentId) => {
-      dispatch(
-        fetchDutyScheduleByDepartmentForAttendance({
-          departmentId,
-          employeeId, // THIS IS THE KEY DIFFERENCE - specific employee
-        })
-      );
-    },
-    [dispatch, employeeId]
-  );
-  // Same handlers as manager component
+  // Callback functions definitions - moved here to avoid hoisting issues
   const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
   }, []);
 
+  const handleDepartmentChange = useCallback(
+    (e) => {
+      const departmentId = e.target.value;
+
+      if (!departmentId) return;
+
+      // Clear attendance data when changing departments
+      dispatch(clearAttendance());
+
+      // Clear duty schedule data when changing departments
+      dispatch(clearDutySchedule());
+
+      // Clear search value and reset pagination when changing departments
+      setSearchValue("");
+      setCurrentPage(1);
+
+      // Clear local attendance state
+      setOriginalAttendances([]);
+      setFilteredAttendances([]);
+      setTotalFilteredAttendance(0);
+
+      // Clear duty schedule state when changing departments
+      setAvailableDutySchedules([]);
+      setCurrentScheduleIndex(0);
+
+      setSelectedDepartment(departmentId);
+    },
+    [dispatch]
+  );
+
+  // Memoized search value handler to prevent re-renders
   const handleSearchValueChange = useCallback(
     (value) => {
       setSearchValue(value);
+      // Only reset page when actually changing the search, not when clearing
       if (value !== searchValue) {
         setCurrentPage(1);
       }
@@ -93,25 +124,31 @@ const MyAttendance = () => {
     [searchValue]
   );
 
+  // Memoized perpage handler
   const handlePerPageChange = useCallback((newPerPage) => {
     setPerpage(newPerPage);
   }, []);
 
-  // Navigation handlers - same as manager
+  // Check if we can navigate to previous schedule
   const canNavigatePrevious = useCallback(() => {
     return currentScheduleIndex > 0;
   }, [currentScheduleIndex]);
 
+  // Check if we can navigate to next schedule
   const canNavigateNext = useCallback(() => {
     return currentScheduleIndex < availableDutySchedules.length - 1;
   }, [currentScheduleIndex, availableDutySchedules]);
 
+  // Month navigation handlers - Modified to work with duty schedule array
   const handleNextMonth = useCallback(() => {
     if (canNavigateNext()) {
       const newIndex = currentScheduleIndex + 1;
       setCurrentScheduleIndex(newIndex);
+
+      // Update current date to be within the new schedule period
       const nextSchedule = availableDutySchedules[newIndex];
       if (nextSchedule) {
+        // Use the start date + 15 days to ensure we're within the period
         const targetDate = parseDatePH(nextSchedule.startDate);
         targetDate.setDate(targetDate.getDate() + 15);
         setCurrentDate(targetDate);
@@ -123,8 +160,11 @@ const MyAttendance = () => {
     if (canNavigatePrevious()) {
       const newIndex = currentScheduleIndex - 1;
       setCurrentScheduleIndex(newIndex);
+
+      // Update current date to be within the new schedule period
       const prevSchedule = availableDutySchedules[newIndex];
       if (prevSchedule) {
+        // Use the start date + 15 days to ensure we're within the period
         const targetDate = parseDatePH(prevSchedule.startDate);
         targetDate.setDate(targetDate.getDate() + 15);
         setCurrentDate(targetDate);
@@ -132,38 +172,62 @@ const MyAttendance = () => {
     }
   }, [canNavigatePrevious, currentScheduleIndex, availableDutySchedules]);
 
-  // Fetch employee department info
-  useEffect(() => {
-    if (!employeeId) return;
-    dispatch(fetchEmployeeDepartmentId(employeeId));
-  }, [employeeId, dispatch]);
+  const getDutyScheduleByDepartmentForAttendance = useCallback(
+    (departmentId) => {
+      dispatch(
+        fetchDutyScheduleByDepartmentForAttendance({
+          departmentId,
+        })
+      );
 
-  // Same cleanup as manager
+      dispatch(fetchEmployeesByDepartment(departmentId));
+    },
+    [dispatch]
+  );
+
   useEffect(() => {
     return () => {
+      // Cleanup function runs when component unmounts
       dispatch(clearAttendance());
     };
   }, [dispatch]);
 
-  // Handle error messages
+  // Handle success/error messages
   useEffect(() => {
+    // if (successMessage) {
+    //   toast.success(successMessage);
+
+    //   dispatch(messageClear());
+    // }
+
     if (dutyScheduleError) {
       toast.error(dutyScheduleError);
       dispatch(messageClear());
     }
   }, [dutyScheduleError, dispatch]);
 
-  // Auto-select employee's department
+  // Auto-select first department when managed departments are loaded
   useEffect(() => {
-    if (employee?.employmentInformation?.department && !selectedDepartment) {
-      setSelectedDepartment(employee.employmentInformation.department);
+    if (
+      managedDepartments &&
+      managedDepartments.length > 0 &&
+      !selectedDepartment
+    ) {
+      // Only auto-select if no department is currently selected
+      setSelectedDepartment(managedDepartments[0]._id);
+    } else if (managedDepartments && managedDepartments.length === 0) {
+      // Clear selected department if user has no managed departments
+      setSelectedDepartment("");
     }
-  }, [employee, selectedDepartment]);
+  }, [managedDepartments, selectedDepartment]);
 
-  // Fetch duty schedules when department is selected
+  // if have selected department,
   useEffect(() => {
+    // console.log("Selected department changed:", selectedDepartment);
     if (!selectedDepartment) return;
 
+    // console.log("Clearing attendance and fetching data for department:", selectedDepartment);
+    // Immediately clear all attendance data when department changes
     dispatch(clearAttendance());
     setOriginalAttendances([]);
     setFilteredAttendances([]);
@@ -172,47 +236,64 @@ const MyAttendance = () => {
     getDutyScheduleByDepartmentForAttendance(selectedDepartment);
   }, [selectedDepartment, getDutyScheduleByDepartmentForAttendance, dispatch]);
 
-  // Same duty schedule processing as manager
+  // Process duty schedule data and set up available schedules
   useEffect(() => {
     if (dutySchedules && dutySchedules.length > 0) {
+      // Backend now returns array of schedules directly
       const currentDate = getTodayDatePH();
+
       const schedulesArray = dutySchedules.filter((schedule) => {
         const isValid =
           schedule && schedule._id && schedule.startDate && schedule.endDate;
+
         if (!isValid) return false;
+
+        // Filter out future schedules - only include schedules that have started
         const scheduleStartDate = parseDatePH(schedule.startDate);
         const isScheduleStarted = scheduleStartDate <= currentDate;
+
         return isScheduleStarted;
       });
 
       if (schedulesArray.length > 0) {
+        // Sort schedules by start date (chronological order)
         schedulesArray.sort(
           (a, b) => new Date(a.startDate) - new Date(b.startDate)
         );
+
         setAvailableDutySchedules(schedulesArray);
 
+        // Find the schedule that contains the current date, or default to most recent
         let selectedIndex = 0;
+
+        // Look for schedule containing current date
         const schedulesContainingCurrentDate = schedulesArray.filter(
-          (schedule) => {
-            return isDateInSchedulePeriod(
+          (schedule, index) => {
+            const isInPeriod = isDateInSchedulePeriod(
               currentDate,
               schedule.startDate,
               schedule.endDate
             );
+            return isInPeriod;
           }
         );
 
         if (schedulesContainingCurrentDate.length > 0) {
-          const currentMonth = currentDate.getMonth() + 1;
+          // If multiple schedules contain the current date, prefer the one with current month
+          const currentMonth = currentDate.getMonth() + 1; // getMonth() is 0-based
           const currentYear = currentDate.getFullYear();
           const currentMonthSchedule = `${currentYear}-${currentMonth
             .toString()
             .padStart(2, "0")}`;
 
+          // SPECIAL LOGIC: If current date is in July but we have an August schedule
+          // that contains this date, we should prefer the August schedule
           let preferredSchedule = schedulesContainingCurrentDate.find(
             (schedule) => schedule.monthSchedule === currentMonthSchedule
           );
 
+          // If no direct match, look for the schedule with the latest monthSchedule
+          // This handles cases where July 28 falls in an August schedule period
           if (!preferredSchedule && schedulesContainingCurrentDate.length > 1) {
             preferredSchedule = schedulesContainingCurrentDate.reduce(
               (latest, current) => {
@@ -228,11 +309,13 @@ const MyAttendance = () => {
               (s) => s._id === preferredSchedule._id
             );
           } else {
+            // Fallback to first schedule that contains current date
             selectedIndex = schedulesArray.findIndex(
               (s) => s._id === schedulesContainingCurrentDate[0]._id
             );
           }
         } else {
+          // If current date doesn't fall in any schedule, select the most recent/closest one
           const today = currentDate.getTime();
           let closestIndex = 0;
           let closestDistance = Math.abs(
@@ -262,35 +345,22 @@ const MyAttendance = () => {
     }
   }, [dutySchedules, isDateInSchedulePeriod]);
 
-  // Fetch attendance data when duty schedule is available
-  useEffect(() => {
-    if (!availableDutySchedules.length || currentScheduleIndex < 0) return;
-
-    const currentSchedule = availableDutySchedules[currentScheduleIndex];
-    if (!currentSchedule?._id) return;
-
-    dispatch(
-      fetchAttendanceByDepartment({
-        scheduleId: currentSchedule._id,
-        employeeId, // THIS IS THE KEY DIFFERENCE - filter for specific employee
-      })
-    );
-  }, [availableDutySchedules, currentScheduleIndex, employeeId, dispatch]);
-
-  // Same attendance processing as manager
+  // Set attendances data when available
   useEffect(() => {
     if (attendances && attendances.length > 0) {
+      // Set new data when we have attendances
       setOriginalAttendances(attendances);
       setFilteredAttendances(attendances);
       setTotalFilteredAttendance(attendances.length);
     } else if (attendances && attendances.length === 0) {
+      // Clear local state when attendances is explicitly empty array
       setOriginalAttendances([]);
       setFilteredAttendances([]);
       setTotalFilteredAttendance(0);
     }
   }, [attendances]);
 
-  // Same search filtering as manager
+  // Search filtering effect
   useEffect(() => {
     if (originalAttendances && originalAttendances.length > 0) {
       let filteredData = [...originalAttendances];
@@ -298,6 +368,7 @@ const MyAttendance = () => {
       if (searchValue && searchValue.trim() !== "") {
         const isEmployeeId =
           searchValue.length === 24 && /^[0-9a-fA-F]{24}$/.test(searchValue);
+
         if (isEmployeeId) {
           const searchId = searchValue.toString();
           filteredData = filteredData.filter((record) => {
@@ -327,21 +398,25 @@ const MyAttendance = () => {
     }
   }, [searchValue, originalAttendances, perPage, currentPage]);
 
-  // Use the same reusable component with different data
+  // Fetch attendance data when duty schedule is available
+  useEffect(() => {
+    if (!availableDutySchedules.length || currentScheduleIndex < 0) return;
+
+    const currentSchedule = availableDutySchedules[currentScheduleIndex];
+    if (!currentSchedule?._id) return;
+
+    dispatch(
+      fetchAttendanceByDepartment({
+        scheduleId: currentSchedule._id,
+      })
+    );
+  }, [availableDutySchedules, currentScheduleIndex, dispatch]);
+
   return (
     <EmployeeAttendance
-      // Essential data props - FOR INDIVIDUAL EMPLOYEE
-      departments={
-        employee?.employmentInformation?.department
-          ? [
-              {
-                _id: employee.employmentInformation.department,
-                name: "My Department",
-              },
-            ]
-          : []
-      }
-      employees={[]} // Empty for individual view
+      // Essential data props
+      departments={managedDepartments}
+      employees={employees}
       attendances={filteredAttendances}
       loading={loading}
       // UI state props
@@ -359,17 +434,15 @@ const MyAttendance = () => {
       canNavigateNext={canNavigateNext}
       handleNextMonth={handleNextMonth}
       handlePrevMonth={handlePrevMonth}
-      // Form handlers - modified for individual employee
-      handleDepartmentChange={() => {}} // Disabled for individual employee
+      // Form handlers
+      handleDepartmentChange={handleDepartmentChange}
       handlePageChange={handlePageChange}
       handleSearchValueChange={handleSearchValueChange}
       handlePerPageChange={handlePerPageChange}
       // Error handling
       errorMessage={errorMessage}
-      // View type - indicates this is individual employee view
-      isIndividualView={true}
     />
   );
 };
 
-export default MyAttendance;
+export default ManagerEmployeeAttendance;

@@ -24,8 +24,11 @@ import Search from "../../../../components/Search";
 import Pagination from "../../../../components/Pagination";
 import { formatTimeTo12HourPH } from "../../../../utils/phDateUtils";
 
+// Handle special cases for non-duty types
+//   day-off  =>  bg-gray-200          // Gray background for Day Off
+//   holiday-off => bg-orange-200      // Orange background for Holiday Off
+//   leave => bg-yellow-200            // Yellow background for Leave
 const shiftColors = [
-  // Already Used — KEEP EXACTLY
   "bg-pink-300",
   "bg-blue-100",
   "bg-purple-100",
@@ -74,9 +77,9 @@ const shiftColors = [
 
   // Light-Medium Tones - 200 variants (Good separation from existing)
   "bg-red-200",
-  "bg-orange-200",
+  // "bg-orange-200", // REMOVED: Reserved for holiday-off
   "bg-amber-200",
-  "bg-yellow-200",
+  // "bg-yellow-200", // REMOVED: Reserved for leave
   "bg-lime-200",
   "bg-emerald-300", // Avoiding emerald-200 (too close to existing)
   "bg-teal-200",
@@ -92,7 +95,7 @@ const shiftColors = [
   "bg-stone-200",
   "bg-neutral-200",
   "bg-zinc-200",
-  "bg-gray-200",
+  // "bg-gray-200", // REMOVED: Reserved for day-off
   "bg-slate-300", // Different from slate-200 above
 
   // Medium Tones - 300 variants (Well separated)
@@ -156,8 +159,9 @@ const shiftColors = [
   "bg-gray-75",
   "bg-slate-75",
 
-  // Total: 18 (existing) + 100 (new) = 118 colors
+  // Total: 15 (existing) + 97 (remaining after removing reserved colors) = 112 colors
   // All checked for visual distinctiveness and black text compatibility
+  // Reserved colors removed: bg-gray-200, bg-orange-200, bg-yellow-200
 ];
 
 const initialFormData = {

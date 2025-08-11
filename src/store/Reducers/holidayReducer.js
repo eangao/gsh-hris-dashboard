@@ -102,12 +102,9 @@ export const deleteHoliday = createAsyncThunk(
   }
 );
 
-export const fetchHolidaysForLocation = createAsyncThunk(
-  "holiday/fetchHolidaysForLocation",
-  async (
-    { startDate, endDate, province = "", city = "" },
-    { rejectWithValue, fulfillWithValue }
-  ) => {
+export const fetchHolidaysDateRange = createAsyncThunk(
+  "holiday/fetchHolidaysDateRange",
+  async ({ startDate, endDate }, { rejectWithValue, fulfillWithValue }) => {
     try {
       if (!startDate || !endDate) {
         return rejectWithValue({
@@ -120,11 +117,8 @@ export const fetchHolidaysForLocation = createAsyncThunk(
         endDate: endDate,
       });
 
-      if (province) params.append("province", province);
-      if (city) params.append("city", city);
-
       const { data } = await api.get(
-        `/hris/reference-data/holidays/location?${params.toString()}`,
+        `/hris/reference-data/holidays/date-range?${params.toString()}`,
         {
           withCredentials: true,
         }
@@ -223,14 +217,14 @@ const holidaySlice = createSlice({
 
     // Fetch Holidays For Location
     builder
-      .addCase(fetchHolidaysForLocation.pending, (state) => {
+      .addCase(fetchHolidaysDateRange.pending, (state) => {
         state.loading = true;
       })
-      .addCase(fetchHolidaysForLocation.rejected, (state, { payload }) => {
+      .addCase(fetchHolidaysDateRange.rejected, (state, { payload }) => {
         state.loading = false;
         state.errorMessage = payload.error;
       })
-      .addCase(fetchHolidaysForLocation.fulfilled, (state, { payload }) => {
+      .addCase(fetchHolidaysDateRange.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.holidays = payload.holidays;
       });
