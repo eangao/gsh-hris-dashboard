@@ -432,6 +432,21 @@ const ManagerEmployeeAttendance = () => {
     );
   }, [availableDutySchedules, currentScheduleIndex, dispatch]);
 
+  // Handle manual attendance success - refresh current attendance data
+  const handleManualAttendanceSuccess = useCallback(() => {
+    // Refresh current attendance data to show the newly added manual attendance
+    if (availableDutySchedules.length > 0 && currentScheduleIndex >= 0) {
+      const currentSchedule = availableDutySchedules[currentScheduleIndex];
+      if (currentSchedule?._id) {
+        dispatch(
+          fetchAttendanceByDepartment({
+            scheduleId: currentSchedule._id,
+          })
+        );
+      }
+    }
+  }, [availableDutySchedules, currentScheduleIndex, dispatch]);
+
   return (
     <EmployeeAttendance
       // Essential data props
@@ -463,6 +478,11 @@ const ManagerEmployeeAttendance = () => {
       errorMessage={errorMessage}
       // Holiday data
       holidays={holidays}
+      // Manual attendance handler
+
+      // Role-based customization
+      userRole="manager"
+      onManualAttendanceSuccess={handleManualAttendanceSuccess}
     />
   );
 };

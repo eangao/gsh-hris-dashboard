@@ -18,6 +18,25 @@ export const formatDatePH = (input, format = "YYYY-MM-DD") => {
 };
 
 /**
+ * Combines a date string and time string into a UTC ISO string.
+ * Both date and time are treated as Asia/Manila timezone.
+ *
+ * @param {string} dateStr - Date string in YYYY-MM-DD format
+ * @param {string} timeStr - Time string in HH:mm format
+ * @returns {string|null} - UTC ISO string or null if invalid
+ */
+export const combineDateTimeToUTC = (dateStr, timeStr) => {
+  if (!dateStr || !timeStr) return null;
+  
+  // Combine date and time in Asia/Manila timezone
+  const phDateTime = moment.tz(`${dateStr} ${timeStr}`, "Asia/Manila");
+  
+  if (!phDateTime.isValid()) return null;
+  
+  return phDateTime.utc().toISOString();
+};
+
+/**
  * Converts a PH-local date string (e.g., '2025-06-05') to a UTC ISO string.
  * Used for submitting dates to APIs or databases.
  *

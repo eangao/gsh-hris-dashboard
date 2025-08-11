@@ -28,10 +28,49 @@ export const fetchAttendanceByDepartment = createAsyncThunk(
   }
 );
 
+export const logManualAttendance = createAsyncThunk(
+  "attendance/logManualAttendance",
+  async (manualAttendanceData, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.post(
+        "/hris/attendances/manual-attendance",
+        manualAttendanceData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const updateManualAttendance = createAsyncThunk(
+  "attendance/updateManualAttendance",
+  async ({ logId, ...updateData }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.put(
+        `/hris/attendances/manual-attendance/${logId}`,
+        updateData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 const attendanceSlice = createSlice({
   name: "attendance",
   initialState: {
     loading: false,
+    manualAttendanceLoading: false, // Separate loading for manual attendance
     successMessage: "",
     errorMessage: "",
     attendances: [],
@@ -85,6 +124,58 @@ const attendanceSlice = createSlice({
         state.totalAttendance = 0;
         state.dutyScheduleInfo = {};
         state.errorMessage = payload?.error || "Failed to load attendance data";
+      })
+
+      // Manual attendance handlers
+      .addCase(logManualAttendance.pending, (state) => {
+        state.manualAttendanceLoading = true;
+        state.errorMessage = "";
+      })
+      .addCase(logManualAttendance.fulfilled, (state, { payload }) => {
+        state.manualAttendanceLoading = false;
+        state.successMessage =
+          payload.message || "Manual attendance logged successfully";
+
+        // Update the specific attendance record in the state
+        if (payload.updatedAttendance) {
+          const attendanceIndex = state.attendances.findIndex(
+            (attendance) => attendance._id === payload.updatedAttendance._id
+          );
+          if (attendanceIndex !== -1) {
+            state.attendances[attendanceIndex] = payload.updatedAttendance;
+          }
+        }
+      })
+      .addCase(logManualAttendance.rejected, (state, { payload }) => {
+        state.manualAttendanceLoading = false;
+        state.errorMessage =
+          payload?.error || "Failed to log manual attendance";
+      })
+
+      // Update manual attendance handlers
+      .addCase(updateManualAttendance.pending, (state) => {
+        state.manualAttendanceLoading = true;
+        state.errorMessage = "";
+      })
+      .addCase(updateManualAttendance.fulfilled, (state, { payload }) => {
+        state.manualAttendanceLoading = false;
+        state.successMessage =
+          payload.message || "Manual attendance updated successfully";
+
+        // Update the specific attendance record in the state
+        if (payload.updatedAttendance) {
+          const attendanceIndex = state.attendances.findIndex(
+            (attendance) => attendance._id === payload.updatedAttendance._id
+          );
+          if (attendanceIndex !== -1) {
+            state.attendances[attendanceIndex] = payload.updatedAttendance;
+          }
+        }
+      })
+      .addCase(updateManualAttendance.rejected, (state, { payload }) => {
+        state.manualAttendanceLoading = false;
+        state.errorMessage =
+          payload?.error || "Failed to update manual attendance";
       });
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   formatDatePH,
   formatTimeTo12HourPH,
@@ -9,7 +9,6 @@ import {
 import Pagination from "../Pagination";
 import EmployeeSearchFrontend from "../EmployeeSearchFrontend";
 import LoadingIndicator from "../LoadingIndicator";
-import ManualAttendanceModal from "../ManualAttendanceModal";
 
 // Helper function to format schedule based on scheduleType
 const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
@@ -42,14 +41,16 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
 
           return (
             <div className={`${baseClasses} space-y-1`}>
-              <div className="flex items-center">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                 <span className="text-blue-800">
-                  {morningIn}-{morningOut}
+                  {morningIn} - {morningOut}
                 </span>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                 <span className="text-blue-800">
-                  {afternoonIn}-{afternoonOut}
+                  {afternoonIn} - {afternoonOut}
                 </span>
               </div>
               {!isDesktop && (
@@ -83,10 +84,24 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
 
           return (
             <div className={`${baseClasses}`}>
-              <div className="flex items-center">
-                <span className="text-cyan-800 whitespace-nowrap">
-                  {startTime}-{endTime}
-                </span>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 text-cyan-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-cyan-800 whitespace-nowrap">
+                    {startTime} - {endTime}
+                  </span>
+                </div>
               </div>
               {!isDesktop && (
                 <div className="flex items-center gap-1 mt-1">
@@ -100,14 +115,38 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
         }
       }
       return (
-        <div className={`${baseClasses}`}>
+        <div className={`${baseClasses} flex items-center gap-2`}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 text-blue-600"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clipRule="evenodd"
+            />
+          </svg>
           <span className="text-blue-800 font-medium">Duty</span>
         </div>
       );
 
     case "off":
       return (
-        <div className={`${baseClasses}`}>
+        <div className={`${baseClasses} flex items-center gap-2`}>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 text-gray-500"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+              clipRule="evenodd"
+            />
+          </svg>
           <span className="text-gray-800 font-medium">Off</span>
         </div>
       );
@@ -115,7 +154,22 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
     case "holiday_off":
       return (
         <div className={`${baseClasses} space-y-1`}>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-red-500"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732L14.146 12.8l-1.179 4.456a1 1 0 01-1.934 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732L9.854 7.2l1.179-4.456A1 1 0 0112 2z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
+            </div>
             <span className="text-red-700 font-semibold uppercase text-xs">
               Holiday Off
             </span>
@@ -126,7 +180,23 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
     case "leave":
       return (
         <div className={`${baseClasses} space-y-1`}>
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 text-amber-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                <path
+                  fillRule="evenodd"
+                  d="M4 5a2 2 0 012-2v1a2 2 0 002 2h4a2 2 0 002-2V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
             <span className="text-amber-700 font-semibold uppercase text-xs">
               {attendance.leaveTemplate?.name || "Leave"}
             </span>
@@ -215,143 +285,8 @@ const EmployeeAttendance = ({
   isIndividualView = false,
 
   // User role - determines header content based on role
-  userRole = "", // Options: "manager", "director", "hr", "employee"
-
-  // Manual attendance handler
-  onManualAttendanceSuccess,
+  userRole = "manager", // Options: "manager", "director", "hr", "employee"
 }) => {
-  // Manual attendance modal state
-  const [remarksModal, setRemarksModal] = useState({
-    isOpen: false,
-    remarks: "",
-    employeeName: "",
-    date: "",
-  });
-
-  // Component to display truncated remarks with "more" option
-  const RemarksDisplay = ({
-    remarks,
-    employeeName,
-    date,
-    onShowMore,
-    schedule,
-  }) => {
-    const maxLength = 15; // Maximum characters to show - kept short to prevent row expansion
-
-    if (!remarks || remarks === "--") {
-      return <span className="text-gray-400">--</span>;
-    }
-
-    if (remarks.length <= maxLength) {
-      return <span className="text-gray-600 text-xs">{remarks}</span>;
-    }
-
-    return (
-      <span className="text-gray-600 text-xs">
-        {remarks.substring(0, maxLength)}...
-        <button
-          onClick={() =>
-            onShowMore({
-              remarks,
-              employeeName,
-              date: formatDatePH(date, "MMM D, YYYY"),
-              schedule,
-            })
-          }
-          className="text-blue-600 hover:text-blue-800 font-medium ml-1 underline"
-        >
-          more
-        </button>
-      </span>
-    );
-  };
-
-  const [manualAttendanceModal, setManualAttendanceModal] = useState({
-    isOpen: false,
-    attendance: null,
-    timeType: null,
-    mode: "create", // "create" or "update"
-    existingTime: "",
-    existingRemarks: "",
-    manualId: null,
-  });
-
-  // Helper function to check if manual attendance is allowed
-  const isManualAttendanceAllowed = (attendance, timeType) => {
-    // Only allow managers to add manual attendance
-    if (userRole?.toLowerCase() !== "manager") {
-      return false;
-    }
-
-    // Only allow for duty schedules (not off, holiday_off, leave, holiday, on duty)
-    const restrictedScheduleTypes = [
-      "off",
-      "holiday_off",
-      "holiday",
-      "leave",
-      "on duty",
-    ];
-
-    const scheduleType = attendance.scheduleType?.toLowerCase();
-    const status = attendance.status?.toLowerCase();
-
-    // Check if schedule type is restricted
-    if (restrictedScheduleTypes.includes(scheduleType)) {
-      return false;
-    }
-
-    // Check if status is restricted (for "on duty" status)
-    if (restrictedScheduleTypes.includes(status)) {
-      return false;
-    }
-
-    // Only allow for "duty" schedule type or similar work schedules
-    if (scheduleType === "duty" || scheduleType === "work") {
-      return true;
-    }
-
-    // If we can't determine the schedule type, be conservative and disallow
-    return false;
-  };
-
-  // Handle opening manual attendance modal
-  const handleManualAttendanceClick = (attendance, timeType) => {
-    if (isManualAttendanceAllowed(attendance, timeType)) {
-      setManualAttendanceModal({
-        isOpen: true,
-        attendance,
-        timeType,
-        mode: "create",
-        existingTime: "",
-        existingRemarks: "",
-        manualId: null,
-      });
-    }
-  };
-
-  // Handle closing manual attendance modal
-  const handleCloseManualAttendanceModal = () => {
-    setManualAttendanceModal({
-      isOpen: false,
-      attendance: null,
-      timeType: null,
-      mode: "create",
-      existingTime: "",
-      existingRemarks: "",
-      manualId: null,
-    });
-  };
-
-  // Handle manual attendance success
-  const handleManualAttendanceSuccess = () => {
-    // Close modal
-    handleCloseManualAttendanceModal();
-
-    // Call parent callback if provided
-    if (onManualAttendanceSuccess) {
-      onManualAttendanceSuccess();
-    }
-  };
   // Helper function to get header content based on role
   const getHeaderContent = () => {
     if (isIndividualView) {
@@ -366,7 +301,7 @@ const EmployeeAttendance = ({
         return {
           title: "Employee Attendance Management",
           description:
-            "Monitor and manage attendance records across all departments",
+            "Monitor and manage attendance records across all company departments",
         };
       case "director":
         return {
@@ -488,28 +423,8 @@ const EmployeeAttendance = ({
   };
 
   // Time display component - formats time to PH timezone 12-hour format
-  const TimeDisplay = ({
-    time,
-    type = "in",
-    attendance,
-    timeType,
-    source, // New parameter for source tracking
-    manualId = null, // Manual attendance ID for update
-    showManualOption = false,
-  }) => {
+  const TimeDisplay = ({ time, type = "in" }) => {
     if (!time) {
-      // Show clickable empty slot for manual attendance if conditions are met
-      if (showManualOption && isManualAttendanceAllowed(attendance, timeType)) {
-        return (
-          <button
-            onClick={() => handleManualAttendanceClick(attendance, timeType)}
-            className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors border border-dashed border-gray-300 hover:border-blue-400"
-            title="Click to add manual attendance"
-          >
-            --:-- ✏️
-          </button>
-        );
-      }
       return <span className="text-gray-400">--:--</span>;
     }
 
@@ -522,106 +437,7 @@ const EmployeeAttendance = ({
 
     const colorClass = type === "in" ? "text-green-600" : "text-red-600";
 
-    // Determine source indicator and styling
-    const getSourceIndicator = (source) => {
-      if (!source) return null;
-
-      const sourceType = source.toLowerCase();
-
-      if (sourceType === "manual") {
-        return {
-          label: "M",
-          className: "bg-amber-100 text-amber-800 border-amber-200",
-          title: "Manual entry",
-        };
-      } else if (sourceType === "biometric") {
-        return {
-          label: "B",
-          className: "bg-emerald-100 text-emerald-800 border-emerald-200",
-          title: "Biometric scan",
-        };
-      }
-
-      return null;
-    };
-
-    const sourceIndicator = getSourceIndicator(source);
-    const isManualEntry = source && source.toLowerCase() === "manual";
-
-    // Handle click for manual entries (edit functionality)
-    const handleManualEditClick = () => {
-      if (isManualEntry) {
-        // Extract time from the full datetime for editing
-        const timeValue =
-          typeof time === "string" && time.includes("T")
-            ? new Date(time).toTimeString().slice(0, 5)
-            : time;
-
-        setManualAttendanceModal({
-          isOpen: true,
-          attendance,
-          timeType,
-          mode: "update",
-          existingTime: timeValue,
-          existingRemarks: "", // You might want to fetch this from the manual log
-          manualId: manualId || `temp-${Date.now()}`, // Temporary ID if missing
-        });
-      }
-    };
-
-    return (
-      <div className="flex items-center">
-        <span className={`text-sm ${colorClass} font-medium`}>
-          {formattedTime}
-        </span>
-        {sourceIndicator && (
-          <>
-            {isManualEntry ? (
-              // Show M badge for manual entries, pen icon only if editing is allowed
-              <div className="flex items-center ml-1">
-                {/* Original M badge */}
-                <span
-                  className={`inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ${sourceIndicator.className}`}
-                  title={sourceIndicator.title}
-                >
-                  {sourceIndicator.label}
-                </span>
-                {/* Pen icon for editing - only show if allowed */}
-                {isManualAttendanceAllowed(attendance, timeType) && (
-                  <button
-                    onClick={handleManualEditClick}
-                    className="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 hover:border-blue-300 cursor-pointer transition-colors"
-                    title="Click to edit manual entry"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-2.5 w-2.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <span
-                className={`inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 ${sourceIndicator.className}`}
-                title={sourceIndicator.title}
-              >
-                {sourceIndicator.label}
-              </span>
-            )}
-          </>
-        )}
-      </div>
-    );
+    return <span className={` text-sm ${colorClass}`}>{formattedTime}</span>;
   };
 
   return (
@@ -1092,8 +908,7 @@ const EmployeeAttendance = ({
                 <div
                   className="grid gap-2 text-sm font-semibold text-gray-700"
                   style={{
-                    gridTemplateColumns:
-                      "2fr 1fr 1.2fr 1.3fr 1.3fr 1fr 1fr 1fr",
+                    gridTemplateColumns: "2fr 1fr 1.2fr 1fr 1fr 1fr 1fr 1fr",
                   }}
                 >
                   <div className="flex items-center">
@@ -1386,11 +1201,6 @@ const EmployeeAttendance = ({
                                     <TimeDisplay
                                       time={attendance.morningInLog}
                                       type="in"
-                                      attendance={attendance}
-                                      timeType="morningIn"
-                                      source={attendance.morningInLogSource}
-                                      manualId={attendance.morningInLogManualId}
-                                      showManualOption={true}
                                     />
                                   </div>
                                   {/* Afternoon In - Always show for Standard */}
@@ -1409,13 +1219,6 @@ const EmployeeAttendance = ({
                                     <TimeDisplay
                                       time={attendance.afternoonInLog}
                                       type="in"
-                                      attendance={attendance}
-                                      timeType="afternoonIn"
-                                      source={attendance.afternoonInLogSource}
-                                      manualId={
-                                        attendance.afternoonInLogManualId
-                                      }
-                                      showManualOption={true}
                                     />
                                   </div>
                                 </div>
@@ -1423,11 +1226,6 @@ const EmployeeAttendance = ({
                                 <TimeDisplay
                                   time={attendance.timeIn}
                                   type="in"
-                                  attendance={attendance}
-                                  timeType="timeIn"
-                                  source={attendance.timeInSource}
-                                  manualId={attendance.timeInManualId}
-                                  showManualOption={true}
                                 />
                               )}
                             </div>
@@ -1475,13 +1273,6 @@ const EmployeeAttendance = ({
                                     <TimeDisplay
                                       time={attendance.morningOutLog}
                                       type="out"
-                                      attendance={attendance}
-                                      timeType="morningOut"
-                                      source={attendance.morningOutLogSource}
-                                      manualId={
-                                        attendance.morningOutLogManualId
-                                      }
-                                      showManualOption={true}
                                     />
                                   </div>
                                   {/* Afternoon Out - Always show for Standard */}
@@ -1500,13 +1291,6 @@ const EmployeeAttendance = ({
                                     <TimeDisplay
                                       time={attendance.afternoonOutLog}
                                       type="out"
-                                      attendance={attendance}
-                                      timeType="afternoonOut"
-                                      source={attendance.afternoonOutLogSource}
-                                      manualId={
-                                        attendance.afternoonOutLogManualId
-                                      }
-                                      showManualOption={true}
                                     />
                                   </div>
                                 </div>
@@ -1514,11 +1298,6 @@ const EmployeeAttendance = ({
                                 <TimeDisplay
                                   time={attendance.timeOut}
                                   type="out"
-                                  attendance={attendance}
-                                  timeType="timeOut"
-                                  source={attendance.timeOutSource}
-                                  manualId={attendance.timeOutManualId}
-                                  showManualOption={true}
                                 />
                               )}
                             </div>
@@ -1612,26 +1391,8 @@ const EmployeeAttendance = ({
                                     Remarks
                                   </span>
                                 </div>
-                                <div>
-                                  <span className="text-sm text-gray-500">
-                                    Remarks:
-                                  </span>
-                                  <div className="mt-1">
-                                    <RemarksDisplay
-                                      remarks={attendance.remarks}
-                                      employeeName={attendance.employeeName}
-                                      date={
-                                        attendance.datePH || attendance.date
-                                      }
-                                      schedule={attendance.shiftTemplate}
-                                      onShowMore={(remarksData) =>
-                                        setRemarksModal({
-                                          isOpen: true,
-                                          data: remarksData,
-                                        })
-                                      }
-                                    />
-                                  </div>
+                                <div className="text-sm text-blue-700">
+                                  {attendance.remarks}
                                 </div>
                               </div>
                             )}
@@ -1663,7 +1424,7 @@ const EmployeeAttendance = ({
                           className="grid gap-4 items-center text-sm"
                           style={{
                             gridTemplateColumns:
-                              "2fr 1fr 1.2fr 1.3fr 1.3fr 1fr 1fr 1fr",
+                              "2fr 1fr 1.2fr 1fr 1fr 1fr 1fr 1fr",
                           }}
                         >
                           {/* Employee Name */}
@@ -1755,11 +1516,6 @@ const EmployeeAttendance = ({
                                   <TimeDisplay
                                     time={attendance.morningInLog}
                                     type="in"
-                                    attendance={attendance}
-                                    timeType="morningIn"
-                                    source={attendance.morningInLogSource}
-                                    manualId={attendance.morningInLogManualId}
-                                    showManualOption={true}
                                   />
                                 </div>
                                 {/* Afternoon In - Always show for Standard */}
@@ -1778,25 +1534,12 @@ const EmployeeAttendance = ({
                                   <TimeDisplay
                                     time={attendance.afternoonInLog}
                                     type="in"
-                                    attendance={attendance}
-                                    timeType="afternoonIn"
-                                    source={attendance.afternoonInLogSource}
-                                    manualId={attendance.afternoonInLogManualId}
-                                    showManualOption={true}
                                   />
                                 </div>
                               </div>
                             ) : (
                               // For Shifting shifts, show single time in
-                              <TimeDisplay
-                                time={attendance.timeIn}
-                                type="in"
-                                attendance={attendance}
-                                timeType="timeIn"
-                                source={attendance.timeInSource}
-                                manualId={attendance.timeInManualId}
-                                showManualOption={true}
-                              />
+                              <TimeDisplay time={attendance.timeIn} type="in" />
                             )}
                           </div>
 
@@ -1825,11 +1568,6 @@ const EmployeeAttendance = ({
                                   <TimeDisplay
                                     time={attendance.morningOutLog}
                                     type="out"
-                                    attendance={attendance}
-                                    timeType="morningOut"
-                                    source={attendance.morningOutLogSource}
-                                    manualId={attendance.morningOutLogManualId}
-                                    showManualOption={true}
                                   />
                                 </div>
                                 {/* Afternoon Out - Always show for Standard */}
@@ -1848,13 +1586,6 @@ const EmployeeAttendance = ({
                                   <TimeDisplay
                                     time={attendance.afternoonOutLog}
                                     type="out"
-                                    attendance={attendance}
-                                    timeType="afternoonOut"
-                                    source={attendance.afternoonOutLogSource}
-                                    manualId={
-                                      attendance.afternoonOutLogManualId
-                                    }
-                                    showManualOption={true}
                                   />
                                 </div>
                               </div>
@@ -1863,11 +1594,6 @@ const EmployeeAttendance = ({
                               <TimeDisplay
                                 time={attendance.timeOut}
                                 type="out"
-                                attendance={attendance}
-                                timeType="timeOut"
-                                source={attendance.timeOutSource}
-                                manualId={attendance.timeOutManualId}
-                                showManualOption={true}
                               />
                             )}
                           </div>
@@ -1932,19 +1658,8 @@ const EmployeeAttendance = ({
                           </div>
 
                           {/* Remarks */}
-                          <div>
-                            <RemarksDisplay
-                              remarks={attendance.remarks}
-                              employeeName={attendance.employeeName}
-                              date={attendance.datePH || attendance.date}
-                              schedule={attendance.shiftTemplate}
-                              onShowMore={(remarksData) =>
-                                setRemarksModal({
-                                  isOpen: true,
-                                  data: remarksData,
-                                })
-                              }
-                            />
+                          <div className="text-gray-600 text-xs">
+                            {attendance.remarks || "--"}
                           </div>
                         </div>
                       </div>
@@ -2046,173 +1761,6 @@ const EmployeeAttendance = ({
             </div>
           </div>
         )
-      )}
-
-      {/* Manual Attendance Modal */}
-      <ManualAttendanceModal
-        isOpen={manualAttendanceModal.isOpen}
-        onClose={handleCloseManualAttendanceModal}
-        attendance={manualAttendanceModal.attendance}
-        timeType={manualAttendanceModal.timeType}
-        onSuccess={handleManualAttendanceSuccess}
-        mode={manualAttendanceModal.mode}
-        existingTime={manualAttendanceModal.existingTime}
-        existingRemarks={manualAttendanceModal.existingRemarks}
-        manualId={manualAttendanceModal.manualId}
-      />
-
-      {/* Remarks Modal */}
-      {remarksModal.isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Remarks Details
-              </h3>
-              <button
-                onClick={() => setRemarksModal({ isOpen: false, data: {} })}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {remarksModal.data.employeeName && (
-                <div>
-                  <span className="text-sm text-gray-500">Employee:</span>
-                  <p className="text-sm font-medium text-gray-900">
-                    {remarksModal.data.employeeName}
-                  </p>
-                </div>
-              )}
-
-              {remarksModal.data.date && (
-                <div>
-                  <span className="text-sm text-gray-500">Date:</span>
-                  <p className="text-sm font-medium text-gray-900">
-                    {remarksModal.data.date}
-                  </p>
-                </div>
-              )}
-
-              {remarksModal.data.schedule && (
-                <div>
-                  <span className="text-sm text-gray-500">Schedule:</span>
-                  <div className="text-sm font-medium text-gray-900">
-                    {remarksModal.data.schedule.type === "Standard" ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-white font-medium bg-sky-500 px-2 py-0.5 rounded flex items-center gap-1">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 text-yellow-200"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fillRule="evenodd"
-                                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                                clipRule="evenodd"
-                              />
-                            </svg>
-                            AM
-                          </span>
-                          <span>
-                            {formatTimeTo12HourPH(
-                              remarksModal.data.schedule.morningIn
-                            )}{" "}
-                            -{" "}
-                            {formatTimeTo12HourPH(
-                              remarksModal.data.schedule.morningOut
-                            )}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-white font-medium bg-amber-500 px-2 py-0.5 rounded flex items-center gap-1">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-3 w-3 text-blue-200"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                            </svg>
-                            PM
-                          </span>
-                          <span>
-                            {formatTimeTo12HourPH(
-                              remarksModal.data.schedule.afternoonIn
-                            )}{" "}
-                            -{" "}
-                            {formatTimeTo12HourPH(
-                              remarksModal.data.schedule.afternoonOut
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    ) : remarksModal.data.schedule.type === "Shifting" ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-white font-medium bg-cyan-500 px-2 py-0.5 rounded">
-                          Shifting
-                        </span>
-                        <span>
-                          {formatTimeTo12HourPH(
-                            remarksModal.data.schedule.startTime
-                          )}{" "}
-                          -{" "}
-                          {formatTimeTo12HourPH(
-                            remarksModal.data.schedule.endTime
-                          )}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-white font-medium bg-purple-500 px-2 py-0.5 rounded">
-                          {remarksModal.data.schedule.type || "Unknown"}
-                        </span>
-                        <span>
-                          {remarksModal.data.schedule.timeIn &&
-                          remarksModal.data.schedule.timeOut
-                            ? `${remarksModal.data.schedule.timeIn} - ${remarksModal.data.schedule.timeOut}`
-                            : "No schedule details"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <span className="text-sm text-gray-500">Remarks:</span>
-                <p className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">
-                  {remarksModal.data.remarks}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setRemarksModal({ isOpen: false, data: {} })}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
