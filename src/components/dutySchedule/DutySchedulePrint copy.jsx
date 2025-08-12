@@ -147,57 +147,33 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
           type: es.type || "duty",
         };
 
-        if (es.type === "duty") {
-          // Use denormalized shift data first, fall back to populated template
-          let shiftTemplate;
-          if (es.shiftData && es.shiftData.name) {
-            // Use denormalized shift data from backend
-            shiftTemplate = es.shiftData;
-          } else if (es.shiftTemplate) {
-            // Fall back to populated template data
-            shiftTemplate = es.shiftTemplate;
-          }
-
-          if (shiftTemplate) {
-            displayInfo.shiftName =
-              shiftTemplate.name?.toLowerCase() || "unknown";
-            displayInfo.shift =
-              shiftTemplate.type === "Standard"
-                ? `${formatTimeTo12HourPH(
-                    shiftTemplate.morningIn
-                  )}-${formatTimeTo12HourPH(
-                    shiftTemplate.morningOut
-                  )}, ${formatTimeTo12HourPH(
-                    shiftTemplate.afternoonIn
-                  )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
-                : `${formatTimeTo12HourPH(
-                    shiftTemplate.startTime
-                  )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`;
-            displayInfo.startIn =
-              shiftTemplate.type === "Standard"
-                ? shiftTemplate.morningIn
-                : shiftTemplate.startTime;
-          }
-        } else if (es.type === "leave") {
-          // Use denormalized leave data first, fall back to populated template
-          let leaveTemplate;
-          if (es.leaveData && es.leaveData.name) {
-            // Use denormalized leave data from backend
-            leaveTemplate = es.leaveData;
-          } else if (es.leaveTemplate) {
-            // Fall back to populated template data
-            leaveTemplate = es.leaveTemplate;
-          }
-
-          if (leaveTemplate) {
-            displayInfo.shift = "LEAVE";
-            displayInfo.shiftName = "leave";
-            displayInfo.startIn = "leave";
-            displayInfo.leaveTemplateName = leaveTemplate.name;
-            displayInfo.leaveAbbreviation = getLeaveAbbreviation(
-              leaveTemplate.name
-            );
-          }
+        if (es.type === "duty" && es.shiftTemplate) {
+          displayInfo.shiftName =
+            es.shiftTemplate.name?.toLowerCase() || "unknown";
+          displayInfo.shift =
+            es.shiftTemplate.type === "Standard"
+              ? `${formatTimeTo12HourPH(
+                  es.shiftTemplate.morningIn
+                )}-${formatTimeTo12HourPH(
+                  es.shiftTemplate.morningOut
+                )}, ${formatTimeTo12HourPH(
+                  es.shiftTemplate.afternoonIn
+                )}-${formatTimeTo12HourPH(es.shiftTemplate.afternoonOut)}`
+              : `${formatTimeTo12HourPH(
+                  es.shiftTemplate.startTime
+                )}-${formatTimeTo12HourPH(es.shiftTemplate.endTime)}`;
+          displayInfo.startIn =
+            es.shiftTemplate.type === "Standard"
+              ? es.shiftTemplate.morningIn
+              : es.shiftTemplate.startTime;
+        } else if (es.type === "leave" && es.leaveTemplate) {
+          displayInfo.shift = "LEAVE";
+          displayInfo.shiftName = "leave";
+          displayInfo.startIn = "leave";
+          displayInfo.leaveTemplateName = es.leaveTemplate.name;
+          displayInfo.leaveAbbreviation = getLeaveAbbreviation(
+            es.leaveTemplate.name
+          );
         } else if (es.type === "off") {
           displayInfo.shift = "Day Off";
           displayInfo.shiftName = "off";
@@ -208,43 +184,17 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
           displayInfo.startIn = "holiday_off";
         }
 
-        // Use denormalized employee data first, fall back to populated employee
-        let employeeName = "Unknown Employee";
-        let lastName = "";
-        let shiftColor = "";
-
-        if (es.employeeData && es.employeeData.firstName) {
-          // Use denormalized employee data from backend
-          employeeName = `${
-            es.employeeData.lastName
-          }, ${es.employeeData.firstName.charAt(0).toUpperCase()}.`;
-          lastName = es.employeeData.lastName || "";
-        } else if (es.employee?.personalInformation) {
-          // Fall back to populated employee data
-          employeeName = `${
-            es.employee.personalInformation.lastName
-          }, ${es.employee.personalInformation.firstName
-            .charAt(0)
-            .toUpperCase()}.`;
-          lastName = es.employee.personalInformation.lastName || "";
-        }
-
-        // Get shift color from denormalized data or populated template
-        if (es.type === "duty") {
-          if (es.shiftData && es.shiftData.shiftColor) {
-            shiftColor = es.shiftData.shiftColor;
-          } else if (es.shiftTemplate?.shiftColor) {
-            shiftColor = es.shiftTemplate.shiftColor;
-          }
-        }
-
         return {
-          name: employeeName,
-          lastName: lastName,
+          name: `${
+            es?.employee?.personalInformation.lastName
+          }, ${es?.employee?.personalInformation.firstName
+            .charAt(0)
+            .toUpperCase()}.`,
+          lastName: es?.employee?.personalInformation?.lastName || "",
           shiftName: displayInfo.shiftName,
           shift: displayInfo.shift,
           description: es?.remarks || "",
-          shiftColor: shiftColor || "",
+          shiftColor: es?.shiftTemplate?.shiftColor || "",
           startIn: displayInfo.startIn,
           type: es.type || "duty",
           leaveTemplateName: displayInfo.leaveTemplateName || null,
@@ -352,28 +302,18 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
     if (shiftName === "leave" || shiftName.startsWith("leave_"))
       return "bg-yellow-200";
 
-    // First try to find the shift template in entries using denormalized data
+    // First try to find the shift template in entries (only for duty type)
     let schedule = null;
     for (const entry of allEntries) {
       for (const es of entry.employeeSchedules) {
-        if (es.type === "duty") {
-          // Check denormalized shift data first
-          if (es.shiftData && es.shiftData.name) {
-            if (es.shiftData.name.toLowerCase() === shiftName.toLowerCase()) {
-              schedule = es.shiftData;
-              break;
-            }
-          }
-          // Fall back to populated template data
-          else if (es.shiftTemplate) {
-            const shiftTemplate = es.shiftTemplate;
-            if (
-              shiftTemplate &&
-              shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
-            ) {
-              schedule = shiftTemplate;
-              break;
-            }
+        if (es.type === "duty" && es.shiftTemplate) {
+          const shiftTemplate = es.shiftTemplate;
+          if (
+            shiftTemplate &&
+            shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
+          ) {
+            schedule = shiftTemplate;
+            break;
           }
         }
       }
@@ -426,95 +366,6 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
 
   const handleCancel = () => {
     navigate(-1);
-  };
-
-  // Helper function to format signatory names
-  const formatSignatoryName = (signatoryData, fallbackData) => {
-    // Check for new format with individual name fields first
-    if (signatoryData && (signatoryData.firstName || signatoryData.lastName)) {
-      let formattedName = "";
-      if (signatoryData.firstName) {
-        formattedName += `${signatoryData.firstName
-          .charAt(0)
-          .toUpperCase()}${signatoryData.firstName.slice(1).toLowerCase()}`;
-      }
-      if (signatoryData.middleName) {
-        formattedName += ` ${signatoryData.middleName
-          .charAt(0)
-          .toUpperCase()}.`;
-      }
-      if (signatoryData.lastName) {
-        formattedName += ` ${signatoryData.lastName
-          .charAt(0)
-          .toUpperCase()}${signatoryData.lastName.slice(1).toLowerCase()}`;
-      }
-      if (signatoryData.suffix) {
-        formattedName += ` ${signatoryData.suffix}`;
-      }
-      return formattedName;
-    }
-
-    // Legacy support: Check for fullName format
-    if (signatoryData?.fullName) {
-      // Parse the fullName from denormalized data
-      const nameParts = signatoryData.fullName.trim().split(/\s+/);
-      if (nameParts.length >= 2) {
-        const firstName = nameParts[0];
-        const lastName = nameParts[nameParts.length - 1];
-        const middleParts = nameParts.slice(1, -1);
-
-        let formattedName = `${firstName.charAt(0).toUpperCase()}${firstName
-          .slice(1)
-          .toLowerCase()}`;
-
-        // Add middle initial if exists
-        if (middleParts.length > 0) {
-          const middleInitial = middleParts[0].charAt(0).toUpperCase();
-          formattedName += ` ${middleInitial}.`;
-        }
-
-        formattedName += ` ${lastName.charAt(0).toUpperCase()}${lastName
-          .slice(1)
-          .toLowerCase()}`;
-
-        // Add suffix if available in signatoryData
-        if (signatoryData.suffix) {
-          formattedName += ` ${signatoryData.suffix}`;
-        }
-
-        return formattedName;
-      }
-      // If fullName format is unexpected, still add suffix if available
-      let formattedName = signatoryData.fullName;
-      if (signatoryData.suffix) {
-        formattedName += ` ${signatoryData.suffix}`;
-      }
-      return formattedName;
-    }
-
-    // Fallback to individual name fields from fallbackData
-    if (fallbackData) {
-      let formattedName = "";
-      if (fallbackData.firstName) {
-        formattedName += `${fallbackData.firstName
-          .charAt(0)
-          .toUpperCase()}${fallbackData.firstName.slice(1).toLowerCase()}`;
-      }
-      if (fallbackData.middleName) {
-        formattedName += ` ${fallbackData.middleName.charAt(0).toUpperCase()}.`;
-      }
-      if (fallbackData.lastName) {
-        formattedName += ` ${fallbackData.lastName
-          .charAt(0)
-          .toUpperCase()}${fallbackData.lastName.slice(1).toLowerCase()}`;
-      }
-      if (fallbackData.suffix) {
-        formattedName += ` ${fallbackData.suffix}`;
-      }
-      return formattedName;
-    }
-
-    return "";
   };
 
   // Helper: Calculate shift hours
@@ -747,40 +598,75 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
               <div className="w-1/3">
                 <div className="mb-8">Prepared by:</div>
                 <div className="border-b border-black w-4/5 mx-auto pt-1">
-                  {formatSignatoryName(
-                    dutySchedule?.submittedByData,
-                    dutySchedule?.submittedBy
-                  )}
+                  <span className="capitalize">
+                    {dutySchedule?.submittedBy?.firstName}
+                  </span>{" "}
+                  {dutySchedule?.submittedBy?.middleName && (
+                    <span className="capitalize">
+                      {dutySchedule?.submittedBy?.middleName
+                        .charAt(0)
+                        .toUpperCase()}
+                      .
+                    </span>
+                  )}{" "}
+                  <span className="capitalize">
+                    {dutySchedule?.submittedBy?.lastName}
+                  </span>{" "}
+                  <span className="capitalize">
+                    {dutySchedule?.submittedBy?.suffix || ""}
+                  </span>
                 </div>
                 <div className="mt-1 uppercase">
-                  {dutySchedule?.departmentData?.name ||
-                    dutySchedule?.department?.name}{" "}
-                  Manager
+                  {dutySchedule?.department?.name} Manager
                 </div>
               </div>
 
               <div className="w-1/3">
                 <div className="mb-8">Noted by:</div>
                 <div className="border-b border-black w-4/5 mx-auto pt-1">
-                  {formatSignatoryName(
-                    dutySchedule?.directorApproval?.signatoryData,
-                    dutySchedule?.directorApproval?.approvedBy
-                  )}
+                  <span className="capitalize">
+                    {dutySchedule?.directorApproval?.approvedBy?.firstName}
+                  </span>{" "}
+                  {dutySchedule?.directorApproval?.approvedBy?.middleName && (
+                    <span className="capitalize">
+                      {dutySchedule?.directorApproval?.approvedBy?.middleName
+                        .charAt(0)
+                        .toUpperCase()}
+                      .
+                    </span>
+                  )}{" "}
+                  <span className="capitalize">
+                    {dutySchedule?.directorApproval?.approvedBy?.lastName}
+                  </span>{" "}
+                  <span className="capitalize">
+                    {dutySchedule?.directorApproval?.approvedBy?.suffix || ""}
+                  </span>
                 </div>
-                <div className="mt-1 uppercase text-xs font-semibold">
-                  {dutySchedule?.directorApproval?.signatoryData?.position ||
-                    dutySchedule?.directorApproval?.approvedBy?.position ||
-                    "DIRECTOR"}
+                <div className="mt-1 uppercase">
+                  {dutySchedule?.directorApproval?.approvedBy?.position}
                 </div>
               </div>
 
               <div className="w-1/3">
                 <div className="mb-8">Approved by:</div>
                 <div className="border-b border-black w-4/5 mx-auto pt-1">
-                  {formatSignatoryName(
-                    dutySchedule?.hrApproval?.signatoryData,
-                    dutySchedule?.hrApproval?.approvedBy
-                  )}
+                  <span className="capitalize">
+                    {dutySchedule?.hrApproval?.approvedBy?.firstName}
+                  </span>{" "}
+                  {dutySchedule?.hrApproval?.approvedBy?.middleName && (
+                    <span className="capitalize">
+                      {dutySchedule?.hrApproval?.approvedBy?.middleName
+                        .charAt(0)
+                        .toUpperCase()}
+                      .
+                    </span>
+                  )}{" "}
+                  <span className="capitalize">
+                    {dutySchedule?.hrApproval?.approvedBy?.lastName}
+                  </span>{" "}
+                  <span className="capitalize">
+                    {dutySchedule?.hrApproval?.approvedBy?.suffix || ""}
+                  </span>
                 </div>
                 <div className="mt-1">HR</div>
               </div>
@@ -793,35 +679,13 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
               Weekly Summary
             </h2>
             {(() => {
-              // 1. Get all unique employees from allEntries using denormalized data
+              // 1. Get all unique employees from allEntries
               const employeeMap = {};
               allEntries.forEach((entry) => {
                 entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-
-                  if (empId) {
-                    // Prioritize denormalized employee data
-                    if (es.employeeData && es.employeeData.firstName) {
-                      employeeMap[empId] = {
-                        _id: empId,
-                        personalInformation: {
-                          firstName: es.employeeData.firstName,
-                          lastName: es.employeeData.lastName,
-                          middleName: es.employeeData.middleName,
-                          suffix: es.employeeData.suffix,
-                        },
-                      };
-                    }
-                    // Fall back to populated employee data
-                    else if (
-                      typeof es.employee === "object" &&
-                      es.employee?._id
-                    ) {
-                      employeeMap[empId] = es.employee;
-                    }
+                  const emp = es.employee;
+                  if (emp && emp._id) {
+                    employeeMap[emp._id] = emp;
                   }
                 });
               });
@@ -834,21 +698,8 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
               const employeeMonthTotals = {};
               allEntries.forEach((entry) => {
                 entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-
-                  // Get shift data prioritizing denormalized data
-                  let shift = null;
-                  if (es.type === "duty") {
-                    if (es.shiftData && es.shiftData.name) {
-                      shift = es.shiftData;
-                    } else if (es.shiftTemplate) {
-                      shift = es.shiftTemplate;
-                    }
-                  }
-
+                  const empId = es.employee?._id;
+                  const shift = es.shiftTemplate;
                   const hours = getShiftHours(shift);
                   if (
                     hours !== "off" &&
@@ -894,26 +745,11 @@ const DutySchedulePrint = ({ scheduleId, employeeId = "" }) => {
                   (e) => formatDatePH(e.date) === formatDatePH(date)
                 );
                 if (!entry) return "";
-                const es = entry.employeeSchedules.find((es) => {
-                  const esEmpId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-                  return esEmpId === empId;
-                });
+                const es = entry.employeeSchedules.find(
+                  (es) => es.employee?._id === empId
+                );
                 if (!es) return "";
-
-                // Get shift data prioritizing denormalized data
-                let shift = null;
-                if (es.type === "duty") {
-                  if (es.shiftData && es.shiftData.name) {
-                    shift = es.shiftData;
-                  } else if (es.shiftTemplate) {
-                    shift = es.shiftTemplate;
-                  }
-                }
-
-                const hours = getShiftHours(shift);
+                const hours = getShiftHours(es.shiftTemplate);
                 return hours;
               };
               return (

@@ -225,55 +225,35 @@ const DutyScheduleDetails = ({
           type: es.type || "duty",
         };
 
-        if (es.type === "duty") {
-          // Use denormalized shift data first, fall back to populated template
-          let shiftTemplate;
-          if (es.shiftData && es.shiftData.name) {
-            // Use denormalized shift data from backend
-            shiftTemplate = es.shiftData;
-          } else if (es.shiftTemplate) {
-            // Fall back to populated template data
-            shiftTemplate = es.shiftTemplate;
-          }
+        if (es.type === "duty" && es.shiftTemplate) {
+          displayInfo.shiftName =
+            es.shiftTemplate.name?.toLowerCase() || "unknown";
+          displayInfo.shift =
+            es.shiftTemplate.type === "Standard"
+              ? `${formatTimeTo12HourPH(
+                  es.shiftTemplate.morningIn
+                )}-${formatTimeTo12HourPH(
+                  es.shiftTemplate.morningOut
+                )}, ${formatTimeTo12HourPH(
+                  es.shiftTemplate.afternoonIn
+                )}-${formatTimeTo12HourPH(es.shiftTemplate.afternoonOut)}`
+              : `${formatTimeTo12HourPH(
+                  es.shiftTemplate.startTime
+                )}-${formatTimeTo12HourPH(es.shiftTemplate.endTime)}`;
+          displayInfo.startIn =
+            es.shiftTemplate.type === "Standard"
+              ? es.shiftTemplate.morningIn
+              : es.shiftTemplate.startTime;
+        } else if (es.type === "leave" && es.leaveTemplate) {
+          const leaveId =
+            typeof es.leaveTemplate === "string"
+              ? es.leaveTemplate
+              : es.leaveTemplate?._id;
 
-          if (shiftTemplate) {
-            displayInfo.shiftName =
-              shiftTemplate.name?.toLowerCase() || "unknown";
-            displayInfo.shift =
-              shiftTemplate.type === "Standard"
-                ? `${formatTimeTo12HourPH(
-                    shiftTemplate.morningIn
-                  )}-${formatTimeTo12HourPH(
-                    shiftTemplate.morningOut
-                  )}, ${formatTimeTo12HourPH(
-                    shiftTemplate.afternoonIn
-                  )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
-                : `${formatTimeTo12HourPH(
-                    shiftTemplate.startTime
-                  )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`;
-            displayInfo.startIn =
-              shiftTemplate.type === "Standard"
-                ? shiftTemplate.morningIn
-                : shiftTemplate.startTime;
-          }
-        } else if (es.type === "leave") {
-          // Use denormalized leave data first, fall back to template reference
-          let leaveTemplate;
-          if (es.leaveData && es.leaveData.name) {
-            // Use denormalized leave data from backend
-            leaveTemplate = es.leaveData;
-          } else if (es.leaveTemplate) {
-            // Fall back to populated or template reference
-            const leaveId =
-              typeof es.leaveTemplate === "string"
-                ? es.leaveTemplate
-                : es.leaveTemplate?._id;
-
-            leaveTemplate =
-              typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
-                ? es.leaveTemplate
-                : leaveTemplates.find((lt) => lt._id === leaveId);
-          }
+          const leaveTemplate =
+            typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
+              ? es.leaveTemplate
+              : leaveTemplates.find((lt) => lt._id === leaveId);
 
           if (leaveTemplate) {
             displayInfo.shift = "LEAVE";
@@ -294,48 +274,18 @@ const DutyScheduleDetails = ({
           displayInfo.startIn = "holiday_off";
         }
 
-        // Use denormalized employee data first, fall back to populated employee
-        let employeeId = null;
-        let employeeName = "Unknown Employee";
-        let lastName = "";
-        let shiftColor = "";
-
-        if (es.employeeData && es.employeeData.firstName) {
-          // Use denormalized employee data from backend
-          employeeId =
-            typeof es.employee === "string" ? es.employee : es.employee?._id;
-          employeeName = `${
-            es.employeeData.lastName
-          }, ${es.employeeData.firstName.charAt(0).toUpperCase()}.`;
-          lastName = es.employeeData.lastName || "";
-        } else if (es.employee?.personalInformation) {
-          // Fall back to populated employee data
-          employeeId = es.employee._id;
-          employeeName = `${
-            es.employee.personalInformation.lastName
-          }, ${es.employee.personalInformation.firstName
-            .charAt(0)
-            .toUpperCase()}.`;
-          lastName = es.employee.personalInformation.lastName || "";
-        }
-
-        // Get shift color from denormalized data or populated template
-        if (es.type === "duty") {
-          if (es.shiftData && es.shiftData.shiftColor) {
-            shiftColor = es.shiftData.shiftColor;
-          } else if (es.shiftTemplate?.shiftColor) {
-            shiftColor = es.shiftTemplate.shiftColor;
-          }
-        }
-
         return {
-          id: employeeId,
-          name: employeeName,
-          lastName: lastName,
+          id: es?.employee?._id,
+          name: `${
+            es?.employee?.personalInformation.lastName
+          }, ${es?.employee?.personalInformation.firstName
+            .charAt(0)
+            .toUpperCase()}.`,
+          lastName: es?.employee?.personalInformation?.lastName || "",
           shiftName: displayInfo.shiftName,
           shift: displayInfo.shift,
           description: es?.remarks || "",
-          shiftColor: shiftColor || "",
+          shiftColor: es?.shiftTemplate?.shiftColor || "",
           startIn: displayInfo.startIn,
           type: es.type || "duty",
           leaveAbbreviation: displayInfo.leaveAbbreviation || null,
@@ -443,28 +393,18 @@ const DutyScheduleDetails = ({
     if (shiftName === "leave" || shiftName.startsWith("leave_"))
       return "bg-yellow-200";
 
-    // First try to find the shift template in entries using denormalized data
+    // First try to find the shift template in entries (only for duty type)
     let schedule = null;
     for (const entry of allEntries) {
       for (const es of entry.employeeSchedules) {
-        if (es.type === "duty") {
-          // Check denormalized shift data first
-          if (es.shiftData && es.shiftData.name) {
-            if (es.shiftData.name.toLowerCase() === shiftName.toLowerCase()) {
-              schedule = es.shiftData;
-              break;
-            }
-          }
-          // Fall back to populated template data
-          else if (es.shiftTemplate) {
-            const shiftTemplate = es.shiftTemplate;
-            if (
-              shiftTemplate &&
-              shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
-            ) {
-              schedule = shiftTemplate;
-              break;
-            }
+        if (es.type === "duty" && es.shiftTemplate) {
+          const shiftTemplate = es.shiftTemplate;
+          if (
+            shiftTemplate &&
+            shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
+          ) {
+            schedule = shiftTemplate;
+            break;
           }
         }
       }
@@ -951,35 +891,13 @@ const DutyScheduleDetails = ({
               Weekly Summary
             </h2>
             {(() => {
-              // 1. Get all unique employees from allEntries using denormalized data
+              // 1. Get all unique employees from allEntries
               const employeeMap = {};
               allEntries.forEach((entry) => {
                 entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-
-                  if (empId) {
-                    // Prioritize denormalized employee data
-                    if (es.employeeData && es.employeeData.firstName) {
-                      employeeMap[empId] = {
-                        _id: empId,
-                        personalInformation: {
-                          firstName: es.employeeData.firstName,
-                          lastName: es.employeeData.lastName,
-                          middleName: es.employeeData.middleName,
-                          suffix: es.employeeData.suffix,
-                        },
-                      };
-                    }
-                    // Fall back to populated employee data
-                    else if (
-                      typeof es.employee === "object" &&
-                      es.employee?._id
-                    ) {
-                      employeeMap[empId] = es.employee;
-                    }
+                  const emp = es.employee;
+                  if (emp && emp._id) {
+                    employeeMap[emp._id] = emp;
                   }
                 });
               });
@@ -992,21 +910,8 @@ const DutyScheduleDetails = ({
               const employeeMonthTotals = {};
               allEntries.forEach((entry) => {
                 entry.employeeSchedules.forEach((es) => {
-                  const empId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-
-                  // Get shift data prioritizing denormalized data
-                  let shift = null;
-                  if (es.type === "duty") {
-                    if (es.shiftData && es.shiftData.name) {
-                      shift = es.shiftData;
-                    } else if (es.shiftTemplate) {
-                      shift = es.shiftTemplate;
-                    }
-                  }
-
+                  const empId = es.employee?._id;
+                  const shift = es.shiftTemplate;
                   const hours = getShiftHours(shift);
                   if (
                     hours !== "off" &&
@@ -1052,26 +957,11 @@ const DutyScheduleDetails = ({
                   (e) => formatDatePH(e.date) === formatDatePH(date)
                 );
                 if (!entry) return "";
-                const es = entry.employeeSchedules.find((es) => {
-                  const esEmpId =
-                    typeof es.employee === "string"
-                      ? es.employee
-                      : es.employee?._id;
-                  return esEmpId === empId;
-                });
+                const es = entry.employeeSchedules.find(
+                  (es) => es.employee?._id === empId
+                );
                 if (!es) return "";
-
-                // Get shift data prioritizing denormalized data
-                let shift = null;
-                if (es.type === "duty") {
-                  if (es.shiftData && es.shiftData.name) {
-                    shift = es.shiftData;
-                  } else if (es.shiftTemplate) {
-                    shift = es.shiftTemplate;
-                  }
-                }
-
-                const hours = getShiftHours(shift);
+                const hours = getShiftHours(es.shiftTemplate);
                 return hours;
               };
               return (

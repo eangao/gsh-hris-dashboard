@@ -282,25 +282,11 @@ const ManagerDutyScheduleForm = () => {
         const empId =
           typeof es.employee === "string" ? es.employee : es.employee?._id;
 
-        // Use denormalized employee data first, fall back to Redux store
-        let employee;
-        if (es.employeeData && es.employeeData.firstName) {
-          // Use denormalized data from backend
-          employee = {
-            personalInformation: {
-              firstName: es.employeeData.firstName,
-              lastName: es.employeeData.lastName,
-              middleName: es.employeeData.middleName,
-              suffix: es.employeeData.suffix,
-            },
-          };
-        } else {
-          // Fall back to Redux store or populated data
-          employee =
-            typeof es.employee === "object" && es.employee?._id
-              ? es.employee
-              : employees.find((emp) => emp._id === empId);
-        }
+        // Try to get employee from the entry first (if it's populated)
+        const employee =
+          typeof es.employee === "object" && es.employee?._id
+            ? es.employee
+            : employees.find((emp) => emp._id === empId);
 
         // Handle different schedule types
         let displayInfo = {
@@ -310,24 +296,16 @@ const ManagerDutyScheduleForm = () => {
           type: es.type || "duty",
         };
 
-        if (es.type === "duty") {
-          // Use denormalized shift data first, fall back to template reference
-          let shiftTemplate;
-          if (es.shiftData && es.shiftData.name) {
-            // Use denormalized shift data from backend
-            shiftTemplate = es.shiftData;
-          } else if (es.shiftTemplate) {
-            // Fall back to Redux store or populated data
-            const wsId =
-              typeof es.shiftTemplate === "string"
-                ? es.shiftTemplate
-                : es.shiftTemplate?._id;
+        if (es.type === "duty" && es.shiftTemplate) {
+          const wsId =
+            typeof es.shiftTemplate === "string"
+              ? es.shiftTemplate
+              : es.shiftTemplate?._id;
 
-            shiftTemplate =
-              typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
-                ? es.shiftTemplate
-                : shiftTemplates.find((ws) => ws._id === wsId);
-          }
+          const shiftTemplate =
+            typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
+              ? es.shiftTemplate
+              : shiftTemplates.find((ws) => ws._id === wsId);
 
           if (shiftTemplate) {
             displayInfo.shiftName =
@@ -349,24 +327,16 @@ const ManagerDutyScheduleForm = () => {
                 ? shiftTemplate.morningIn
                 : shiftTemplate.startTime;
           }
-        } else if (es.type === "leave") {
-          // Use denormalized leave data first, fall back to template reference
-          let leaveTemplate;
-          if (es.leaveData && es.leaveData.name) {
-            // Use denormalized leave data from backend
-            leaveTemplate = es.leaveData;
-          } else if (es.leaveTemplate) {
-            // Fall back to Redux store or populated data
-            const leaveId =
-              typeof es.leaveTemplate === "string"
-                ? es.leaveTemplate
-                : es.leaveTemplate?._id;
+        } else if (es.type === "leave" && es.leaveTemplate) {
+          const leaveId =
+            typeof es.leaveTemplate === "string"
+              ? es.leaveTemplate
+              : es.leaveTemplate?._id;
 
-            leaveTemplate =
-              typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
-                ? es.leaveTemplate
-                : leaveTemplates.find((lt) => lt._id === leaveId);
-          }
+          const leaveTemplate =
+            typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
+              ? es.leaveTemplate
+              : leaveTemplates.find((lt) => lt._id === leaveId);
 
           if (leaveTemplate) {
             displayInfo.shift = "LEAVE";
@@ -676,31 +646,21 @@ const ManagerDutyScheduleForm = () => {
     if (shiftName === "leave" || shiftName.startsWith("leave_"))
       return "bg-yellow-200";
 
-    // First try to find the shift template in entries using denormalized data
+    // First try to find the shift template in entries (only for duty type)
     let schedule = null;
     for (const entry of allEntries) {
       for (const es of entry.employeeSchedules) {
-        if (es.type === "duty") {
-          // Check denormalized shift data first
-          if (es.shiftData && es.shiftData.name) {
-            if (es.shiftData.name.toLowerCase() === shiftName.toLowerCase()) {
-              schedule = es.shiftData;
-              break;
-            }
-          }
-          // Fall back to populated template data
-          else if (es.shiftTemplate) {
-            const shiftTemplate =
-              typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
-                ? es.shiftTemplate
-                : null;
-            if (
-              shiftTemplate &&
-              shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
-            ) {
-              schedule = shiftTemplate;
-              break;
-            }
+        if (es.type === "duty" && es.shiftTemplate) {
+          const shiftTemplate =
+            typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
+              ? es.shiftTemplate
+              : null;
+          if (
+            shiftTemplate &&
+            shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
+          ) {
+            schedule = shiftTemplate;
+            break;
           }
         }
       }
@@ -1244,10 +1204,10 @@ const ManagerDutyScheduleForm = () => {
 
   // Helper: Build summary data for the current visible calendar weeks
   const getWeeklySummary = () => {
-    // Build a map of employees from entries (prioritize denormalized data)
+    // Build a map of employees from entries (prioritize entry data)
     const employeeMap = {};
 
-    // First, collect all unique employees from entries using denormalized data
+    // First, collect all unique employees from entries
     const entryEmployees = new Set();
     allEntries.forEach((entry) => {
       entry.employeeSchedules.forEach((es) => {
@@ -1255,20 +1215,8 @@ const ManagerDutyScheduleForm = () => {
           typeof es.employee === "string" ? es.employee : es.employee?._id;
         entryEmployees.add(empId);
 
-        // Prioritize denormalized employee data
-        if (es.employeeData && es.employeeData.firstName) {
-          employeeMap[empId] = {
-            _id: empId,
-            personalInformation: {
-              firstName: es.employeeData.firstName,
-              lastName: es.employeeData.lastName,
-              middleName: es.employeeData.middleName,
-              suffix: es.employeeData.suffix,
-            },
-          };
-        }
-        // Fall back to populated employee data
-        else if (typeof es.employee === "object" && es.employee?._id) {
+        // If employee data is populated in entry, use it
+        if (typeof es.employee === "object" && es.employee?._id) {
           employeeMap[empId] = es.employee;
         }
       });
@@ -1284,53 +1232,34 @@ const ManagerDutyScheduleForm = () => {
       }
     });
 
-    // Build a map of shift templates from entries (prioritize denormalized data)
+    // Build a map of shiftTemplates from entries (prioritize entry data)
     const shiftMap = {};
 
-    // First, collect all unique shift templates from entries using denormalized data
+    // First, collect all unique shift templates from entries
+    const entryShiftTemplates = new Set();
     allEntries.forEach((entry) => {
       entry.employeeSchedules.forEach((es) => {
-        if (es.type === "duty") {
-          // Prioritize denormalized shift data
-          if (es.shiftData && es.shiftData.name) {
-            // Create a unique key for the denormalized shift data
-            const shiftKey = `denorm_${es.shiftData.name}`;
-            shiftMap[shiftKey] = es.shiftData;
-          }
-          // Fall back to template reference
-          else if (es.shiftTemplate) {
-            const shiftId =
-              typeof es.shiftTemplate === "string"
-                ? es.shiftTemplate
-                : es.shiftTemplate?._id;
+        const shiftId =
+          typeof es.shiftTemplate === "string"
+            ? es.shiftTemplate
+            : es.shiftTemplate?._id;
+        entryShiftTemplates.add(shiftId);
 
-            if (typeof es.shiftTemplate === "object" && es.shiftTemplate?._id) {
-              shiftMap[shiftId] = es.shiftTemplate;
-            }
-          }
+        // If shift template data is populated in entry, use it
+        if (typeof es.shiftTemplate === "object" && es.shiftTemplate?._id) {
+          shiftMap[shiftId] = es.shiftTemplate;
         }
       });
     });
 
-    // Fill in missing shift template data from Redux store
-    allEntries.forEach((entry) => {
-      entry.employeeSchedules.forEach((es) => {
-        if (es.type === "duty" && es.shiftTemplate) {
-          const shiftId =
-            typeof es.shiftTemplate === "string"
-              ? es.shiftTemplate
-              : es.shiftTemplate?._id;
-
-          if (shiftId && !shiftMap[shiftId]) {
-            const shiftFromStore = shiftTemplates.find(
-              (st) => st._id === shiftId
-            );
-            if (shiftFromStore) {
-              shiftMap[shiftId] = shiftFromStore;
-            }
-          }
+    // Fill in missing shift template data from Redux store (for select options compatibility)
+    entryShiftTemplates.forEach((shiftId) => {
+      if (!shiftMap[shiftId]) {
+        const shiftFromStore = shiftTemplates.find((st) => st._id === shiftId);
+        if (shiftFromStore) {
+          shiftMap[shiftId] = shiftFromStore;
         }
-      });
+      }
     });
 
     // Get all unique employees scheduled in this month
@@ -1371,7 +1300,6 @@ const ManagerDutyScheduleForm = () => {
       while (week.length < 7) week.push(null);
       weeks.push(week);
     }
-
     // For each week, build summary rows
     return weeks.map((weekDates) => {
       // For each employee, build row
@@ -1405,23 +1333,12 @@ const ManagerDutyScheduleForm = () => {
             row.days.push("");
             return;
           }
-
-          // Get shift data prioritizing denormalized data
-          let shift = null;
-          if (es.type === "duty") {
-            if (es.shiftData && es.shiftData.name) {
-              // Use denormalized shift data
-              shift = es.shiftData;
-            } else if (es.shiftTemplate) {
-              // Use template reference
-              const shiftId =
-                typeof es.shiftTemplate === "string"
-                  ? es.shiftTemplate
-                  : es.shiftTemplate?._id;
-              shift = shiftMap[shiftId];
-            }
-          }
-
+          const shift =
+            shiftMap[
+              typeof es.shiftTemplate === "string"
+                ? es.shiftTemplate
+                : es.shiftTemplate?._id
+            ];
           const hours = getShiftHours(shift);
           row.days.push(hours === "off" ? "off" : hours);
           if (hours !== "off" && hours !== "" && !isNaN(Number(hours))) {
