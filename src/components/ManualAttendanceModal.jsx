@@ -181,51 +181,6 @@ const ManualAttendanceModal = ({
     }
   };
 
-  const getScheduleInfo = () => {
-    if (!attendance.shiftTemplate) {
-      return null;
-    }
-
-    if (attendance.shiftTemplate.type === "Standard") {
-      const morningIn = formatTimeTo12HourPH(
-        attendance.shiftTemplate.morningIn
-      );
-      const morningOut = formatTimeTo12HourPH(
-        attendance.shiftTemplate.morningOut
-      );
-      const afternoonIn = formatTimeTo12HourPH(
-        attendance.shiftTemplate.afternoonIn
-      );
-      const afternoonOut = formatTimeTo12HourPH(
-        attendance.shiftTemplate.afternoonOut
-      );
-
-      return (
-        <div className="space-y-1 text-sm">
-          <div>
-            Morning: {morningIn} - {morningOut}
-          </div>
-          <div>
-            Afternoon: {afternoonIn} - {afternoonOut}
-          </div>
-        </div>
-      );
-    } else if (attendance.shiftTemplate.type === "Shifting") {
-      const startTime = formatTimeTo12HourPH(
-        attendance.shiftTemplate.startTime
-      );
-      const endTime = formatTimeTo12HourPH(attendance.shiftTemplate.endTime);
-
-      return (
-        <div className="text-sm">
-          Shift: {startTime} - {endTime}
-        </div>
-      );
-    }
-
-    return null;
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -271,37 +226,105 @@ const ManualAttendanceModal = ({
         {/* Content */}
         <div className="p-6">
           {/* Employee Info */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">
-              Employee Information
-            </h3>
-            <div className="space-y-2 text-sm">
+          <div className="space-y-3 mb-6">
+            <div>
+              <span className="text-sm text-gray-500">Employee:</span>
+              <p className="text-sm font-medium text-gray-900">
+                {attendance.employeeName}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-sm text-gray-500">Date:</span>
+              <p className="text-sm font-medium text-gray-900">
+                {formatDatePH(
+                  attendance.datePH || attendance.date,
+                  "MMM D, YYYY"
+                )}
+              </p>
+            </div>
+
+            {attendance.shiftTemplate && (
               <div>
-                <span className="font-medium text-gray-600">Name:</span>{" "}
-                <span className="text-gray-900">{attendance.employeeName}</span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">ID:</span>{" "}
-                <span className="text-gray-900">
-                  {attendance.hospitalEmployeeId}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Date:</span>{" "}
-                <span className="text-gray-900">
-                  {formatDatePH(
-                    attendance.datePH || attendance.date,
-                    "MMM D, YYYY"
+                <span className="text-sm text-gray-500">Schedule:</span>
+                <div className="text-sm font-medium text-gray-900">
+                  {attendance.shiftTemplate.type === "Standard" ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white font-medium bg-sky-500 px-2 py-0.5 rounded flex items-center gap-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3 text-yellow-200"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          AM
+                        </span>
+                        <span>
+                          {formatTimeTo12HourPH(
+                            attendance.shiftTemplate.morningIn
+                          )}{" "}
+                          -{" "}
+                          {formatTimeTo12HourPH(
+                            attendance.shiftTemplate.morningOut
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white font-medium bg-amber-500 px-2 py-0.5 rounded flex items-center gap-1">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3 text-blue-200"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                          >
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                          </svg>
+                          PM
+                        </span>
+                        <span>
+                          {formatTimeTo12HourPH(
+                            attendance.shiftTemplate.afternoonIn
+                          )}{" "}
+                          -{" "}
+                          {formatTimeTo12HourPH(
+                            attendance.shiftTemplate.afternoonOut
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                  ) : attendance.shiftTemplate.type === "Shifting" ? (
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {formatTimeTo12HourPH(
+                          attendance.shiftTemplate.startTime
+                        )}{" "}
+                        -{" "}
+                        {formatTimeTo12HourPH(attendance.shiftTemplate.endTime)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white font-medium bg-purple-500 px-2 py-0.5 rounded">
+                        {attendance.shiftTemplate.type || "Unknown"}
+                      </span>
+                      <span>
+                        {attendance.shiftTemplate.timeIn &&
+                        attendance.shiftTemplate.timeOut
+                          ? `${attendance.shiftTemplate.timeIn} - ${attendance.shiftTemplate.timeOut}`
+                          : "No schedule details"}
+                      </span>
+                    </div>
                   )}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-gray-600">Schedule:</span>
-                <div className="mt-1 text-gray-900">
-                  {getScheduleInfo() || "No schedule information"}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Error Message */}

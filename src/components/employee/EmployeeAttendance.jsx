@@ -10,6 +10,7 @@ import Pagination from "../Pagination";
 import EmployeeSearchFrontend from "../EmployeeSearchFrontend";
 import LoadingIndicator from "../LoadingIndicator";
 import ManualAttendanceModal from "../ManualAttendanceModal";
+import DutyScheduleForm from "../dutySchedule/DutyScheduleForm";
 
 // Helper function to format schedule based on scheduleType
 const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
@@ -174,6 +175,28 @@ const getHolidayInfo = (attendance, holidays) => {
   return holiday || null;
 };
 
+// Helper function to format holiday name with type abbreviation
+const getHolidayNameWithAbbreviation = (holiday) => {
+  if (!holiday) return null;
+
+  // Generate holiday type abbreviation
+  const getHolidayTypeAbbreviation = (type) => {
+    if (!type) return "H";
+
+    const typeStr = type.toLowerCase();
+    if (typeStr.includes("regular")) return "RH";
+    if (typeStr.includes("special") && typeStr.includes("non-working"))
+      return "SN";
+    if (typeStr.includes("special") && typeStr.includes("working")) return "SW";
+    if (typeStr.includes("local")) return "LH";
+
+    return "H"; // Default abbreviation
+  };
+
+  const abbreviation = getHolidayTypeAbbreviation(holiday.type);
+  return `${holiday.name} (${abbreviation})`;
+};
+
 const EmployeeAttendance = ({
   // Essential data props
   departments,
@@ -275,6 +298,8 @@ const EmployeeAttendance = ({
     existingRemarks: "",
     manualId: null,
   });
+
+  const [managerEditModalOpen, setManagerEditModalOpen] = useState(false);
 
   // Helper function to check if manual attendance is allowed
   const isManualAttendanceAllowed = (attendance, timeType) => {
@@ -755,15 +780,59 @@ const EmployeeAttendance = ({
                     {availableDutySchedules[currentScheduleIndex].name}
                   </div>
                   {availableDutySchedules.length > 1 ? (
-                    <div className="opacity-75 text-xs">
+                    <div className="opacity-75 text-xs flex items-center justify-between">
                       <span>
                         ({currentScheduleIndex + 1} of{" "}
                         {availableDutySchedules.length} available)
                       </span>
+                      {userRole?.toLowerCase() === "manager" && (
+                        <button
+                          onClick={() => setManagerEditModalOpen(true)}
+                          className="text-white/80 hover:text-white ml-2 p-1 rounded transition-colors"
+                          title="Edit Schedule"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   ) : (
-                    <div className="opacity-75 text-xs">
+                    <div className="opacity-75 text-xs flex items-center justify-between">
                       <span>Current available schedule</span>
+                      {userRole?.toLowerCase() === "manager" && (
+                        <button
+                          onClick={() => setManagerEditModalOpen(true)}
+                          className="text-white/80 hover:text-white ml-2 p-1 rounded transition-colors"
+                          title="Edit Schedule"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1308,11 +1377,10 @@ const EmployeeAttendance = ({
                               );
                               return holidayInfo ? (
                                 <div className="mt-2">
-                                  <div className="text-xs font-semibold text-red-600 uppercase">
-                                    {holidayInfo.name}
-                                  </div>
-                                  <div className="text-xs text-red-400 font-medium">
-                                    {holidayInfo.type}
+                                  <div className="text-xs font-semibold text-red-600 capitalize">
+                                    {getHolidayNameWithAbbreviation(
+                                      holidayInfo
+                                    )}
                                   </div>
                                 </div>
                               ) : null;
@@ -1711,11 +1779,10 @@ const EmployeeAttendance = ({
                               );
                               return holidayInfo ? (
                                 <div className="mt-1">
-                                  <div className="text-xs font-semibold text-red-600 uppercase">
-                                    {holidayInfo.name}
-                                  </div>
-                                  <div className="text-xs text-red-400 font-medium">
-                                    {holidayInfo.type}
+                                  <div className="text-xs font-semibold text-red-600 capitalize">
+                                    {getHolidayNameWithAbbreviation(
+                                      holidayInfo
+                                    )}
                                   </div>
                                 </div>
                               ) : null;
@@ -2165,9 +2232,6 @@ const EmployeeAttendance = ({
                       </div>
                     ) : remarksModal.data.schedule.type === "Shifting" ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-white font-medium bg-cyan-500 px-2 py-0.5 rounded">
-                          Shifting
-                        </span>
                         <span>
                           {formatTimeTo12HourPH(
                             remarksModal.data.schedule.startTime
@@ -2210,6 +2274,45 @@ const EmployeeAttendance = ({
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manager Edit Schedule Modal */}
+      {managerEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-7xl w-full max-h-[95vh] overflow-hidden">
+            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center z-10">
+              <h2 className="text-xl font-semibold text-gray-800">
+                Edit Duty Schedule
+              </h2>
+              <button
+                onClick={() => setManagerEditModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(95vh-80px)]">
+              <DutyScheduleForm
+                departmentId={selectedDepartment?._id}
+                scheduleId={
+                  availableDutySchedules &&
+                  availableDutySchedules[currentScheduleIndex]?._id
+                }
+                isHrApprovedUpdate={true}
+                onClose={() => setManagerEditModalOpen(false)}
+                onSuccess={() => {
+                  // Close modal first, then refresh data from parent
+                  setManagerEditModalOpen(false);
+                  // Call parent's refresh function if provided
+                  if (onManualAttendanceSuccess) {
+                    onManualAttendanceSuccess();
+                  }
+                }}
+              />
             </div>
           </div>
         </div>

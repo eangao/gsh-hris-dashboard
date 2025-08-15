@@ -44,6 +44,37 @@ export const fetchDutyScheduleById = createAsyncThunk(
   }
 );
 
+export const fetchDutyScheduleByIdSnapshot = createAsyncThunk(
+  "dutySchedule/fetchDutyScheduleByIdSnapshot",
+  async (
+    // Fetch duty schedule with denormalized/snapshot data
+    // Useful for viewing submitted/approved schedules with historical data snapshots
+    { scheduleId, employeeId = "", version = "" },
+    { rejectWithValue, fulfillWithValue }
+  ) => {
+    try {
+      const params = { employeeId }; // 👈 Add employeeId as a query param for filtering
+
+      // Add version parameter if provided ('v1' or 'v2')
+      if (version) {
+        params.version = version;
+      }
+
+      const { data } = await api.get(
+        `/hris/duty-schedules/${scheduleId}/snapshot`,
+        {
+          params,
+          withCredentials: true,
+        }
+      );
+
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
 export const createDutySchedule = createAsyncThunk(
   "dutySchedule/createDutySchedule",
   async (scheduleData, { rejectWithValue, fulfillWithValue }) => {
@@ -64,6 +95,24 @@ export const updateDutySchedule = createAsyncThunk(
     try {
       const { data } = await api.put(
         `/hris/duty-schedules/${_id}`,
+        scheduleData,
+        {
+          withCredentials: true,
+        }
+      );
+      return fulfillWithValue(data);
+    } catch (error) {
+      return rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const updateHrApprovedDutySchedule = createAsyncThunk(
+  "dutySchedule/updateHrApprovedDutySchedule",
+  async ({ _id, ...scheduleData }, { rejectWithValue, fulfillWithValue }) => {
+    try {
+      const { data } = await api.put(
+        `/hris/duty-schedules/${_id}/hr-approved-update`,
         scheduleData,
         {
           withCredentials: true,
@@ -257,7 +306,7 @@ export const fetchDutyScheduleByDepartmentForAttendance = createAsyncThunk(
 
       return fulfillWithValue(data);
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       return rejectWithValue(error.response.data);
     }
   }
@@ -314,6 +363,22 @@ const dutyScheduleSlice = createSlice({
       });
 
     builder
+      .addCase(fetchDutyScheduleByIdSnapshot.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(
+        fetchDutyScheduleByIdSnapshot.fulfilled,
+        (state, { payload }) => {
+          state.loading = false;
+          state.dutySchedule = payload.dutySchedule;
+        }
+      )
+      .addCase(fetchDutyScheduleByIdSnapshot.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      });
+
+    builder
       .addCase(createDutySchedule.pending, (state) => {
         state.loading = true;
       })
@@ -340,6 +405,19 @@ const dutyScheduleSlice = createSlice({
         state.errorMessage = payload.error;
       })
       .addCase(updateDutySchedule.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.successMessage = payload.message;
+      });
+
+    builder
+      .addCase(updateHrApprovedDutySchedule.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateHrApprovedDutySchedule.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.errorMessage = payload.error;
+      })
+      .addCase(updateHrApprovedDutySchedule.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.successMessage = payload.message;
       });

@@ -156,7 +156,26 @@ const DutyScheduleDetails = ({
       const holidayDatePH = formatDatePH(new Date(h.date));
       return holidayDatePH === dateStr;
     });
-    return holiday ? holiday.name : null;
+
+    if (!holiday) return null;
+
+    // Generate holiday type abbreviation
+    const getHolidayTypeAbbreviation = (type) => {
+      if (!type) return "H";
+
+      const typeStr = type.toLowerCase();
+      if (typeStr.includes("regular")) return "RH";
+      if (typeStr.includes("special") && typeStr.includes("non-working"))
+        return "SN";
+      if (typeStr.includes("special") && typeStr.includes("working"))
+        return "SW";
+      if (typeStr.includes("local")) return "LH";
+
+      return "H"; // Default abbreviation
+    };
+
+    const abbreviation = getHolidayTypeAbbreviation(holiday.type);
+    return `${holiday.name} (${abbreviation})`;
   };
 
   const isWeekend = (date) => {
@@ -190,7 +209,7 @@ const DutyScheduleDetails = ({
       "casual leave": "CL",
     };
 
-    const normalizedName = leaveName.toLowerCase().trim();
+    const normalizedName = leaveName?.toLowerCase().trim();
 
     // Check for common abbreviations first
     if (commonAbbreviations[normalizedName]) {
@@ -228,11 +247,7 @@ const DutyScheduleDetails = ({
         if (es.type === "duty") {
           // Use denormalized shift data first, fall back to populated template
           let shiftTemplate;
-          if (es.shiftData && es.shiftData.name) {
-            // Use denormalized shift data from backend
-            shiftTemplate = es.shiftData;
-          } else if (es.shiftTemplate) {
-            // Fall back to populated template data
+          if (es.shiftTemplate) {
             shiftTemplate = es.shiftTemplate;
           }
 
@@ -450,7 +465,7 @@ const DutyScheduleDetails = ({
         if (es.type === "duty") {
           // Check denormalized shift data first
           if (es.shiftData && es.shiftData.name) {
-            if (es.shiftData.name.toLowerCase() === shiftName.toLowerCase()) {
+            if (es.shiftData.name?.toLowerCase() === shiftName?.toLowerCase()) {
               schedule = es.shiftData;
               break;
             }
@@ -460,7 +475,7 @@ const DutyScheduleDetails = ({
             const shiftTemplate = es.shiftTemplate;
             if (
               shiftTemplate &&
-              shiftTemplate.name.toLowerCase() === shiftName.toLowerCase()
+              shiftTemplate.name?.toLowerCase() === shiftName?.toLowerCase()
             ) {
               schedule = shiftTemplate;
               break;
@@ -702,7 +717,7 @@ const DutyScheduleDetails = ({
                                             className="mb-2"
                                           >
                                             <div className="text-xs font-medium text-blue-700 mb-1 capitalize">
-                                              {leaveTypeName.toLowerCase()}
+                                              {leaveTypeName?.toLowerCase()}
                                             </div>
                                             {employees.map((emp) => (
                                               <div
@@ -877,7 +892,7 @@ const DutyScheduleDetails = ({
                                               className="mb-2"
                                             >
                                               <div className="text-xs font-medium text-blue-700 mb-1 capitalize">
-                                                {leaveTypeName.toLowerCase()}
+                                                {leaveTypeName?.toLowerCase()}
                                               </div>
                                               {employees.map(
                                                 (emp, empIndex) => (

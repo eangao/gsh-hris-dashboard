@@ -27,10 +27,6 @@ export {
   RemarksInput,
 } from "./ApprovalActions";
 
-// Optimized Components
-export { default as OptimizedDutySchedulePrint } from "./OptimizedDutySchedulePrint";
-export { default as OptimizedDutyScheduleDetails } from "./OptimizedDutyScheduleDetails";
-
 // Legacy Components (for backward compatibility)
 export { default as DutySchedulePrint } from "./DutySchedulePrint";
 export { default as DutyScheduleDetails } from "./DutySheduleDetails";
@@ -46,12 +42,12 @@ export * from "../../constants/holidays";
 /**
  * Usage Examples:
  *
- * // Import specific components
+ *  Import specific components
  * import { DutyScheduleCalendar, useDutySchedule } from './components/dutySchedule';
  *
- * // Import utilities
+ *  Import utilities
  * import { isHoliday, getEmployeesForDate } from './components/dutySchedule';
  *
- * // Import optimized components
+ *  Import optimized components
  * import { OptimizedDutySchedulePrint } from './components/dutySchedule';
  */
