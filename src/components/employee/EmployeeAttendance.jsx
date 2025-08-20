@@ -14,6 +14,7 @@ import DutyScheduleForm from "../dutySchedule/DutyScheduleForm";
 
 // Helper function to format schedule based on scheduleType
 const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
+  console.log(attendance);
   if (!attendance.scheduleType) {
     return (
       <div className="text-gray-500 text-sm">
@@ -125,18 +126,101 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
       );
 
     case "leave":
+      // Check if this is compensatory time off and display schedule accordingly
+      const isCompensatoryTimeOff =
+        attendance.leaveTemplate?.isCompensatoryTimeOff;
+      const compensatoryWorkShift =
+        attendance.leaveTemplate?.compensatoryWorkShift;
+
+      if (isCompensatoryTimeOff && compensatoryWorkShift) {
+        // Display time schedule for compensatory time off
+        if (compensatoryWorkShift.type === "Standard") {
+          const morningIn = formatTimeTo12HourPH(
+            compensatoryWorkShift.morningIn
+          );
+          const morningOut = formatTimeTo12HourPH(
+            compensatoryWorkShift.morningOut
+          );
+          const afternoonIn = formatTimeTo12HourPH(
+            compensatoryWorkShift.afternoonIn
+          );
+          const afternoonOut = formatTimeTo12HourPH(
+            compensatoryWorkShift.afternoonOut
+          );
+
+          return (
+            <div className={`${baseClasses} space-y-1`}>
+              <div className="text-amber-700 font-semibold capitalize mb-1">
+                {attendance.leaveTemplate?.name || "Leave"}
+              </div>
+              <div className="flex items-center">
+                <span className="text-blue-800">
+                  {morningIn}-{morningOut}
+                </span>
+              </div>
+              <div className="flex items-center">
+                <span className="text-blue-800">
+                  {afternoonIn}-{afternoonOut}
+                </span>
+              </div>
+              {!isDesktop && (
+                <div className="flex items-center gap-1 mt-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3 w-3 text-blue-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-xs text-blue-600 font-medium">
+                    Compensatory Standard
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        } else if (compensatoryWorkShift.type === "Shifting") {
+          const startTime = formatTimeTo12HourPH(
+            compensatoryWorkShift.startTime
+          );
+          const endTime = formatTimeTo12HourPH(compensatoryWorkShift.endTime);
+
+          return (
+            <div className={`${baseClasses}`}>
+              <div className="text-amber-700 font-semibold capitalize mb-1">
+                {attendance.leaveTemplate?.name || "Leave"}
+              </div>
+              <div className="flex items-center">
+                <span className="text-cyan-800 whitespace-nowrap">
+                  {startTime}-{endTime}
+                </span>
+              </div>
+              {!isDesktop && (
+                <div className="flex items-center gap-1 mt-1">
+                  <span className="text-xs text-cyan-600 font-medium">
+                    Compensatory Shifting
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        }
+      }
+
+      // Default leave display (non-compensatory)
       return (
-        <div className={`${baseClasses} space-y-1`}>
-          <div className="flex items-center">
-            <span className="text-amber-700 font-semibold uppercase text-xs">
-              {attendance.leaveTemplate?.name || "Leave"}
-            </span>
+        <div className={`${baseClasses}`}>
+          <div className="text-amber-700 font-semibold capitalize">
+            {attendance.leaveTemplate?.name || "Leave"}
           </div>
           {attendance.leaveTemplate?.category && (
-            <div className="text-xs pl-6 space-y-0.5">
-              <div className="text-amber-600 font-medium bg-amber-50 px-2 py-1 rounded-md border-l-2 border-amber-300 capitalize">
-                🏖️ {attendance.leaveTemplate.category}
-              </div>
+            <div className="text-xs text-amber-600 mt-1 capitalize">
+              {attendance.leaveTemplate.category}
             </div>
           )}
         </div>
@@ -186,8 +270,9 @@ const getHolidayNameWithAbbreviation = (holiday) => {
     const typeStr = type.toLowerCase();
     if (typeStr.includes("regular")) return "RH";
     if (typeStr.includes("special") && typeStr.includes("non-working"))
-      return "SN";
-    if (typeStr.includes("special") && typeStr.includes("working")) return "SW";
+      return "SNWH";
+    if (typeStr.includes("special") && typeStr.includes("working"))
+      return "SWH";
     if (typeStr.includes("local")) return "LH";
 
     return "H"; // Default abbreviation
@@ -308,6 +393,16 @@ const EmployeeAttendance = ({
       return false;
     }
 
+    // Check if this is compensatory time off - treat it like duty since employee is working
+    const isCompensatoryTimeOff =
+      attendance.scheduleType === "leave" &&
+      attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+    // For compensatory time off, allow manual attendance (employee is working)
+    if (isCompensatoryTimeOff) {
+      return true;
+    }
+
     // Only allow for duty schedules (not off, holiday_off, leave, holiday, on duty)
     const restrictedScheduleTypes = [
       "off",
@@ -342,9 +437,26 @@ const EmployeeAttendance = ({
   // Handle opening manual attendance modal
   const handleManualAttendanceClick = (attendance, timeType) => {
     if (isManualAttendanceAllowed(attendance, timeType)) {
+      // For compensatory time off, modify the attendance object to use compensatoryWorkDate
+      let modifiedAttendance = attendance;
+      const isCompensatoryTimeOff =
+        attendance.scheduleType === "leave" &&
+        attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+      if (
+        isCompensatoryTimeOff &&
+        attendance.leaveTemplate?.compensatoryWorkDate
+      ) {
+        modifiedAttendance = {
+          ...attendance,
+          datePH: attendance.leaveTemplate.compensatoryWorkDate,
+          date: attendance.leaveTemplate.compensatoryWorkDate,
+        };
+      }
+
       setManualAttendanceModal({
         isOpen: true,
-        attendance,
+        attendance: modifiedAttendance,
         timeType,
         mode: "create",
         existingTime: "",
@@ -487,16 +599,16 @@ const EmployeeAttendance = ({
           };
         case "Scheduled":
           return {
-            bg: "bg-indigo-100",
-            text: "text-indigo-800",
-            border: "border-indigo-200",
+            bg: "bg-purple-100",
+            text: "text-purple-800",
+            border: "border-purple-200",
             label: "Scheduled",
           };
         default:
           return {
-            bg: "bg-purple-100",
-            text: "text-purple-800",
-            border: "border-purple-200",
+            bg: "bg-gray-100",
+            text: "text-gray-800",
+            border: "border-gray-200",
             label: status || "Others", // Use the actual status from backend or "Others" as fallback
           };
       }
@@ -522,6 +634,14 @@ const EmployeeAttendance = ({
     manualId = null, // Manual attendance ID for update
     showManualOption = false,
   }) => {
+    // If status is "Scheduled", show "--:--" for both time in and time out
+    if (attendance?.status === "Scheduled") {
+      return <span className="text-gray-400">--:--</span>;
+    }
+
+    // For compensatory time off, use the actual logged times (same as regular duty)
+    // The time parameter already contains the correct logged time (morningInLog, timeIn, etc.)
+
     if (!time) {
       // Show clickable empty slot for manual attendance if conditions are met
       if (showManualOption && isManualAttendanceAllowed(attendance, timeType)) {
@@ -582,9 +702,26 @@ const EmployeeAttendance = ({
             ? new Date(time).toTimeString().slice(0, 5)
             : time;
 
+        // For compensatory time off, modify the attendance object to use compensatoryWorkDate
+        let modifiedAttendance = attendance;
+        const isCompensatoryTimeOff =
+          attendance.scheduleType === "leave" &&
+          attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+        if (
+          isCompensatoryTimeOff &&
+          attendance.leaveTemplate?.compensatoryWorkDate
+        ) {
+          modifiedAttendance = {
+            ...attendance,
+            datePH: attendance.leaveTemplate.compensatoryWorkDate,
+            date: attendance.leaveTemplate.compensatoryWorkDate,
+          };
+        }
+
         setManualAttendanceModal({
           isOpen: true,
-          attendance,
+          attendance: modifiedAttendance,
           timeType,
           mode: "update",
           existingTime: timeValue,
@@ -648,6 +785,17 @@ const EmployeeAttendance = ({
       </div>
     );
   };
+
+  // Filter out future dates from attendances
+  const filteredAttendances = attendances
+    ? attendances.filter((attendance) => {
+        // Filter out future dates - only show today and past dates
+        const attendanceDate = new Date(attendance.datePH || attendance.date);
+        const today = new Date();
+        today.setHours(23, 59, 59, 999); // Set to end of today
+        return attendanceDate <= today;
+      })
+    : [];
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -840,22 +988,64 @@ const EmployeeAttendance = ({
             </div>
           )}
 
-          <div className="hidden sm:block flex-shrink-0">
-            <div className="bg-white/10 p-3 rounded-full">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-8 w-8"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+          <div className="flex items-center gap-3">
+            {/* Print Button - Only show for managers */}
+            {userRole?.toLowerCase() === "manager" &&
+              !isIndividualView &&
+              availableDutySchedules.length > 0 && (
+                <button
+                  onClick={() => {
+                    // Open attendance print in new tab with the current schedule ID
+                    const currentSchedule =
+                      availableDutySchedules[currentScheduleIndex];
+                    if (currentSchedule?._id) {
+                      const printUrl = `/manager/employee-attendance-print?scheduleId=${currentSchedule._id}&department=${selectedDepartment}`;
+                      window.open(printUrl, "_blank");
+                    }
+                  }}
+                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2"
+                  disabled={
+                    loading ||
+                    !selectedDepartment ||
+                    !availableDutySchedules[currentScheduleIndex]
+                  }
+                  title="Print Attendance Report"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                    />
+                  </svg>
+                  Print
+                </button>
+              )}
+
+            <div className="hidden sm:block flex-shrink-0">
+              <div className="bg-white/10 p-3 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -1000,160 +1190,181 @@ const EmployeeAttendance = ({
       <LoadingIndicator isLoading={loading} />
 
       {/* Show table when we have data OR when we're ready to show "no records" */}
-      {!loading && attendances && attendances.length > 0 ? (
+      {!loading && filteredAttendances && filteredAttendances.length > 0 ? (
         <>
           <div className="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
             {/* Summary Stats */}
-            {attendances && attendances.length > 0 && !loading && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-4 border-b border-gray-200">
-                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 text-sm">
-                  {/* Duty */}
-                  {(() => {
-                    const count = attendances.filter(
-                      (a) => a.status === "Duty"
-                    ).length;
-                    return count > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          Duty:{" "}
-                          <span className="font-semibold text-blue-700">
-                            {count}
+            {filteredAttendances &&
+              filteredAttendances.length > 0 &&
+              !loading && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-4 sm:px-6 py-4 border-b border-gray-200">
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-4 sm:gap-6 text-sm">
+                    {/* Duty */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) => a.status === "Duty"
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            Duty:{" "}
+                            <span className="font-semibold text-blue-700">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                        </div>
+                      ) : null;
+                    })()}
 
-                  {/* On Duty */}
-                  {(() => {
-                    const count = attendances.filter(
-                      (a) => a.status === "On Duty"
-                    ).length;
-                    return count > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-cyan-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          On Duty:{" "}
-                          <span className="font-semibold text-cyan-700">
-                            {count}
+                    {/* On Duty */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) => a.status === "On Duty"
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-cyan-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            On Duty:{" "}
+                            <span className="font-semibold text-cyan-700">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                        </div>
+                      ) : null;
+                    })()}
 
-                  {/* Off */}
-                  {(() => {
-                    const count = attendances.filter(
-                      (a) => a.status === "Off"
-                    ).length;
-                    return count > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-gray-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          Off:{" "}
-                          <span className="font-semibold text-gray-700">
-                            {count}
+                    {/* Off */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) => a.status === "Off"
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-gray-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            Off:{" "}
+                            <span className="font-semibold text-gray-700">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                        </div>
+                      ) : null;
+                    })()}
 
-                  {/* Holiday Off */}
-                  {(() => {
-                    const count = attendances.filter(
-                      (a) => a.status === "Holiday Off"
-                    ).length;
-                    return count > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          Holiday Off:{" "}
-                          <span className="font-semibold text-orange-700">
-                            {count}
+                    {/* Holiday Off */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) => a.status === "Holiday Off"
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-orange-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            Holiday Off:{" "}
+                            <span className="font-semibold text-orange-700">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                        </div>
+                      ) : null;
+                    })()}
 
-                  {/* Leave */}
-                  {(() => {
-                    const count = attendances.filter(
-                      (a) => a.status === "Leave"
-                    ).length;
-                    return count > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          Leave:{" "}
-                          <span className="font-semibold text-yellow-700">
-                            {count}
+                    {/* Leave */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) => a.status === "Leave"
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-yellow-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            Leave:{" "}
+                            <span className="font-semibold text-yellow-700">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                        </div>
+                      ) : null;
+                    })()}
 
-                  {/* Absent */}
-                  {(() => {
-                    const count = attendances.filter(
-                      (a) => a.status === "Absent"
-                    ).length;
-                    return count > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          Absent:{" "}
-                          <span className="font-semibold text-red-700">
-                            {count}
+                    {/* Absent */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) => a.status === "Absent"
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-red-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            Absent:{" "}
+                            <span className="font-semibold text-red-700">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                        </div>
+                      ) : null;
+                    })()}
 
-                  {/* Others */}
-                  {(() => {
-                    const count = attendances.filter(
-                      (a) =>
-                        ![
-                          "Duty",
-                          "On Duty",
-                          "Off",
-                          "Holiday Off",
-                          "Leave",
-                          "Absent",
-                        ].includes(a.status)
-                    ).length;
-                    return count > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
-                        <span className="text-gray-700">
-                          Others:{" "}
-                          <span className="font-semibold text-purple-700">
-                            {count}
+                    {/* Scheduled */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) => a.status === "Scheduled"
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-purple-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            Scheduled:{" "}
+                            <span className="font-semibold text-purple-700">
+                              {count}
+                            </span>
                           </span>
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                        </div>
+                      ) : null;
+                    })()}
 
-                  {/* Total Count */}
-                  <div className="flex items-center gap-2 border-l border-gray-300 pl-4 col-span-2 sm:col-span-1">
-                    <div className="w-3 h-3 bg-indigo-500 rounded-full flex-shrink-0"></div>
-                    <span className="text-gray-700">
-                      Total:{" "}
-                      <span className="font-semibold text-indigo-700">
-                        {attendances.length}
+                    {/* Others */}
+                    {(() => {
+                      const count = filteredAttendances.filter(
+                        (a) =>
+                          ![
+                            "Duty",
+                            "On Duty",
+                            "Off",
+                            "Holiday Off",
+                            "Leave",
+                            "Absent",
+                            "Scheduled",
+                          ].includes(a.status)
+                      ).length;
+                      return count > 0 ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-gray-500 rounded-full flex-shrink-0"></div>
+                          <span className="text-gray-700">
+                            Others:{" "}
+                            <span className="font-semibold text-gray-700">
+                              {count}
+                            </span>
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
+
+                    {/* Total Count */}
+                    <div className="flex items-center gap-2 border-l border-gray-300 pl-4 col-span-2 sm:col-span-1">
+                      <div className="w-3 h-3 bg-indigo-500 rounded-full flex-shrink-0"></div>
+                      <span className="text-gray-700">
+                        Total:{" "}
+                        <span className="font-semibold text-indigo-700">
+                          {filteredAttendances.length}
+                        </span>
                       </span>
-                    </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Desktop Table Header - only show on large screens */}
             {attendances && attendances.length > 0 && (
@@ -1291,8 +1502,8 @@ const EmployeeAttendance = ({
 
             {/* Mobile Card View - show on small/medium screens */}
             <div className="lg:hidden">
-              {attendances && attendances.length > 0
-                ? attendances
+              {filteredAttendances && filteredAttendances.length > 0
+                ? filteredAttendances
                     .slice((currentPage - 1) * perPage, currentPage * perPage)
                     .map((attendance, idx) => (
                       <div
@@ -1359,16 +1570,59 @@ const EmployeeAttendance = ({
                               </span>
                             </div>
                             <div className="font-semibold text-gray-900">
-                              {formatDatePH(
-                                attendance.datePH || attendance.date,
-                                "MMM D, YYYY"
-                              )}
+                              {(() => {
+                                const isCompensatoryTimeOff =
+                                  attendance.scheduleType === "leave" &&
+                                  attendance.leaveTemplate
+                                    ?.isCompensatoryTimeOff;
+
+                                if (isCompensatoryTimeOff) {
+                                  return (
+                                    <div>
+                                      <div>
+                                        {formatDatePH(
+                                          attendance.datePH || attendance.date,
+                                          "ddd MMM D, YYYY"
+                                        )}
+                                      </div>
+                                      {attendance.leaveTemplate
+                                        ?.compensatoryWorkDate && (
+                                        <div className="text-sm text-blue-600 mt-1">
+                                          Work Date:{" "}
+                                          {formatDatePH(
+                                            attendance.leaveTemplate
+                                              .compensatoryWorkDate,
+                                            "ddd MMM D, YYYY"
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                return formatDatePH(
+                                  attendance.datePH || attendance.date,
+                                  "MMM D, YYYY"
+                                );
+                              })()}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
-                              {formatDatePH(
-                                attendance.datePH || attendance.date,
-                                "dddd"
-                              )}
+                              {(() => {
+                                const isCompensatoryTimeOff =
+                                  attendance.scheduleType === "leave" &&
+                                  attendance.leaveTemplate
+                                    ?.isCompensatoryTimeOff;
+
+                                // For compensatory time off, don't show the day name separately since it's in the main date
+                                if (isCompensatoryTimeOff) {
+                                  return null;
+                                }
+
+                                return formatDatePH(
+                                  attendance.datePH || attendance.date,
+                                  "dddd"
+                                );
+                              })()}
                             </div>
                             {(() => {
                               const holidayInfo = getHolidayInfo(
@@ -1712,9 +1966,9 @@ const EmployeeAttendance = ({
 
             {/* Desktop Table Body - show on large screens */}
             <div className="hidden lg:block divide-y divide-gray-200">
-              {attendances && attendances.length > 0
+              {filteredAttendances && filteredAttendances.length > 0
                 ? // Show data
-                  attendances
+                  filteredAttendances
                     .slice((currentPage - 1) * perPage, currentPage * perPage)
                     .map((attendance, idx) => (
                       <div
@@ -1762,16 +2016,50 @@ const EmployeeAttendance = ({
 
                           {/* Date */}
                           <div className="font-medium text-gray-900">
-                            {formatDatePH(
-                              attendance.datePH || attendance.date,
-                              "MMM D, YYYY"
-                            )}
-                            <div className="text-xs text-gray-500 mt-1">
-                              {formatDatePH(
-                                attendance.datePH || attendance.date,
-                                "dddd"
-                              )}
-                            </div>
+                            {(() => {
+                              const isCompensatoryTimeOff =
+                                attendance.scheduleType === "leave" &&
+                                attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+                              if (isCompensatoryTimeOff) {
+                                return (
+                                  <div>
+                                    <div>
+                                      {formatDatePH(
+                                        attendance.datePH || attendance.date,
+                                        "ddd MMM D, YYYY"
+                                      )}
+                                    </div>
+                                    {attendance.leaveTemplate
+                                      ?.compensatoryWorkDate && (
+                                      <div className="text-sm text-blue-600 mt-1">
+                                        Work Date:{" "}
+                                        {formatDatePH(
+                                          attendance.leaveTemplate
+                                            .compensatoryWorkDate,
+                                          "ddd MMM D, YYYY"
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div>
+                                  {formatDatePH(
+                                    attendance.datePH || attendance.date,
+                                    "MMM D, YYYY"
+                                  )}
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {formatDatePH(
+                                      attendance.datePH || attendance.date,
+                                      "dddd"
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
                             {(() => {
                               const holidayInfo = getHolidayInfo(
                                 attendance,
@@ -1799,144 +2087,169 @@ const EmployeeAttendance = ({
 
                           {/* Time In */}
                           <div>
-                            {attendance.shiftTemplate?.type === "Standard" ? (
-                              // For Standard shifts, show morning and afternoon separately
-                              <div className="space-y-1">
-                                {/* Morning In - Always show for Standard */}
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-3 w-3 text-yellow-200"
-                                      viewBox="0 0 20 20"
-                                      fill="currentColor"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                    AM
-                                  </span>
-                                  <TimeDisplay
-                                    time={attendance.morningInLog}
-                                    type="in"
-                                    attendance={attendance}
-                                    timeType="morningIn"
-                                    source={attendance.morningInLogSource}
-                                    manualId={attendance.morningInLogManualId}
-                                    showManualOption={true}
-                                  />
+                            {(() => {
+                              // For compensatory time off, check the compensatoryWorkShift type
+                              const isCompensatoryTimeOff =
+                                attendance.scheduleType === "leave" &&
+                                attendance.leaveTemplate?.isCompensatoryTimeOff;
+                              const shiftType = isCompensatoryTimeOff
+                                ? attendance.leaveTemplate
+                                    ?.compensatoryWorkShift?.type
+                                : attendance.shiftTemplate?.type;
+
+                              return shiftType === "Standard" ? (
+                                // For Standard shifts, show morning and afternoon separately
+                                <div className="space-y-1">
+                                  {/* Morning In - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-yellow-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      AM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.morningInLog}
+                                      type="in"
+                                      attendance={attendance}
+                                      timeType="morningIn"
+                                      source={attendance.morningInLogSource}
+                                      manualId={attendance.morningInLogManualId}
+                                      showManualOption={true}
+                                    />
+                                  </div>
+                                  {/* Afternoon In - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-blue-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                      </svg>
+                                      PM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.afternoonInLog}
+                                      type="in"
+                                      attendance={attendance}
+                                      timeType="afternoonIn"
+                                      source={attendance.afternoonInLogSource}
+                                      manualId={
+                                        attendance.afternoonInLogManualId
+                                      }
+                                      showManualOption={true}
+                                    />
+                                  </div>
                                 </div>
-                                {/* Afternoon In - Always show for Standard */}
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-3 w-3 text-blue-200"
-                                      viewBox="0 0 20 20"
-                                      fill="currentColor"
-                                    >
-                                      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                                    </svg>
-                                    PM
-                                  </span>
-                                  <TimeDisplay
-                                    time={attendance.afternoonInLog}
-                                    type="in"
-                                    attendance={attendance}
-                                    timeType="afternoonIn"
-                                    source={attendance.afternoonInLogSource}
-                                    manualId={attendance.afternoonInLogManualId}
-                                    showManualOption={true}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              // For Shifting shifts, show single time in
-                              <TimeDisplay
-                                time={attendance.timeIn}
-                                type="in"
-                                attendance={attendance}
-                                timeType="timeIn"
-                                source={attendance.timeInSource}
-                                manualId={attendance.timeInManualId}
-                                showManualOption={true}
-                              />
-                            )}
+                              ) : (
+                                // For Shifting shifts, show single time in
+                                <TimeDisplay
+                                  time={attendance.timeIn}
+                                  type="in"
+                                  attendance={attendance}
+                                  timeType="timeIn"
+                                  source={attendance.timeInSource}
+                                  manualId={attendance.timeInManualId}
+                                  showManualOption={true}
+                                />
+                              );
+                            })()}
                           </div>
 
                           {/* Time Out */}
                           <div>
-                            {attendance.shiftTemplate?.type === "Standard" ? (
-                              // For Standard shifts, show morning and afternoon separately
-                              <div className="space-y-1">
-                                {/* Morning Out - Always show for Standard */}
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-3 w-3 text-yellow-200"
-                                      viewBox="0 0 20 20"
-                                      fill="currentColor"
-                                    >
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                    AM
-                                  </span>
-                                  <TimeDisplay
-                                    time={attendance.morningOutLog}
-                                    type="out"
-                                    attendance={attendance}
-                                    timeType="morningOut"
-                                    source={attendance.morningOutLogSource}
-                                    manualId={attendance.morningOutLogManualId}
-                                    showManualOption={true}
-                                  />
+                            {(() => {
+                              // For compensatory time off, use compensatoryWorkShift to determine display type
+                              const isCompensatoryTimeOff =
+                                attendance.leaveTemplate?.isCompensatoryTimeOff;
+                              const shiftType = isCompensatoryTimeOff
+                                ? attendance.leaveTemplate
+                                    ?.compensatoryWorkShift?.type
+                                : attendance.shiftTemplate?.type;
+
+                              return shiftType === "Standard" ? (
+                                // For Standard shifts, show morning and afternoon separately
+                                <div className="space-y-1">
+                                  {/* Morning Out - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-yellow-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path
+                                          fillRule="evenodd"
+                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                          clipRule="evenodd"
+                                        />
+                                      </svg>
+                                      AM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.morningOutLog}
+                                      type="out"
+                                      attendance={attendance}
+                                      timeType="morningOut"
+                                      source={attendance.morningOutLogSource}
+                                      manualId={
+                                        attendance.morningOutLogManualId
+                                      }
+                                      showManualOption={true}
+                                    />
+                                  </div>
+                                  {/* Afternoon Out - Always show for Standard */}
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-3 w-3 text-blue-200"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                      >
+                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                      </svg>
+                                      PM
+                                    </span>
+                                    <TimeDisplay
+                                      time={attendance.afternoonOutLog}
+                                      type="out"
+                                      attendance={attendance}
+                                      timeType="afternoonOut"
+                                      source={attendance.afternoonOutLogSource}
+                                      manualId={
+                                        attendance.afternoonOutLogManualId
+                                      }
+                                      showManualOption={true}
+                                    />
+                                  </div>
                                 </div>
-                                {/* Afternoon Out - Always show for Standard */}
-                                <div className="flex items-center gap-1">
-                                  <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      className="h-3 w-3 text-blue-200"
-                                      viewBox="0 0 20 20"
-                                      fill="currentColor"
-                                    >
-                                      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                                    </svg>
-                                    PM
-                                  </span>
-                                  <TimeDisplay
-                                    time={attendance.afternoonOutLog}
-                                    type="out"
-                                    attendance={attendance}
-                                    timeType="afternoonOut"
-                                    source={attendance.afternoonOutLogSource}
-                                    manualId={
-                                      attendance.afternoonOutLogManualId
-                                    }
-                                    showManualOption={true}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              // For Shifting shifts, show single time out
-                              <TimeDisplay
-                                time={attendance.timeOut}
-                                type="out"
-                                attendance={attendance}
-                                timeType="timeOut"
-                                source={attendance.timeOutSource}
-                                manualId={attendance.timeOutManualId}
-                                showManualOption={true}
-                              />
-                            )}
+                              ) : (
+                                // For Shifting shifts, show single time out
+                                <TimeDisplay
+                                  time={attendance.timeOut}
+                                  type="out"
+                                  attendance={attendance}
+                                  timeType="timeOut"
+                                  source={attendance.timeOutSource}
+                                  manualId={attendance.timeOutManualId}
+                                  showManualOption={true}
+                                />
+                              );
+                            })()}
                           </div>
 
                           {/* Status */}
@@ -2020,7 +2333,7 @@ const EmployeeAttendance = ({
             </div>
 
             {/* Pagination */}
-            {attendances && attendances.length > perPage && (
+            {filteredAttendances && filteredAttendances.length > perPage && (
               <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-gray-50 to-blue-50 border-t border-gray-200">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   {/* Results Summary */}
@@ -2040,17 +2353,20 @@ const EmployeeAttendance = ({
                       </svg>
                       <span className="text-center sm:text-left">
                         <span className="font-medium text-blue-700">
-                          {attendances.length === 0
+                          {filteredAttendances.length === 0
                             ? 0
                             : (currentPage - 1) * perPage + 1}
                         </span>
                         -
                         <span className="font-medium text-blue-700">
-                          {Math.min(currentPage * perPage, attendances.length)}
+                          {Math.min(
+                            currentPage * perPage,
+                            filteredAttendances.length
+                          )}
                         </span>{" "}
                         of{" "}
                         <span className="font-medium text-blue-700">
-                          {attendances.length}
+                          {filteredAttendances.length}
                         </span>{" "}
                         records
                       </span>
@@ -2061,17 +2377,17 @@ const EmployeeAttendance = ({
                   <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end gap-3">
                     <span className="text-sm text-gray-600 text-center sm:text-right order-2 sm:order-1">
                       Page {currentPage} of{" "}
-                      {Math.ceil(attendances.length / perPage)}
+                      {Math.ceil(filteredAttendances.length / perPage)}
                     </span>
                     <div className="order-1 sm:order-2">
                       <Pagination
                         pageNumber={currentPage}
                         setPageNumber={handlePageChange}
-                        totalItem={attendances.length}
+                        totalItem={filteredAttendances.length}
                         perPage={perPage}
                         showItem={Math.min(
                           3, // Show fewer items on mobile
-                          Math.ceil(attendances.length / perPage)
+                          Math.ceil(filteredAttendances.length / perPage)
                         )}
                       />
                     </div>

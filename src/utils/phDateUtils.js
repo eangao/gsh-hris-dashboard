@@ -27,12 +27,12 @@ export const formatDatePH = (input, format = "YYYY-MM-DD") => {
  */
 export const combineDateTimeToUTC = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return null;
-  
+
   // Combine date and time in Asia/Manila timezone
   const phDateTime = moment.tz(`${dateStr} ${timeStr}`, "Asia/Manila");
-  
+
   if (!phDateTime.isValid()) return null;
-  
+
   return phDateTime.utc().toISOString();
 };
 
@@ -634,4 +634,27 @@ export const getBirthdayStatsPH = (employees) => {
     lastMonth: getEmployeesBirthdaysByPeriod(employees, "lastMonth").length,
     nextMonth: getEmployeesBirthdaysByPeriod(employees, "nextMonth").length,
   };
+};
+
+/**
+ * Converts a UTC Date object or ISO string to a compact PH date format (M/D/YY).
+ * Used for displaying compensatory work dates in a space-efficient format.
+ * @param {Date|string} utcDate - UTC Date object or ISO string
+ * @returns {string} - Formatted date string in M/D/YY format (PH timezone)
+ */
+export const formatUTCToCompactDatePH = (utcDate) => {
+  if (!utcDate) return "";
+  try {
+    const date = typeof utcDate === "string" ? new Date(utcDate) : utcDate;
+    if (isNaN(date.getTime())) return "";
+
+    return moment(date).tz("Asia/Manila").format("M/D/YY");
+  } catch (error) {
+    console.error(
+      "Error formatting UTC date to compact PH format:",
+      utcDate,
+      error
+    );
+    return "";
+  }
 };

@@ -25,6 +25,7 @@ import {
   formatTimeTo12HourPH,
   formatMonthYearPH,
   formatMonthSchedulePH,
+  formatUTCToCompactDatePH,
 } from "../../utils/phDateUtils";
 import { fetchAllLeaveTemplates } from "store/Reducers/leaveTemplateReducer";
 
@@ -72,6 +73,8 @@ const DutyScheduleForm = ({
   const [scheduleType, setScheduleType] = useState("duty"); // New: duty, off, leave, holiday_off
   const [selectedShift, setSelectedShift] = useState("");
   const [selectedLeave, setSelectedLeave] = useState(""); // New: for leave template
+  const [compensatoryWorkDate, setCompensatoryWorkDate] = useState(""); // New: for compensatory time off work date
+  const [compensatoryWorkShift, setCompensatoryWorkShift] = useState(""); // New: for compensatory work shift schedule
   const [description, setDescription] = useState("");
 
   const [localDutySchedule, setLocalDutySchedule] = useState({
@@ -96,6 +99,10 @@ const DutyScheduleForm = ({
   const [employeeError, setEmployeeError] = useState("");
   const [typeError, setTypeError] = useState(""); // New: for schedule type validation
   const [leaveError, setLeaveError] = useState(""); // New: for leave template validation
+  const [compensatoryWorkDateError, setCompensatoryWorkDateError] =
+    useState(""); // New: for compensatory work date validation
+  const [compensatoryWorkShiftError, setCompensatoryWorkShiftError] =
+    useState(""); // New: for compensatory work shift validation
 
   const weekDays = [
     { day: "Sun", isWeekend: true },
@@ -111,7 +118,7 @@ const DutyScheduleForm = ({
   useEffect(() => {
     // Clear any existing success/error messages when component mounts
     dispatch(messageClear());
-    
+
     dispatch(fetchAllShiftTemplates());
     dispatch(fetchAllLeaveTemplates());
 
@@ -300,6 +307,8 @@ const DutyScheduleForm = ({
     setScheduleType("duty"); // Reset to default
     setSelectedShift("");
     setSelectedLeave(""); // Reset leave template
+    setCompensatoryWorkDate(""); // Reset compensatory work date
+    setCompensatoryWorkShift(""); // Reset compensatory work shift
     setDescription("");
 
     // Clear all error states
@@ -307,6 +316,8 @@ const DutyScheduleForm = ({
     setTypeError("");
     setShiftError("");
     setLeaveError("");
+    setCompensatoryWorkDateError(""); // Clear compensatory work date error
+    setCompensatoryWorkShiftError(""); // Clear compensatory work shift error
   };
 
   const getEmployeesForDate = (date) => {
@@ -418,6 +429,8 @@ const DutyScheduleForm = ({
           type: es.type || "duty",
           leaveAbbreviation: displayInfo.leaveAbbreviation || null,
           leaveTemplateName: displayInfo.leaveTemplateName || null,
+          compensatoryWorkDate: es.compensatoryWorkDate || null, // Add compensatory work date to employee object
+          compensatoryWorkShift: es.compensatoryWorkShift || null, // Add compensatory work shift to employee object
         };
       })
       .sort((a, b) => {
@@ -522,6 +535,7 @@ const DutyScheduleForm = ({
     setTypeError("");
     setShiftError("");
     setLeaveError("");
+    setCompensatoryWorkDateError(""); // Clear compensatory work date error
 
     // Validate employee selection
     if (!employeeInput) {
@@ -544,6 +558,25 @@ const DutyScheduleForm = ({
     if (scheduleType === "leave" && !selectedLeave) {
       setLeaveError("Leave template is required for leave schedule.");
       valid = false;
+    }
+
+    // Validate compensatory work date for compensatory time off leave
+    if (scheduleType === "leave" && selectedLeave) {
+      const leaveTemplate = leaveTemplates?.find(
+        (lt) => lt._id === selectedLeave
+      );
+      if (leaveTemplate?.isCompensatoryTimeOff && !compensatoryWorkDate) {
+        setCompensatoryWorkDateError(
+          "Work date is required for compensatory time off."
+        );
+        valid = false;
+      }
+      if (leaveTemplate?.isCompensatoryTimeOff && !compensatoryWorkShift) {
+        setCompensatoryWorkShiftError(
+          "Work shift schedule is required for compensatory time off."
+        );
+        valid = false;
+      }
     }
 
     // Check if date is a holiday and type is holiday_off
@@ -575,6 +608,21 @@ const DutyScheduleForm = ({
       newSchedule.shiftTemplate = selectedShift;
     } else if (scheduleType === "leave") {
       newSchedule.leaveTemplate = selectedLeave;
+
+      // Add compensatory work date if this is compensatory time off
+      const leaveTemplate = leaveTemplates?.find(
+        (lt) => lt._id === selectedLeave
+      );
+      if (leaveTemplate?.isCompensatoryTimeOff && compensatoryWorkDate) {
+        // Convert YYYY-MM-DD string to proper Date object for backend
+        newSchedule.compensatoryWorkDate = new Date(
+          compensatoryWorkDate + "T00:00:00.000Z"
+        );
+        // Add compensatory work shift reference
+        if (compensatoryWorkShift) {
+          newSchedule.compensatoryWorkShift = compensatoryWorkShift;
+        }
+      }
     }
     // For "off" and "holiday_off", no additional fields needed
 
@@ -653,6 +701,8 @@ const DutyScheduleForm = ({
     setScheduleType("duty");
     setSelectedShift("");
     setSelectedLeave("");
+    setCompensatoryWorkDate(""); // Reset compensatory work date
+    setCompensatoryWorkShift(""); // Reset compensatory work shift
     setSelectedDate(null);
     setDescription("");
   };
@@ -857,7 +907,7 @@ const DutyScheduleForm = ({
         error.message ||
           "Failed to update HR approved schedule. Please try again."
       );
-      
+
       // If there's an error, show the modal again so user can retry
       setShowHrUpdateModal(true);
     } finally {
@@ -955,12 +1005,23 @@ const DutyScheduleForm = ({
       if (emp.type === "duty") {
         setSelectedShift(emp.shiftTemplate || "");
         setSelectedLeave("");
+        setCompensatoryWorkDate(""); // Reset compensatory work date
       } else if (emp.type === "leave") {
         setSelectedLeave(emp.leaveTemplate || "");
+        setCompensatoryWorkDate(
+          emp.compensatoryWorkDate
+            ? typeof emp.compensatoryWorkDate === "string"
+              ? emp.compensatoryWorkDate.split("T")[0] // Extract YYYY-MM-DD from ISO string
+              : emp.compensatoryWorkDate.toISOString().split("T")[0] // Convert Date to YYYY-MM-DD
+            : ""
+        ); // Set compensatory work date if available
+        setCompensatoryWorkShift(emp.compensatoryWorkShift || ""); // Set compensatory work shift if available
         setSelectedShift("");
       } else {
         setSelectedShift("");
         setSelectedLeave("");
+        setCompensatoryWorkDate(""); // Reset compensatory work date
+        setCompensatoryWorkShift(""); // Reset compensatory work shift
       }
 
       setDescription(emp.description || "");
@@ -970,6 +1031,7 @@ const DutyScheduleForm = ({
         setScheduleType("duty");
         setSelectedShift("");
         setSelectedLeave("");
+        setCompensatoryWorkDate(""); // Reset compensatory work date
         setSelectedDate(null);
         setDescription("");
         setDraggedItem(null);
@@ -999,12 +1061,24 @@ const DutyScheduleForm = ({
           if (emp.type === "duty") {
             setSelectedShift(emp.shiftTemplate || "");
             setSelectedLeave("");
+            setCompensatoryWorkDate(""); // Reset compensatory work date
+            setCompensatoryWorkShift(""); // Reset compensatory work shift
           } else if (emp.type === "leave") {
             setSelectedLeave(emp.leaveTemplate || "");
+            setCompensatoryWorkDate(
+              emp.compensatoryWorkDate
+                ? typeof emp.compensatoryWorkDate === "string"
+                  ? emp.compensatoryWorkDate.split("T")[0] // Extract YYYY-MM-DD from ISO string
+                  : emp.compensatoryWorkDate.toISOString().split("T")[0] // Convert Date to YYYY-MM-DD
+                : ""
+            ); // Set compensatory work date if available
+            setCompensatoryWorkShift(emp.compensatoryWorkShift || ""); // Set compensatory work shift if available
             setSelectedShift("");
           } else {
             setSelectedShift("");
             setSelectedLeave("");
+            setCompensatoryWorkDate(""); // Reset compensatory work date
+            setCompensatoryWorkShift(""); // Reset compensatory work shift
           }
 
           setDescription(emp.description || "");
@@ -1013,6 +1087,7 @@ const DutyScheduleForm = ({
           setScheduleType("duty");
           setSelectedShift("");
           setSelectedLeave("");
+          setCompensatoryWorkDate(""); // Reset compensatory work date
           setSelectedDate(null);
           setDescription("");
           if (idx === group.employees.length - 1) setDraggedItem(null);
@@ -1748,6 +1823,36 @@ const DutyScheduleForm = ({
                                           : "text-blue-600"
                                       }`}
                                       style={{ marginTop: "-4px" }}
+                                      title={(() => {
+                                        const days = [
+                                          "Sunday",
+                                          "Monday",
+                                          "Tuesday",
+                                          "Wednesday",
+                                          "Thursday",
+                                          "Friday",
+                                          "Saturday",
+                                        ];
+                                        const months = [
+                                          "January",
+                                          "February",
+                                          "March",
+                                          "April",
+                                          "May",
+                                          "June",
+                                          "July",
+                                          "August",
+                                          "September",
+                                          "October",
+                                          "November",
+                                          "December",
+                                        ];
+                                        return `${days[day.getDay()]}, ${
+                                          months[day.getMonth()]
+                                        } ${day.getDate()}, ${day.getFullYear()} (Holiday: ${getHolidayName(
+                                          day
+                                        )})`;
+                                      })()}
                                     >
                                       {day.getDate()}
                                     </span>
@@ -1764,6 +1869,34 @@ const DutyScheduleForm = ({
                                             ? "text-red-600"
                                             : "text-blue-600"
                                         }`}
+                                        title={(() => {
+                                          const days = [
+                                            "Sunday",
+                                            "Monday",
+                                            "Tuesday",
+                                            "Wednesday",
+                                            "Thursday",
+                                            "Friday",
+                                            "Saturday",
+                                          ];
+                                          const months = [
+                                            "January",
+                                            "February",
+                                            "March",
+                                            "April",
+                                            "May",
+                                            "June",
+                                            "July",
+                                            "August",
+                                            "September",
+                                            "October",
+                                            "November",
+                                            "December",
+                                          ];
+                                          return `${days[day.getDay()]}, ${
+                                            months[day.getMonth()]
+                                          } ${day.getDate()}, ${day.getFullYear()}`;
+                                        })()}
                                       >
                                         {day.getDate()}
                                       </span>
@@ -1776,6 +1909,34 @@ const DutyScheduleForm = ({
                                             : "text-blue-600"
                                         }`}
                                         style={{ marginTop: "-4px" }}
+                                        title={(() => {
+                                          const days = [
+                                            "Sunday",
+                                            "Monday",
+                                            "Tuesday",
+                                            "Wednesday",
+                                            "Thursday",
+                                            "Friday",
+                                            "Saturday",
+                                          ];
+                                          const months = [
+                                            "January",
+                                            "February",
+                                            "March",
+                                            "April",
+                                            "May",
+                                            "June",
+                                            "July",
+                                            "August",
+                                            "September",
+                                            "October",
+                                            "November",
+                                            "December",
+                                          ];
+                                          return `${days[day.getDay()]}, ${
+                                            months[day.getMonth()]
+                                          } ${day.getDate()}, ${day.getFullYear()}`;
+                                        })()}
                                       >
                                         {day.getDate()}
                                       </span>
@@ -1837,48 +1998,123 @@ const DutyScheduleForm = ({
                                                 <div className="text-xs font-medium text-blue-700 mb-1 capitalize">
                                                   {leaveTypeName?.toLowerCase()}
                                                 </div>
-                                                {employees.map((emp) => (
-                                                  <div
-                                                    key={emp.id}
-                                                    className="text-sm mb-1 p-1 rounded bg-white/50 ml-2"
-                                                  >
-                                                    <div className="flex justify-between items-center">
-                                                      <span
-                                                        title={
-                                                          emp.leaveTemplateName
-                                                        }
-                                                      >
-                                                        {emp.name}
-                                                      </span>
-                                                      <button
-                                                        onClick={(e) => {
-                                                          e.stopPropagation();
-                                                          handleEmployeeRemove(
-                                                            day,
-                                                            emp.id
-                                                          );
-                                                        }}
-                                                        className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
-                                                        type="button"
-                                                      >
-                                                        <FaTimes />
-                                                      </button>
-                                                    </div>
-                                                    {emp.description && (
-                                                      <div className="text-gray-600 mt-1 text-xs italic">
-                                                        {emp.description}
+                                                {employees.map(
+                                                  (emp, empIndex) => (
+                                                    <div
+                                                      key={`${emp.id}-${empIndex}`}
+                                                      className="text-sm mb-1 p-1 rounded bg-white/50 ml-2"
+                                                    >
+                                                      <div className="flex justify-between items-center">
+                                                        <span
+                                                          title={
+                                                            emp.leaveTemplateName
+                                                          }
+                                                          className="text-xs"
+                                                        >
+                                                          {emp.name}
+                                                          {emp.compensatoryWorkDate &&
+                                                            (() => {
+                                                              try {
+                                                                const compactDate =
+                                                                  formatUTCToCompactDatePH(
+                                                                    emp.compensatoryWorkDate
+                                                                  );
+                                                                return compactDate ? (
+                                                                  <span className="text-green-600 font-medium text-xs inline">
+                                                                    -
+                                                                    {
+                                                                      compactDate
+                                                                    }
+                                                                  </span>
+                                                                ) : (
+                                                                  ""
+                                                                );
+                                                              } catch (error) {
+                                                                console.error(
+                                                                  "Error parsing compensatory work date:",
+                                                                  emp.compensatoryWorkDate,
+                                                                  error
+                                                                );
+                                                                return "";
+                                                              }
+                                                            })()}
+                                                        </span>
+                                                        {/* Display compensatory work shift on second line */}
+                                                        {emp.compensatoryWorkShift && (
+                                                          <div className="text-blue-600 font-medium text-xs mt-0.5">
+                                                            {(() => {
+                                                              // Find shift template from Redux or use embedded data
+                                                              const shiftTemplate =
+                                                                typeof emp.compensatoryWorkShift ===
+                                                                "object"
+                                                                  ? emp.compensatoryWorkShift
+                                                                  : shiftTemplates?.find(
+                                                                      (st) =>
+                                                                        st._id ===
+                                                                        emp.compensatoryWorkShift
+                                                                    );
+
+                                                              if (
+                                                                !shiftTemplate
+                                                              )
+                                                                return "";
+
+                                                              return (
+                                                                <span
+                                                                  title={`Compensatory work shift: ${shiftTemplate.name}`}
+                                                                  className="text-xs"
+                                                                >
+                                                                  {shiftTemplate.type ===
+                                                                  "Standard"
+                                                                    ? `${formatTimeTo12HourPH(
+                                                                        shiftTemplate.morningIn
+                                                                      )}-${formatTimeTo12HourPH(
+                                                                        shiftTemplate.morningOut
+                                                                      )}, ${formatTimeTo12HourPH(
+                                                                        shiftTemplate.afternoonIn
+                                                                      )}-${formatTimeTo12HourPH(
+                                                                        shiftTemplate.afternoonOut
+                                                                      )}`
+                                                                    : `${formatTimeTo12HourPH(
+                                                                        shiftTemplate.startTime
+                                                                      )}-${formatTimeTo12HourPH(
+                                                                        shiftTemplate.endTime
+                                                                      )}`}
+                                                                </span>
+                                                              );
+                                                            })()}
+                                                          </div>
+                                                        )}
+                                                        <button
+                                                          onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleEmployeeRemove(
+                                                              day,
+                                                              emp.id
+                                                            );
+                                                          }}
+                                                          className="text-red-500 hover:text-red-700 flex items-center justify-center z-10"
+                                                          type="button"
+                                                        >
+                                                          <FaTimes />
+                                                        </button>
                                                       </div>
-                                                    )}
-                                                  </div>
-                                                ))}
+                                                      {emp.description && (
+                                                        <div className="text-gray-600 mt-1 text-xs italic">
+                                                          {emp.description}
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  )
+                                                )}
                                               </div>
                                             )
                                           );
                                         })()
                                       : // Regular rendering for non-leave groups
-                                        group.employees.map((emp) => (
+                                        group.employees.map((emp, empIndex) => (
                                           <div
-                                            key={emp.id}
+                                            key={`${emp.id}-${empIndex}`}
                                             className="text-sm mb-1 p-1 rounded bg-white/50"
                                             // Remove draggable and drag handlers from employee
                                           >
@@ -2271,7 +2507,9 @@ const DutyScheduleForm = ({
                           ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800"
                           : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
                       } text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200 shadow-sm flex items-center gap-2 ${
-                        loading && !hrUpdateLoading ? "opacity-75 cursor-not-allowed" : ""
+                        loading && !hrUpdateLoading
+                          ? "opacity-75 cursor-not-allowed"
+                          : ""
                       }`}
                     >
                       {loading && !hrUpdateLoading ? (
@@ -2619,8 +2857,8 @@ const DutyScheduleForm = ({
       {/* Professional Add Employee Modal */}
       {showAddModal && selectedDate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white shadow-2xl rounded-xl w-full max-w-lg mx-auto border border-gray-200">
-            <div className="px-6 pt-6 pb-4 border-b border-gray-200">
+          <div className="bg-white shadow-2xl rounded-xl w-full max-w-lg mx-auto border border-gray-200 max-h-[90vh] flex flex-col">
+            <div className="px-6 pt-6 pb-4 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <svg
@@ -2642,14 +2880,47 @@ const DutyScheduleForm = ({
                   <h2 className="text-2xl font-bold text-gray-800">
                     Add Employee Schedule
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {formatMonthYearPH(selectedDate, true)}
-                  </p>
+                  {/* Enhanced readable date display */}
+                  <div className="mt-2 px-3 py-1 bg-blue-50 rounded-lg inline-block">
+                    <p className="text-xs text-blue-700 font-medium">
+                      Selected Date:{" "}
+                      {selectedDate
+                        ? (() => {
+                            const days = [
+                              "Sunday",
+                              "Monday",
+                              "Tuesday",
+                              "Wednesday",
+                              "Thursday",
+                              "Friday",
+                              "Saturday",
+                            ];
+                            const months = [
+                              "January",
+                              "February",
+                              "March",
+                              "April",
+                              "May",
+                              "June",
+                              "July",
+                              "August",
+                              "September",
+                              "October",
+                              "November",
+                              "December",
+                            ];
+                            return `${days[selectedDate.getDay()]}, ${
+                              months[selectedDate.getMonth()]
+                            } ${selectedDate.getDate()}, ${selectedDate.getFullYear()}`;
+                          })()
+                        : "None"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <form className="px-6 py-6 space-y-6">
+            <form className="px-6 py-6 space-y-6 overflow-y-auto flex-1 min-h-0">
               {/* Employee Selection */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
@@ -2966,6 +3237,196 @@ const DutyScheduleForm = ({
                       {leaveError}
                     </div>
                   )}
+
+                  {/* Compensatory Work Date - Only for compensatory time off */}
+                  {selectedLeave &&
+                    (() => {
+                      const leaveTemplate = leaveTemplates?.find(
+                        (lt) => lt._id === selectedLeave
+                      );
+                      return leaveTemplate?.isCompensatoryTimeOff;
+                    })() && (
+                      <div className="space-y-2 mt-4">
+                        <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 10a1 1 0 001 1h10a1 1 0 001-1L16 7m-6 0V5"
+                            />
+                          </svg>
+                          Date Worked for This Time Off
+                        </label>
+                        <input
+                          type="date"
+                          required
+                          value={compensatoryWorkDate}
+                          max={formatDatePH(getCurrentDatePH())} // Prevent future dates
+                          onChange={(e) =>
+                            setCompensatoryWorkDate(e.target.value)
+                          }
+                          className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
+                        />
+
+                        {/* Readable date display */}
+                        {compensatoryWorkDate && (
+                          <div className="mt-2 px-3 py-2 bg-green-50 rounded-lg border-l-4 border-green-400">
+                            <p className="text-sm text-green-700 font-medium">
+                              📅 Work Date:{" "}
+                              {(() => {
+                                const workDate = new Date(
+                                  compensatoryWorkDate + "T00:00:00"
+                                );
+                                const days = [
+                                  "Sunday",
+                                  "Monday",
+                                  "Tuesday",
+                                  "Wednesday",
+                                  "Thursday",
+                                  "Friday",
+                                  "Saturday",
+                                ];
+                                const months = [
+                                  "January",
+                                  "February",
+                                  "March",
+                                  "April",
+                                  "May",
+                                  "June",
+                                  "July",
+                                  "August",
+                                  "September",
+                                  "October",
+                                  "November",
+                                  "December",
+                                ];
+                                return `${days[workDate.getDay()]}, ${
+                                  months[workDate.getMonth()]
+                                } ${workDate.getDate()}, ${workDate.getFullYear()}`;
+                              })()}
+                            </p>
+                            <p className="text-xs text-green-600 mt-1">
+                              This compensatory time off is for work performed
+                              on the above date.
+                            </p>
+                          </div>
+                        )}
+                        {compensatoryWorkDateError && (
+                          <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            {compensatoryWorkDateError}
+                          </div>
+                        )}
+                        <div className="text-xs text-gray-500">
+                          Select the date when you worked that entitles you to
+                          this compensatory time off. Future dates are not
+                          allowed.
+                        </div>
+
+                        {/* Compensatory Work Shift Schedule */}
+                        <div className="mt-4">
+                          <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 text-gray-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            Work Shift Schedule
+                          </label>
+                          <select
+                            required
+                            value={compensatoryWorkShift}
+                            onChange={(e) =>
+                              setCompensatoryWorkShift(e.target.value)
+                            }
+                            className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
+                          >
+                            <option value="" className="text-gray-500">
+                              -- Select Work Shift --
+                            </option>
+                            {shiftTemplates &&
+                              [...shiftTemplates]
+                                .filter(
+                                  (schedule) => schedule.isActive !== false
+                                )
+                                .map((schedule) => (
+                                  <option
+                                    key={schedule._id}
+                                    value={schedule._id}
+                                    className="py-2"
+                                  >
+                                    {schedule.name}
+                                    {schedule.type === "Standard"
+                                      ? ` (${formatTimeTo12HourPH(
+                                          schedule.morningIn
+                                        )}-${formatTimeTo12HourPH(
+                                          schedule.morningOut
+                                        )}, ${formatTimeTo12HourPH(
+                                          schedule.afternoonIn
+                                        )}-${formatTimeTo12HourPH(
+                                          schedule.afternoonOut
+                                        )})`
+                                      : ` (${formatTimeTo12HourPH(
+                                          schedule.startTime
+                                        )}-${formatTimeTo12HourPH(
+                                          schedule.endTime
+                                        )})`}
+                                  </option>
+                                ))}
+                          </select>
+                          {compensatoryWorkShiftError && (
+                            <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
+                              {compensatoryWorkShiftError}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500 mt-2">
+                            Select the shift schedule that was worked on the
+                            compensatory work date to identify the time in/out.
+                          </div>
+                        </div>
+                      </div>
+                    )}
                 </div>
               )}
 
@@ -2999,7 +3460,7 @@ const DutyScheduleForm = ({
               </div>
             </form>
 
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-xl flex-shrink-0">
               <div className="flex flex-col sm:flex-row gap-3 justify-end">
                 <button
                   type="button"
@@ -3009,11 +3470,15 @@ const DutyScheduleForm = ({
                     setScheduleType("duty");
                     setSelectedShift("");
                     setSelectedLeave("");
+                    setCompensatoryWorkDate(""); // Reset compensatory work date
+                    setCompensatoryWorkShift(""); // Reset compensatory work shift
                     setDescription("");
                     setEmployeeError("");
                     setTypeError("");
                     setShiftError("");
                     setLeaveError("");
+                    setCompensatoryWorkDateError(""); // Reset compensatory work date error
+                    setCompensatoryWorkShiftError(""); // Reset compensatory work shift error
                   }}
                   className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300 flex items-center gap-2 justify-center"
                 >

@@ -20,12 +20,6 @@ const ManagerDutySchedule = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutySchedule")
 );
 
-const OptimizedManagerDutySchedule = lazy(() =>
-  import(
-    "../../pages/dashboard/manager/dutySchedule/OptimizedManagerDutySchedule"
-  )
-);
-
 const ManagerDutyScheduleForm = lazy(() =>
   import("../../pages/dashboard/manager/dutySchedule/ManagerDutyScheduleForm")
 );
@@ -41,6 +35,12 @@ const ManagerDutySchedulePrint = lazy(() =>
 
 const ManagerEmployeeAttendance = lazy(() =>
   import("../../pages/dashboard/manager/attendance/ManagerEmployeeAttendance")
+);
+
+const ManagerEmployeeAttendancePrint = lazy(() =>
+  import(
+    "../../pages/dashboard/manager/attendance/ManagerEmployeeAttendancePrint"
+  )
 );
 // const TeamOverview = lazy(() =>
 //   import("../../pages/dashboard/manager/TeamOverview")
@@ -151,6 +151,18 @@ const managerRoutes = [
   {
     path: "/manager/employee-attendance",
     element: <ManagerEmployeeAttendance />,
+    role: managerRoles,
+  },
+
+  {
+    path: "/manager/employee-attendance-print",
+    element: <ManagerEmployeeAttendancePrint />,
+    role: managerRoles,
+  },
+
+  {
+    path: "/manager/employee-attendance/print",
+    element: <ManagerEmployeeAttendancePrint />,
     role: managerRoles,
   },
   // {
