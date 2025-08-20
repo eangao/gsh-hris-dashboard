@@ -132,21 +132,37 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
       const compensatoryWorkShift =
         attendance.leaveTemplate?.compensatoryWorkShift;
 
+      console.log("Leave case - isCompensatoryTimeOff:", isCompensatoryTimeOff);
+      console.log("Leave case - compensatoryWorkShift:", compensatoryWorkShift);
+
       if (isCompensatoryTimeOff && compensatoryWorkShift) {
         // Display time schedule for compensatory time off
         if (compensatoryWorkShift.type === "Standard") {
-          const morningIn = formatTimeTo12HourPH(
-            compensatoryWorkShift.morningIn
-          );
-          const morningOut = formatTimeTo12HourPH(
-            compensatoryWorkShift.morningOut
-          );
-          const afternoonIn = formatTimeTo12HourPH(
-            compensatoryWorkShift.afternoonIn
-          );
-          const afternoonOut = formatTimeTo12HourPH(
-            compensatoryWorkShift.afternoonOut
-          );
+          // Helper function to format time from HH:mm to 12-hour format
+          const formatTime = (timeStr) => {
+            if (!timeStr) return "";
+            const [hours, minutes] = timeStr.split(":").map(Number);
+            const date = new Date();
+            date.setHours(hours);
+            date.setMinutes(minutes);
+            return date.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "numeric",
+              hour12: true,
+            });
+          };
+
+          const morningIn = formatTime(compensatoryWorkShift.morningIn);
+          const morningOut = formatTime(compensatoryWorkShift.morningOut);
+          const afternoonIn = formatTime(compensatoryWorkShift.afternoonIn);
+          const afternoonOut = formatTime(compensatoryWorkShift.afternoonOut);
+
+          console.log("Standard shift times:", {
+            morningIn,
+            morningOut,
+            afternoonIn,
+            afternoonOut,
+          });
 
           return (
             <div className={`${baseClasses} space-y-1`}>
@@ -185,10 +201,22 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
             </div>
           );
         } else if (compensatoryWorkShift.type === "Shifting") {
-          const startTime = formatTimeTo12HourPH(
-            compensatoryWorkShift.startTime
-          );
-          const endTime = formatTimeTo12HourPH(compensatoryWorkShift.endTime);
+          // Helper function to format time from HH:mm to 12-hour format
+          const formatTime = (timeStr) => {
+            if (!timeStr) return "";
+            const [hours, minutes] = timeStr.split(":").map(Number);
+            const date = new Date();
+            date.setHours(hours);
+            date.setMinutes(minutes);
+            return date.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "numeric",
+              hour12: true,
+            });
+          };
+
+          const startTime = formatTime(compensatoryWorkShift.startTime);
+          const endTime = formatTime(compensatoryWorkShift.endTime);
 
           return (
             <div className={`${baseClasses}`}>
@@ -447,10 +475,15 @@ const EmployeeAttendance = ({
         isCompensatoryTimeOff &&
         attendance.leaveTemplate?.compensatoryWorkDate
       ) {
+        // Format the compensatory work date to PH date format for proper handling
+        const formattedWorkDate = formatDatePH(
+          attendance.leaveTemplate.compensatoryWorkDate
+        );
+
         modifiedAttendance = {
           ...attendance,
-          datePH: attendance.leaveTemplate.compensatoryWorkDate,
-          date: attendance.leaveTemplate.compensatoryWorkDate,
+          datePH: formattedWorkDate,
+          date: formattedWorkDate,
         };
       }
 
@@ -712,10 +745,15 @@ const EmployeeAttendance = ({
           isCompensatoryTimeOff &&
           attendance.leaveTemplate?.compensatoryWorkDate
         ) {
+          // Format the compensatory work date to PH date format for proper handling
+          const formattedWorkDate = formatDatePH(
+            attendance.leaveTemplate.compensatoryWorkDate
+          );
+
           modifiedAttendance = {
             ...attendance,
-            datePH: attendance.leaveTemplate.compensatoryWorkDate,
-            date: attendance.leaveTemplate.compensatoryWorkDate,
+            datePH: formattedWorkDate,
+            date: formattedWorkDate,
           };
         }
 

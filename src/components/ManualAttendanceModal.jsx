@@ -34,6 +34,13 @@ const ManualAttendanceModal = ({
 
   const [errors, setErrors] = useState({});
 
+  // Password confirmation state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState("");
+  const [reason, setReason] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [pendingSubmissionData, setPendingSubmissionData] = useState(null);
+
   useEffect(() => {
     if (successMessage) {
       onSuccess();
@@ -49,6 +56,16 @@ const ManualAttendanceModal = ({
       }, 5000);
     }
   }, [errorMessage, dispatch]);
+
+  // Reset password modal when main modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowPasswordModal(false);
+      setPassword("");
+      setReason("");
+      setPendingSubmissionData(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -148,17 +165,56 @@ const ManualAttendanceModal = ({
       timeType: timeType, // Additional field to specify which time slot for frontend reference
     };
 
-    if (mode === "update" && manualId) {
-      // Update existing manual attendance
-      dispatch(
-        updateManualAttendance({
-          logId: manualId,
-          ...manualAttendanceData,
-        })
-      );
-    } else {
-      // Create new manual attendance
-      dispatch(logManualAttendance(manualAttendanceData));
+    // Store the submission data and show password confirmation modal
+    setPendingSubmissionData(manualAttendanceData);
+    setShowPasswordModal(true);
+  };
+
+  // Handle password confirmation and actual submission
+  const handlePasswordConfirmation = async () => {
+    // if (!reason.trim() || !password.trim()) {
+    //   alert("Both reason and password are required for manual attendance.");
+    //   return;
+    // }
+
+    if (!password.trim()) {
+      alert("Password is required for manual attendance.");
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      // Add password and reason to the submission data
+      const submissionData = {
+        ...pendingSubmissionData,
+        // reason: reason.trim(),
+        password: password.trim(),
+      };
+
+      if (mode === "update" && manualId) {
+        // Update existing manual attendance
+        await dispatch(
+          updateManualAttendance({
+            logId: manualId,
+            ...submissionData,
+          })
+        ).unwrap();
+      } else {
+        // Create new manual attendance
+        await dispatch(logManualAttendance(submissionData)).unwrap();
+      }
+
+      // Close password modal and reset states
+      setShowPasswordModal(false);
+      setPassword("");
+      setReason("");
+      setPendingSubmissionData(null);
+    } catch (error) {
+      // Error handling is done by Redux and useEffect
+      console.error("Manual attendance submission failed:", error);
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -244,87 +300,85 @@ const ManualAttendanceModal = ({
               </p>
             </div>
 
-            {attendance.shiftTemplate && (
-              <div>
-                <span className="text-sm text-gray-500">Schedule:</span>
-                <div className="text-sm font-medium text-gray-900">
-                  {attendance.shiftTemplate.type === "Standard" ? (
-                    <div className="space-y-1">
+            {(() => {
+              // Check if this is compensatory time off
+              const isCompensatoryTimeOff =
+                attendance.scheduleType === "leave" &&
+                attendance.leaveTemplate?.isCompensatoryTimeOff;
+              const workShift = isCompensatoryTimeOff
+                ? attendance.leaveTemplate?.compensatoryWorkShift
+                : attendance.shiftTemplate;
+
+              if (!workShift) return null;
+
+              return (
+                <div>
+                  <span className="text-sm text-gray-500">Schedule:</span>
+                  <div className="text-sm font-medium text-gray-900">
+                    {workShift.type === "Standard" ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-white font-medium bg-sky-500 px-2 py-0.5 rounded flex items-center gap-1">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3 w-3 text-yellow-200"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            AM
+                          </span>
+                          <span>
+                            {formatTimeTo12HourPH(workShift.morningIn)} -{" "}
+                            {formatTimeTo12HourPH(workShift.morningOut)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-white font-medium bg-amber-500 px-2 py-0.5 rounded flex items-center gap-1">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-3 w-3 text-blue-200"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                            </svg>
+                            PM
+                          </span>
+                          <span>
+                            {formatTimeTo12HourPH(workShift.afternoonIn)} -{" "}
+                            {formatTimeTo12HourPH(workShift.afternoonOut)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : workShift.type === "Shifting" ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-white font-medium bg-sky-500 px-2 py-0.5 rounded flex items-center gap-1">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3 w-3 text-yellow-200"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          AM
-                        </span>
                         <span>
-                          {formatTimeTo12HourPH(
-                            attendance.shiftTemplate.morningIn
-                          )}{" "}
-                          -{" "}
-                          {formatTimeTo12HourPH(
-                            attendance.shiftTemplate.morningOut
-                          )}
+                          {formatTimeTo12HourPH(workShift.startTime)} -{" "}
+                          {formatTimeTo12HourPH(workShift.endTime)}
                         </span>
                       </div>
+                    ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-white font-medium bg-amber-500 px-2 py-0.5 rounded flex items-center gap-1">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3 w-3 text-blue-200"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                          </svg>
-                          PM
+                        <span className="text-xs text-white font-medium bg-purple-500 px-2 py-0.5 rounded">
+                          {workShift.type || "Unknown"}
                         </span>
                         <span>
-                          {formatTimeTo12HourPH(
-                            attendance.shiftTemplate.afternoonIn
-                          )}{" "}
-                          -{" "}
-                          {formatTimeTo12HourPH(
-                            attendance.shiftTemplate.afternoonOut
-                          )}
+                          {workShift.timeIn && workShift.timeOut
+                            ? `${workShift.timeIn} - ${workShift.timeOut}`
+                            : "No schedule details"}
                         </span>
                       </div>
-                    </div>
-                  ) : attendance.shiftTemplate.type === "Shifting" ? (
-                    <div className="flex items-center gap-2">
-                      <span>
-                        {formatTimeTo12HourPH(
-                          attendance.shiftTemplate.startTime
-                        )}{" "}
-                        -{" "}
-                        {formatTimeTo12HourPH(attendance.shiftTemplate.endTime)}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-white font-medium bg-purple-500 px-2 py-0.5 rounded">
-                        {attendance.shiftTemplate.type || "Unknown"}
-                      </span>
-                      <span>
-                        {attendance.shiftTemplate.timeIn &&
-                        attendance.shiftTemplate.timeOut
-                          ? `${attendance.shiftTemplate.timeIn} - ${attendance.shiftTemplate.timeOut}`
-                          : "No schedule details"}
-                      </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Error Message */}
@@ -454,6 +508,96 @@ const ManualAttendanceModal = ({
           </form>
         </div>
       </div>
+
+      {/* Password Confirmation Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-auto border border-gray-200">
+            <div className="p-6">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                  <svg
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 15v2m0 0v2m0-2h2m-2 0H8m4-5V8a3 3 0 00-6 0v3M7 10h10a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-xl font-bold mb-2 text-gray-900">
+                  Manual Attendance Confirmation
+                </h2>
+                {/* <p className="mb-4 text-gray-600 text-sm leading-relaxed">
+                  Please provide a reason and password confirmation for this
+                  manual attendance entry.
+                </p> */}
+
+                <div className="space-y-4 text-left">
+                  <div>
+                    {/* <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Reason for Manual Entry *
+                    </label>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="e.g., Employee forgot to clock in, system was down, adjustment needed..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      rows={3}
+                      required
+                    /> */}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password Confirmation *
+                    </label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+                  <button
+                    onClick={() => {
+                      setShowPasswordModal(false);
+                      setPassword("");
+                      setReason("");
+                      setPendingSubmissionData(null);
+                    }}
+                    // disabled={passwordLoading}
+                    disabled={passwordLoading}
+                    className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePasswordConfirmation}
+                    disabled={
+                      // passwordLoading || !reason.trim() || !password.trim()
+                      passwordLoading || !password.trim()
+                    }
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {passwordLoading ? "Submitting..." : "Confirm & Submit"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
