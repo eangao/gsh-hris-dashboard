@@ -132,9 +132,6 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
       const compensatoryWorkShift =
         attendance.leaveTemplate?.compensatoryWorkShift;
 
-      console.log("Leave case - isCompensatoryTimeOff:", isCompensatoryTimeOff);
-      console.log("Leave case - compensatoryWorkShift:", compensatoryWorkShift);
-
       if (isCompensatoryTimeOff && compensatoryWorkShift) {
         // Display time schedule for compensatory time off
         if (compensatoryWorkShift.type === "Standard") {
@@ -421,6 +418,11 @@ const EmployeeAttendance = ({
       return false;
     }
 
+    // Don't allow manual attendance for "No Show" status
+    if (attendance?.status === "No Show") {
+      return false;
+    }
+
     // Check if this is compensatory time off - treat it like duty since employee is working
     const isCompensatoryTimeOff =
       attendance.scheduleType === "leave" &&
@@ -475,7 +477,7 @@ const EmployeeAttendance = ({
         isCompensatoryTimeOff &&
         attendance.leaveTemplate?.compensatoryWorkDate
       ) {
-        // Format the compensatory work date to PH date format for proper handling
+        // Format the compensatory duty date to PH date format for proper handling
         const formattedWorkDate = formatDatePH(
           attendance.leaveTemplate.compensatoryWorkDate
         );
@@ -745,7 +747,7 @@ const EmployeeAttendance = ({
           isCompensatoryTimeOff &&
           attendance.leaveTemplate?.compensatoryWorkDate
         ) {
-          // Format the compensatory work date to PH date format for proper handling
+          // Format the compensatory duty date to PH date format for proper handling
           const formattedWorkDate = formatDatePH(
             attendance.leaveTemplate.compensatoryWorkDate
           );
@@ -1626,7 +1628,7 @@ const EmployeeAttendance = ({
                                       {attendance.leaveTemplate
                                         ?.compensatoryWorkDate && (
                                         <div className="text-sm text-blue-600 mt-1">
-                                          Work Date:{" "}
+                                          Duty Date:{" "}
                                           {formatDatePH(
                                             attendance.leaveTemplate
                                               .compensatoryWorkDate,
@@ -2071,7 +2073,7 @@ const EmployeeAttendance = ({
                                     {attendance.leaveTemplate
                                       ?.compensatoryWorkDate && (
                                       <div className="text-sm text-blue-600 mt-1">
-                                        Work Date:{" "}
+                                        Duty Date:{" "}
                                         {formatDatePH(
                                           attendance.leaveTemplate
                                             .compensatoryWorkDate,

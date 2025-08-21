@@ -136,6 +136,85 @@ const ScheduleDisplay = ({ attendance, isDesktop = true }) => {
         return <span className="text-sm text-gray-600">Holiday Off</span>;
 
       case "leave":
+        // Check if this is compensatory time off and display schedule accordingly
+        const isCompensatoryTimeOff =
+          attendance.leaveTemplate?.isCompensatoryTimeOff;
+        const compensatoryWorkShift =
+          attendance.leaveTemplate?.compensatoryWorkShift;
+
+        if (isCompensatoryTimeOff && compensatoryWorkShift) {
+          // Display time schedule for compensatory time off
+          if (compensatoryWorkShift.type === "Standard") {
+            // Helper function to format time from HH:mm to 12-hour format
+            const formatTime = (timeStr) => {
+              if (!timeStr) return "";
+              const [hours, minutes] = timeStr.split(":").map(Number);
+              const date = new Date();
+              date.setHours(hours);
+              date.setMinutes(minutes);
+              return date.toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "numeric",
+                hour12: true,
+              });
+            };
+
+            const morningIn = formatTime(compensatoryWorkShift.morningIn);
+            const morningOut = formatTime(compensatoryWorkShift.morningOut);
+            const afternoonIn = formatTime(compensatoryWorkShift.afternoonIn);
+            const afternoonOut = formatTime(compensatoryWorkShift.afternoonOut);
+
+            return (
+              <div className="text-sm space-y-1">
+                <div className="text-amber-700 font-semibold capitalize mb-1">
+                  {attendance.leaveTemplate?.name || "Leave"}
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-800">
+                    {morningIn}-{morningOut}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-blue-800">
+                    {afternoonIn}-{afternoonOut}
+                  </span>
+                </div>
+              </div>
+            );
+          } else if (compensatoryWorkShift.type === "Shifting") {
+            // Helper function to format time from HH:mm to 12-hour format
+            const formatTime = (timeStr) => {
+              if (!timeStr) return "";
+              const [hours, minutes] = timeStr.split(":").map(Number);
+              const date = new Date();
+              date.setHours(hours);
+              date.setMinutes(minutes);
+              return date.toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "numeric",
+                hour12: true,
+              });
+            };
+
+            const startTime = formatTime(compensatoryWorkShift.startTime);
+            const endTime = formatTime(compensatoryWorkShift.endTime);
+
+            return (
+              <div className="text-sm">
+                <div className="text-amber-700 font-semibold capitalize mb-1">
+                  {attendance.leaveTemplate?.name || "Leave"}
+                </div>
+                <div className="flex items-center">
+                  <span className="text-cyan-800 whitespace-nowrap">
+                    {startTime}-{endTime}
+                  </span>
+                </div>
+              </div>
+            );
+          }
+        }
+
+        // Default leave display (non-compensatory)
         return (
           <span className="text-sm text-gray-600">
             {(attendance.leaveTemplate?.name || "Leave")
@@ -216,7 +295,14 @@ const formatTime = (time) => {
 
 // Time display component for print (matching EmployeeAttendance.jsx logic)
 const TimeDisplay = ({ attendance, type = "in" }) => {
-  if (!attendance || attendance.scheduleType !== "duty") {
+  if (
+    !attendance ||
+    (attendance.scheduleType !== "duty" &&
+      !(
+        attendance.scheduleType === "leave" &&
+        attendance.leaveTemplate?.isCompensatoryTimeOff
+      ))
+  ) {
     return <span className="text-gray-400">--:--</span>;
   }
 
@@ -233,8 +319,16 @@ const TimeDisplay = ({ attendance, type = "in" }) => {
     return "";
   };
 
+  // Determine shift type - for compensatory time off, use compensatoryWorkShift
+  const isCompensatoryTimeOff =
+    attendance.scheduleType === "leave" &&
+    attendance.leaveTemplate?.isCompensatoryTimeOff;
+  const shiftTemplate = isCompensatoryTimeOff
+    ? attendance.leaveTemplate?.compensatoryWorkShift
+    : attendance.shiftTemplate;
+
   // Check if it's a Standard shift (has morning/afternoon times)
-  if (attendance.shiftTemplate?.type === "Standard") {
+  if (shiftTemplate?.type === "Standard") {
     if (type === "in") {
       // Show morning and afternoon IN times
       const morningIn = attendance.morningInLog
@@ -333,6 +427,14 @@ const calculateDayEquivalent = (attendance) => {
     return payMultiplier.toString();
   }
 
+  // Compensatory Time Off = 1 day (employee is working on their leave day)
+  if (
+    attendance.scheduleType === "leave" &&
+    attendance.leaveTemplate?.isCompensatoryTimeOff
+  ) {
+    return "1";
+  }
+
   // Paid Leave = 1 day
   if (
     attendance.scheduleType === "leave" &&
@@ -399,12 +501,27 @@ const calculateDayEquivalent = (attendance) => {
 
 // Late display component for print
 const LateDisplay = ({ attendance }) => {
-  if (!attendance || attendance.scheduleType !== "duty") {
+  if (
+    !attendance ||
+    (attendance.scheduleType !== "duty" &&
+      !(
+        attendance.scheduleType === "leave" &&
+        attendance.leaveTemplate?.isCompensatoryTimeOff
+      ))
+  ) {
     return <span className="text-gray-400">--</span>;
   }
 
+  // Determine shift type - for compensatory time off, use compensatoryWorkShift
+  const isCompensatoryTimeOff =
+    attendance.scheduleType === "leave" &&
+    attendance.leaveTemplate?.isCompensatoryTimeOff;
+  const shiftTemplate = isCompensatoryTimeOff
+    ? attendance.leaveTemplate?.compensatoryWorkShift
+    : attendance.shiftTemplate;
+
   // Check if it's a Standard shift (has morning/afternoon late minutes)
-  if (attendance.shiftTemplate?.type === "Standard") {
+  if (shiftTemplate?.type === "Standard") {
     const morningLate = attendance.morningLateMinutes || 0;
     const afternoonLate = attendance.afternoonLateMinutes || 0;
     const totalLate = morningLate + afternoonLate;
@@ -701,11 +818,22 @@ const EmployeeAttendancePrint = () => {
                             };
 
                             employeeData.attendances.forEach((attendance) => {
-                              // Calculate late minutes for all duty schedules
-                              if (attendance.scheduleType === "duty") {
-                                if (
-                                  attendance.shiftTemplate?.type === "Standard"
-                                ) {
+                              // Calculate late minutes for duty schedules and compensatory time off
+                              const isCompensatoryTimeOff =
+                                attendance.scheduleType === "leave" &&
+                                attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+                              if (
+                                attendance.scheduleType === "duty" ||
+                                isCompensatoryTimeOff
+                              ) {
+                                // Determine shift type for late minutes calculation
+                                const shiftTemplate = isCompensatoryTimeOff
+                                  ? attendance.leaveTemplate
+                                      ?.compensatoryWorkShift
+                                  : attendance.shiftTemplate;
+
+                                if (shiftTemplate?.type === "Standard") {
                                   const morningLate =
                                     attendance.morningLateMinutes || 0;
                                   const afternoonLate =
@@ -863,9 +991,37 @@ const EmployeeAttendancePrint = () => {
                     >
                       <td className="border border-gray-300 px-3 py-2 text-sm">
                         <div className="text-xs">
-                          {formatDateWithDay(
-                            attendance.datePH || attendance.date
-                          )}
+                          {(() => {
+                            const isCompensatoryTimeOff =
+                              attendance.scheduleType === "leave" &&
+                              attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+                            if (isCompensatoryTimeOff) {
+                              return (
+                                <div>
+                                  <div>
+                                    {formatDateWithDay(
+                                      attendance.datePH || attendance.date
+                                    )}
+                                  </div>
+                                  {attendance.leaveTemplate
+                                    ?.compensatoryWorkDate && (
+                                    <div className="text-blue-600 mt-1">
+                                      Duty date:{" "}
+                                      {formatDateWithDay(
+                                        attendance.leaveTemplate
+                                          .compensatoryWorkDate
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+
+                            return formatDateWithDay(
+                              attendance.datePH || attendance.date
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="border border-gray-300 px-3 py-2 text-sm">

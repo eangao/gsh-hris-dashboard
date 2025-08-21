@@ -37,7 +37,6 @@ const ManualAttendanceModal = ({
   // Password confirmation state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [password, setPassword] = useState("");
-  const [reason, setReason] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [pendingSubmissionData, setPendingSubmissionData] = useState(null);
 
@@ -62,7 +61,6 @@ const ManualAttendanceModal = ({
     if (!isOpen) {
       setShowPasswordModal(false);
       setPassword("");
-      setReason("");
       setPendingSubmissionData(null);
     }
   }, [isOpen]);
@@ -172,11 +170,6 @@ const ManualAttendanceModal = ({
 
   // Handle password confirmation and actual submission
   const handlePasswordConfirmation = async () => {
-    // if (!reason.trim() || !password.trim()) {
-    //   alert("Both reason and password are required for manual attendance.");
-    //   return;
-    // }
-
     if (!password.trim()) {
       alert("Password is required for manual attendance.");
       return;
@@ -185,10 +178,9 @@ const ManualAttendanceModal = ({
     setPasswordLoading(true);
 
     try {
-      // Add password and reason to the submission data
+      // Add password to the submission data
       const submissionData = {
         ...pendingSubmissionData,
-        // reason: reason.trim(),
         password: password.trim(),
       };
 
@@ -208,7 +200,6 @@ const ManualAttendanceModal = ({
       // Close password modal and reset states
       setShowPasswordModal(false);
       setPassword("");
-      setReason("");
       setPendingSubmissionData(null);
     } catch (error) {
       // Error handling is done by Redux and useEffect
@@ -533,26 +524,12 @@ const ManualAttendanceModal = ({
                 <h2 className="text-xl font-bold mb-2 text-gray-900">
                   Manual Attendance Confirmation
                 </h2>
-                {/* <p className="mb-4 text-gray-600 text-sm leading-relaxed">
-                  Please provide a reason and password confirmation for this
-                  manual attendance entry.
-                </p> */}
+                <p className="mb-4 text-gray-600 text-sm leading-relaxed">
+                  Please enter your password to confirm this manual attendance
+                  entry.
+                </p>
 
                 <div className="space-y-4 text-left">
-                  <div>
-                    {/* <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Reason for Manual Entry *
-                    </label>
-                    <textarea
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      placeholder="e.g., Employee forgot to clock in, system was down, adjustment needed..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      rows={3}
-                      required
-                    /> */}
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Password Confirmation *
@@ -573,10 +550,8 @@ const ManualAttendanceModal = ({
                     onClick={() => {
                       setShowPasswordModal(false);
                       setPassword("");
-                      setReason("");
                       setPendingSubmissionData(null);
                     }}
-                    // disabled={passwordLoading}
                     disabled={passwordLoading}
                     className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300 disabled:opacity-50"
                   >
@@ -584,10 +559,7 @@ const ManualAttendanceModal = ({
                   </button>
                   <button
                     onClick={handlePasswordConfirmation}
-                    disabled={
-                      // passwordLoading || !reason.trim() || !password.trim()
-                      passwordLoading || !password.trim()
-                    }
+                    disabled={passwordLoading || !password.trim()}
                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {passwordLoading ? "Submitting..." : "Confirm & Submit"}
