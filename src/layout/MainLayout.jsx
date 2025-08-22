@@ -30,6 +30,11 @@ const MainLayout = () => {
       "/director/employee-attendance-print",
       "/employee/employee-attendance-print",
       "/admin/employee-attendance-print",
+      "/hr/employee-duty-summary",
+      "/manager/employee-duty-summary",
+      "/director/employee-duty-summary",
+      "/employee/employee-duty-summary",
+      "/admin/employee-duty-summary",
     ];
 
     return (

@@ -42,6 +42,10 @@ const ManagerEmployeeAttendancePrint = lazy(() =>
     "../../pages/dashboard/manager/attendance/ManagerEmployeeAttendancePrint"
   )
 );
+
+const ManagerEmployeeDutySummary = lazy(() =>
+  import("../../pages/dashboard/manager/attendance/ManagerEmployeeDutySummary")
+);
 // const TeamOverview = lazy(() =>
 //   import("../../pages/dashboard/manager/TeamOverview")
 // );
@@ -157,6 +161,12 @@ const managerRoutes = [
   {
     path: "/manager/employee-attendance-print",
     element: <ManagerEmployeeAttendancePrint />,
+    role: managerRoles,
+  },
+
+  {
+    path: "/manager/employee-duty-summary",
+    element: <ManagerEmployeeDutySummary />,
     role: managerRoles,
   },
 

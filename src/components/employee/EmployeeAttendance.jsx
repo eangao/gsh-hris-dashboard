@@ -14,7 +14,6 @@ import DutyScheduleForm from "../dutySchedule/DutyScheduleForm";
 
 // Helper function to format schedule based on scheduleType
 const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
-  console.log(attendance);
   if (!attendance.scheduleType) {
     return (
       <div className="text-gray-500 text-sm">
@@ -82,14 +81,46 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
           const endTime = formatTimeTo12HourPH(
             attendance.shiftTemplate.endTime
           );
+          const isNightDifferential =
+            attendance.shiftTemplate.isNightDifferential;
 
           return (
             <div className={`${baseClasses}`}>
-              <div className="flex items-center">
-                <span className="text-cyan-800 whitespace-nowrap">
-                  {startTime}-{endTime}
-                </span>
-              </div>
+              {isNightDifferential ? (
+                // Two-line format for night differential shifts
+                <div className="space-y-1">
+                  <div className="flex items-center">
+                    <span className="text-cyan-800 whitespace-nowrap">
+                      {formatDatePH(attendance.datePH, "MMM D, YYYY")}{" "}
+                      {startTime} -
+                    </span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-cyan-800 whitespace-nowrap">
+                      {(() => {
+                        // Calculate next day for end time display
+                        const currentDate = new Date(
+                          attendance.datePH + "T00:00:00"
+                        );
+                        const nextDay = new Date(currentDate);
+                        nextDay.setDate(currentDate.getDate() + 1);
+                        const nextDayFormatted = formatDatePH(
+                          nextDay.toISOString(),
+                          "MMM D, YYYY"
+                        );
+                        return `${nextDayFormatted} ${endTime}`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                // Single line format for regular shifting schedules
+                <div className="flex items-center">
+                  <span className="text-cyan-800 whitespace-nowrap">
+                    {startTime}-{endTime}
+                  </span>
+                </div>
+              )}
               {!isDesktop && (
                 <div className="flex items-center gap-1 mt-1">
                   <span className="text-xs text-cyan-600 font-medium">
@@ -153,13 +184,6 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
           const morningOut = formatTime(compensatoryWorkShift.morningOut);
           const afternoonIn = formatTime(compensatoryWorkShift.afternoonIn);
           const afternoonOut = formatTime(compensatoryWorkShift.afternoonOut);
-
-          console.log("Standard shift times:", {
-            morningIn,
-            morningOut,
-            afternoonIn,
-            afternoonOut,
-          });
 
           return (
             <div className={`${baseClasses} space-y-1`}>
@@ -489,6 +513,26 @@ const EmployeeAttendance = ({
         };
       }
 
+      // For night differential shifts, adjust the date for time out entries
+      const isNightDifferential =
+        attendance?.shiftTemplate?.isNightDifferential;
+      const isTimeOut = timeType === "timeOut";
+
+      if (isNightDifferential && isTimeOut) {
+        // For night differential time out, use the next day's date
+        const currentDate = new Date(attendance.datePH + "T00:00:00");
+        const nextDay = new Date(currentDate);
+        nextDay.setDate(currentDate.getDate() + 1);
+        const nextDayFormatted = formatDatePH(nextDay.toISOString());
+
+        modifiedAttendance = {
+          ...modifiedAttendance,
+          originalDate: attendance.datePH, // Store the original shift date
+          datePH: nextDayFormatted,
+          date: nextDayFormatted,
+        };
+      }
+
       setManualAttendanceModal({
         isOpen: true,
         attendance: modifiedAttendance,
@@ -677,28 +721,81 @@ const EmployeeAttendance = ({
     // For compensatory time off, use the actual logged times (same as regular duty)
     // The time parameter already contains the correct logged time (morningInLog, timeIn, etc.)
 
-    if (!time) {
+    // Special handling for night differential shifts crossing midnight
+    let displayTime = time;
+    let displaySource = source;
+    let displayManualId = manualId;
+
+    if (!displayTime && type === "out" && timeType === "timeOut") {
+      // Check if this is a night differential shift that crosses midnight
+      const isNightDifferential =
+        attendance?.shiftTemplate?.isNightDifferential;
+      const shiftType = attendance?.shiftTemplate?.type;
+
+      if (isNightDifferential && shiftType === "Shifting") {
+        // For night differential shifts, the timeOut might be on the next day
+        // Try to find timeOut data even if it's from the next calendar day
+        displayTime = attendance?.timeOut;
+        displaySource = attendance?.timeOutSource;
+        displayManualId = attendance?.timeOutManualId;
+
+        // If we have timeOut data but it's null/undefined, it might be because
+        // the attendance data for this date doesn't include next-day timeOut
+        // In this case, we need to look at the next day's data or use a different approach
+        if (!displayTime) {
+          // The backend should now properly return cross-midnight timeOut data
+          // for night differential shifts
+        }
+      }
+    }
+
+    if (!displayTime) {
       // Show clickable empty slot for manual attendance if conditions are met
       if (showManualOption && isManualAttendanceAllowed(attendance, timeType)) {
         return (
-          <button
-            onClick={() => handleManualAttendanceClick(attendance, timeType)}
-            className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors border border-dashed border-gray-300 hover:border-blue-400"
-            title="Click to add manual attendance"
-          >
-            --:-- ✏️
-          </button>
+          <div className="flex items-center">
+            <button
+              onClick={() => handleManualAttendanceClick(attendance, timeType)}
+              className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition-colors border border-dashed border-gray-300 hover:border-blue-400"
+              title="Click to add manual attendance"
+            >
+              --:-- ✏️
+            </button>
+            {/* Night differential badge for timeOut - show even when no data */}
+            {type === "out" &&
+              attendance?.shiftTemplate?.isNightDifferential && (
+                <span
+                  className="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 bg-indigo-100 text-indigo-800 border-indigo-200"
+                  title="Night differential shift"
+                >
+                  N
+                </span>
+              )}
+          </div>
         );
       }
-      return <span className="text-gray-400">--:--</span>;
+      return (
+        <div className="flex items-center">
+          <span className="text-gray-400">--:--</span>
+          {/* Night differential badge for timeOut - show even when no data */}
+          {type === "out" && attendance?.shiftTemplate?.isNightDifferential && (
+            <span
+              className="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 bg-indigo-100 text-indigo-800 border-indigo-200"
+              title="Night differential shift"
+            >
+              N
+            </span>
+          )}
+        </div>
+      );
     }
 
     // Use formatDateTimeToTimePH for DateTime objects (ISO strings with date and time)
     // Use formatTimeTo12HourPH for time-only values (HH:mm format)
     const formattedTime =
-      typeof time === "string" && time.includes("T")
-        ? formatDateTimeToTimePH(time)
-        : formatTimeTo12HourPH(time);
+      typeof displayTime === "string" && displayTime.includes("T")
+        ? formatDateTimeToTimePH(displayTime)
+        : formatTimeTo12HourPH(displayTime);
 
     const colorClass = type === "in" ? "text-green-600" : "text-red-600";
 
@@ -725,17 +822,18 @@ const EmployeeAttendance = ({
       return null;
     };
 
-    const sourceIndicator = getSourceIndicator(source);
-    const isManualEntry = source && source.toLowerCase() === "manual";
+    const sourceIndicator = getSourceIndicator(displaySource);
+    const isManualEntry =
+      displaySource && displaySource.toLowerCase() === "manual";
 
     // Handle click for manual entries (edit functionality)
     const handleManualEditClick = () => {
       if (isManualEntry) {
         // Extract time from the full datetime for editing
         const timeValue =
-          typeof time === "string" && time.includes("T")
-            ? new Date(time).toTimeString().slice(0, 5)
-            : time;
+          typeof displayTime === "string" && displayTime.includes("T")
+            ? new Date(displayTime).toTimeString().slice(0, 5)
+            : displayTime;
 
         // For compensatory time off, modify the attendance object to use compensatoryWorkDate
         let modifiedAttendance = attendance;
@@ -766,7 +864,7 @@ const EmployeeAttendance = ({
           mode: "update",
           existingTime: timeValue,
           existingRemarks: "", // You might want to fetch this from the manual log
-          manualId: manualId || `temp-${Date.now()}`, // Temporary ID if missing
+          manualId: displayManualId || `temp-${Date.now()}`, // Temporary ID if missing
         });
       }
     };
@@ -821,6 +919,16 @@ const EmployeeAttendance = ({
               </span>
             )}
           </>
+        )}
+
+        {/* Night differential badge for timeOut */}
+        {type === "out" && attendance?.shiftTemplate?.isNightDifferential && (
+          <span
+            className="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 bg-indigo-100 text-indigo-800 border-indigo-200"
+            title="Night differential shift"
+          >
+            N
+          </span>
         )}
       </div>
     );
@@ -1029,44 +1137,83 @@ const EmployeeAttendance = ({
           )}
 
           <div className="flex items-center gap-3">
-            {/* Print Button - Only show for managers */}
+            {/* Print Buttons - Only show for managers */}
             {userRole?.toLowerCase() === "manager" &&
               !isIndividualView &&
               availableDutySchedules.length > 0 && (
-                <button
-                  onClick={() => {
-                    // Open attendance print in new tab with the current schedule ID
-                    const currentSchedule =
-                      availableDutySchedules[currentScheduleIndex];
-                    if (currentSchedule?._id) {
-                      const printUrl = `/manager/employee-attendance-print?scheduleId=${currentSchedule._id}&department=${selectedDepartment}`;
-                      window.open(printUrl, "_blank");
+                <div className="flex items-center gap-2">
+                  {/* DTR Button */}
+                  <button
+                    onClick={() => {
+                      // Open attendance print in new tab with the current schedule ID
+                      const currentSchedule =
+                        availableDutySchedules[currentScheduleIndex];
+                      if (currentSchedule?._id) {
+                        const printUrl = `/manager/employee-attendance-print?scheduleId=${currentSchedule._id}&department=${selectedDepartment}`;
+                        window.open(printUrl, "_blank");
+                      }
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2"
+                    disabled={
+                      loading ||
+                      !selectedDepartment ||
+                      !availableDutySchedules[currentScheduleIndex]
                     }
-                  }}
-                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2"
-                  disabled={
-                    loading ||
-                    !selectedDepartment ||
-                    !availableDutySchedules[currentScheduleIndex]
-                  }
-                  title="Print Attendance Report"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                    title="Print DTR Report"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                    />
-                  </svg>
-                  Print
-                </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                      />
+                    </svg>
+                    DTR
+                  </button>
+
+                  {/* Duty Summary Button */}
+                  <button
+                    onClick={() => {
+                      // Open duty summary in new tab with the current schedule ID
+                      const currentSchedule =
+                        availableDutySchedules[currentScheduleIndex];
+                      if (currentSchedule?._id) {
+                        const summaryUrl = `/manager/employee-duty-summary?scheduleId=${currentSchedule._id}&department=${selectedDepartment}`;
+                        window.open(summaryUrl, "_blank");
+                      }
+                    }}
+                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all text-sm flex items-center gap-2"
+                    disabled={
+                      loading ||
+                      !selectedDepartment ||
+                      !availableDutySchedules[currentScheduleIndex]
+                    }
+                    title="Print Duty Summary Report"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v2M7 7h10"
+                      />
+                    </svg>
+                    Duty Summary
+                  </button>
+                </div>
               )}
 
             <div className="hidden sm:block flex-shrink-0">
@@ -1873,6 +2020,7 @@ const EmployeeAttendance = ({
                                   </div>
                                 </div>
                               ) : (
+                                // For non-Standard shifts (including Shifting with night differential)
                                 <TimeDisplay
                                   time={attendance.timeOut}
                                   type="out"

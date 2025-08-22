@@ -348,11 +348,61 @@ const ManualAttendanceModal = ({
                         </div>
                       </div>
                     ) : workShift.type === "Shifting" ? (
-                      <div className="flex items-center gap-2">
-                        <span>
-                          {formatTimeTo12HourPH(workShift.startTime)} -{" "}
-                          {formatTimeTo12HourPH(workShift.endTime)}
-                        </span>
+                      <div>
+                        {(() => {
+                          // Check if this is a night differential shift
+                          const isNightDifferential =
+                            workShift.isNightDifferential;
+                          const isTimeIn = timeType === "timeIn";
+                          const isTimeOut = timeType === "timeOut";
+                          const originalDate = attendance.originalDate;
+                          const attendanceDate =
+                            attendance.datePH || attendance.date;
+
+                          // Show schedule with both dates for night differential shifts (both time in and time out)
+                          if (isNightDifferential && (isTimeIn || isTimeOut)) {
+                            let startDate, endDate;
+
+                            if (
+                              isTimeOut &&
+                              originalDate &&
+                              originalDate !== attendanceDate
+                            ) {
+                              // For time out: original date -> attendance date
+                              startDate = originalDate;
+                              endDate = attendanceDate;
+                            } else if (isTimeIn) {
+                              // For time in: attendance date -> next day
+                              startDate = attendanceDate;
+                              const nextDay = new Date(
+                                attendanceDate + "T00:00:00"
+                              );
+                              nextDay.setDate(nextDay.getDate() + 1);
+                              endDate = formatDatePH(
+                                nextDay.toISOString()
+                              ).split("T")[0];
+                            }
+
+                            if (startDate && endDate) {
+                              return (
+                                <span>
+                                  {formatDatePH(startDate, "MMM D, YYYY")}{" "}
+                                  {formatTimeTo12HourPH(workShift.startTime)} -{" "}
+                                  {formatDatePH(endDate, "MMM D, YYYY")}{" "}
+                                  {formatTimeTo12HourPH(workShift.endTime)}
+                                </span>
+                              );
+                            }
+                          }
+
+                          // Default schedule display without dates
+                          return (
+                            <span>
+                              {formatTimeTo12HourPH(workShift.startTime)} -{" "}
+                              {formatTimeTo12HourPH(workShift.endTime)}
+                            </span>
+                          );
+                        })()}
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">

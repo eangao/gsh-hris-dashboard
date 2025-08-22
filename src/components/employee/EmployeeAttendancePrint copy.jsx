@@ -592,11 +592,8 @@ const EmployeeAttendancePrint = () => {
   const departmentId = searchParams.get("department");
   const scheduleId = searchParams.get("scheduleId");
 
-  const { attendances, loading, dutyScheduleInfo } = useSelector(
-    (state) => state.attendance
-  );
-
-  console.log(attendances);
+  const { attendances, loading } = useSelector((state) => state.attendance);
+  const { department } = useSelector((state) => state.department);
 
   const [groupedAttendances, setGroupedAttendances] = useState({});
 
@@ -617,10 +614,10 @@ const EmployeeAttendancePrint = () => {
 
   // Set browser title when department is loaded
   useEffect(() => {
-    if (dutyScheduleInfo?.departmentName) {
-      document.title = `${dutyScheduleInfo.departmentName.toUpperCase()} ATTENDANCE REPORT | ADVENTIST HOSPITAL GINGOOG`;
+    if (department?.name) {
+      document.title = `${department.name.toUpperCase()} ATTENDANCE REPORT | ADVENTIST HOSPITAL GINGOOG`;
     }
-  }, [dutyScheduleInfo]);
+  }, [department]);
 
   // Group attendances by employee when data is loaded
   useEffect(() => {
@@ -801,8 +798,7 @@ const EmployeeAttendancePrint = () => {
         </div>
         <div className="text-right leading-tight">
           <p className="text-xs">
-            <span className="font-bold">Attendance Period:</span>{" "}
-            {getDateRange()}
+            <span className="font-bold">Report Period:</span> {getDateRange()}
           </p>
           {/* Date Printed - hidden in preview, only visible when printing */}
           <p className="text-xs hidden print:block">
@@ -853,482 +849,126 @@ const EmployeeAttendancePrint = () => {
                           {(() => {
                             // Count attendance types
                             const counts = {
-                              regularDuty: 0,
-                              overtimeDuty: 0,
-                              extraDuty: 0,
-                              leaveWithPay: 0,
-                              leaveWithoutPay: 0,
+                              duty: 0,
+                              holidayDuty: 0,
                               holidayOff: 0,
-                              totalDuty: 0,
-                              regularHoliday: 0,
-                              specialHoliday: 0,
-                              nocDuty: 0,
-                              minutesLate: 0,
-                              specialHolidayDays: 0, // Track special holiday additional days
+                              off: 0,
+                              leave: 0,
+                              absent: 0,
+                              totalLateMinutes: 0,
+                              totalPaidDays: 0,
                             };
 
                             employeeData.attendances.forEach((attendance) => {
-                              // Skip absent employees
+                              // Calculate late minutes for duty schedules and compensatory time off
+                              const isCompensatoryTimeOff =
+                                attendance.scheduleType === "leave" &&
+                                attendance.leaveTemplate?.isCompensatoryTimeOff;
+
                               if (
-                                attendance.status?.toLowerCase() === "absent"
+                                attendance.scheduleType === "duty" ||
+                                isCompensatoryTimeOff
                               ) {
-                                return;
-                              }
+                                // Determine shift type for late minutes calculation
+                                const shiftTemplate = isCompensatoryTimeOff
+                                  ? attendance.leaveTemplate
+                                      ?.compensatoryWorkShift
+                                  : attendance.shiftTemplate;
 
-                              // Count regular duty (all duty schedules)
-                              if (
-                                attendance.scheduleType?.toLowerCase() ===
-                                "duty"
-                              ) {
-                                counts.regularDuty++;
-
-                                // Calculate overtime duty if shift is longer than 8 hours
-                                if (
-                                  attendance.shiftTemplate?.type === "Shifting"
-                                ) {
-                                  const startTime =
-                                    attendance.shiftTemplate.startTime;
-                                  const endTime =
-                                    attendance.shiftTemplate.endTime;
-
-                                  if (startTime && endTime) {
-                                    // Parse time strings (assuming HH:MM format)
-                                    const [startHour, startMin] = startTime
-                                      .split(":")
-                                      .map(Number);
-                                    const [endHour, endMin] = endTime
-                                      .split(":")
-                                      .map(Number);
-
-                                    let startMinutes =
-                                      startHour * 60 + startMin;
-                                    let endMinutes = endHour * 60 + endMin;
-
-                                    // Handle overnight shifts
-                                    if (endMinutes <= startMinutes) {
-                                      endMinutes += 24 * 60; // Add 24 hours for next day
-                                    }
-
-                                    const totalMinutes =
-                                      endMinutes - startMinutes;
-                                    const totalHours = totalMinutes / 60;
-
-                                    // If more than 8 hours, add overtime duty
-                                    if (totalHours > 8) {
-                                      const overtimeHours = totalHours - 8;
-                                      const overtimeDays = overtimeHours / 8; // Convert overtime hours to days
-                                      counts.overtimeDuty += overtimeDays;
-                                    }
-                                  }
-                                }
-
-                                // Count NOC (night differential)
-                                if (
-                                  attendance.shiftTemplate
-                                    ?.isNightDifferential === true
-                                ) {
-                                  counts.nocDuty++;
-                                }
-
-                                // Calculate total late minutes
-                                if (
-                                  attendance.shiftTemplate?.type?.toLowerCase() ===
-                                  "standard"
-                                ) {
-                                  counts.minutesLate +=
-                                    (attendance.morningLateMinutes || 0) +
-                                    (attendance.afternoonLateMinutes || 0);
+                                if (shiftTemplate?.type === "Standard") {
+                                  const morningLate =
+                                    attendance.morningLateMinutes || 0;
+                                  const afternoonLate =
+                                    attendance.afternoonLateMinutes || 0;
+                                  counts.totalLateMinutes +=
+                                    morningLate + afternoonLate;
                                 } else {
-                                  counts.minutesLate +=
+                                  counts.totalLateMinutes +=
                                     attendance.lateMinutes || 0;
                                 }
-
-                                // Count holidays with duty
-                                if (attendance.holiday) {
-                                  if (
-                                    attendance.holiday.type
-                                      ?.toLowerCase()
-                                      .includes("regular")
-                                  ) {
-                                    counts.regularHoliday++;
-                                  } else if (
-                                    attendance.holiday.type
-                                      ?.toLowerCase()
-                                      .includes("special")
-                                  ) {
-                                    counts.specialHoliday++;
-
-                                    // Calculate special holiday additional days using payMultiplier
-                                    // payMultiplier is already a decimal (e.g., 1.3 for 130%)
-                                    const payMultiplier =
-                                      attendance.holiday.payMultiplier || 1;
-                                    const additionalDays = payMultiplier - 1; // Subtract 1 (100%) to get additional days
-                                    counts.specialHolidayDays += additionalDays;
-                                  }
-                                }
                               }
 
-                              // Count holiday off
+                              // Calculate total paid days using the same logic as Days column
+                              const dayEquivalent =
+                                calculateDayEquivalent(attendance);
                               if (
-                                attendance.scheduleType?.toLowerCase() ===
-                                "holiday_off"
+                                dayEquivalent !== "--" &&
+                                dayEquivalent !== "0"
+                              ) {
+                                counts.totalPaidDays +=
+                                  parseFloat(dayEquivalent);
+                              }
+
+                              // Priority: Check actual attendance status first
+                              if (attendance.status === "Absent") {
+                                counts.absent++;
+                              } else if (
+                                attendance.scheduleType === "duty" &&
+                                attendance.holiday
+                              ) {
+                                // Holiday duty counts separately
+                                counts.holidayDuty++;
+                              } else if (
+                                attendance.status === "Present" ||
+                                attendance.status === "Late" ||
+                                attendance.status === "Incomplete" ||
+                                attendance.scheduleType === "duty" ||
+                                attendance.status === "Scheduled"
+                              ) {
+                                counts.duty++;
+                              } else if (
+                                attendance.scheduleType === "holiday_off"
                               ) {
                                 counts.holidayOff++;
-                              }
-
-                              // Count leaves
-                              if (
-                                attendance.scheduleType?.toLowerCase() ===
-                                "leave"
-                              ) {
-                                if (attendance.leaveTemplate?.isPaid) {
-                                  counts.leaveWithPay++;
-                                } else {
-                                  counts.leaveWithoutPay++;
-                                }
+                              } else if (attendance.scheduleType === "off") {
+                                counts.off++;
+                              } else if (attendance.scheduleType === "leave") {
+                                counts.leave++;
                               }
                             });
 
-                            // Calculate total duty (regular duty + paid leave + holiday off + regular holiday + special holiday additional days + overtime duty)
-                            counts.totalDuty =
-                              counts.regularDuty +
-                              counts.leaveWithPay +
-                              counts.holidayOff +
-                              counts.regularHoliday +
-                              counts.specialHolidayDays +
-                              counts.overtimeDuty;
-
                             return (
-                              <div className="text-xs text-gray-600 text-right ">
-                                <div className="grid grid-cols-10 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-1 justify-items-end">
-                                  {/* REGULAR DUTY */}
-                                  {counts.regularDuty > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        REGULAR
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        DUTY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.regularDuty}
-                                      </div>
-                                    </div>
+                              <div className="text-sm text-gray-600">
+                                <div className="flex flex-wrap gap-3">
+                                  {counts.duty > 0 && (
+                                    <span>Duty: {counts.duty}</span>
                                   )}
-
-                                  {/* OVERTIME DUTY */}
-                                  {counts.overtimeDuty > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        OVERTIME
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        DUTY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.overtimeDuty}
-                                      </div>
-                                    </div>
+                                  {counts.holidayDuty > 0 && (
+                                    <span>
+                                      Holiday Duty: {counts.holidayDuty}
+                                    </span>
                                   )}
-
-                                  {/* EXTRA DUTY */}
-                                  {counts.extraDuty > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        EXTRA
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        DUTY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.extraDuty}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* LEAVE W/PAY */}
-                                  {counts.leaveWithPay > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        LEAVE
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        W/PAY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.leaveWithPay}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* LEAVE W/O PAY */}
-                                  {counts.leaveWithoutPay > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        LEAVE
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        W/O PAY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.leaveWithoutPay}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* HOLIDAY OFF */}
                                   {counts.holidayOff > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        HOLIDAY
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        OFF
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.holidayOff}
-                                      </div>
-                                    </div>
+                                    <span>
+                                      Holiday Off: {counts.holidayOff}
+                                    </span>
                                   )}
-
-                                  {/* TOTAL DUTY */}
-                                  <div className="text-center border-r border-gray-300 pr-1">
-                                    <div
-                                      className="text-xs font-semibold text-gray-800 mb-0"
-                                      style={{
-                                        fontSize: "10px",
-                                        lineHeight: "1.1",
-                                      }}
-                                    >
-                                      TOTAL
-                                    </div>
-                                    <div
-                                      className="text-xs font-semibold text-gray-800 mb-0"
-                                      style={{
-                                        fontSize: "10px",
-                                        lineHeight: "1.1",
-                                      }}
-                                    >
-                                      DUTY
-                                    </div>
-                                    <div
-                                      className="text-sm font-bold text-black"
-                                      style={{ color: "#000000" }}
-                                    >
-                                      {counts.totalDuty % 1 === 0
-                                        ? counts.totalDuty.toString()
-                                        : counts.totalDuty.toFixed(1)}
-                                    </div>
-                                  </div>
-
-                                  {/* REGULAR HOLIDAY */}
-                                  {counts.regularHoliday > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        REGULAR
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        HOLIDAY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.regularHoliday}
-                                      </div>
-                                    </div>
+                                  {counts.off > 0 && (
+                                    <span>Off: {counts.off}</span>
                                   )}
-
-                                  {/* SPECIAL HOLIDAY */}
-                                  {counts.specialHoliday > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        SPECIAL
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        HOLIDAY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.specialHoliday}
-                                      </div>
-                                    </div>
+                                  {counts.leave > 0 && (
+                                    <span>Leave: {counts.leave}</span>
                                   )}
-
-                                  {/* NOC DUTY */}
-                                  {counts.nocDuty > 0 && (
-                                    <div className="text-center border-r border-gray-300 pr-1">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        NOC
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        DUTY
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.nocDuty}
-                                      </div>
-                                    </div>
+                                  {counts.absent > 0 && (
+                                    <span>Absent: {counts.absent}</span>
                                   )}
-
-                                  {/* MINUTES LATE */}
-                                  {counts.minutesLate > 0 && (
-                                    <div className="text-center">
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        MINUTES
-                                      </div>
-                                      <div
-                                        className="text-xs font-semibold text-gray-800 mb-0"
-                                        style={{
-                                          fontSize: "10px",
-                                          lineHeight: "1.1",
-                                        }}
-                                      >
-                                        LATE
-                                      </div>
-                                      <div
-                                        className="text-sm font-bold text-black"
-                                        style={{ color: "#000000" }}
-                                      >
-                                        {counts.minutesLate}
-                                      </div>
-                                    </div>
+                                  <span>
+                                    Total: {employeeData.attendances.length}
+                                  </span>
+                                </div>
+                                <div className="flex gap-3 mt-1">
+                                  {counts.totalLateMinutes > 0 && (
+                                    <span>
+                                      Late: {counts.totalLateMinutes} Min
+                                    </span>
+                                  )}
+                                  {counts.totalPaidDays > 0 && (
+                                    <span>
+                                      Compensated Days:{" "}
+                                      {counts.totalPaidDays % 1 === 0
+                                        ? counts.totalPaidDays.toString()
+                                        : counts.totalPaidDays.toFixed(1)}
+                                    </span>
                                   )}
                                 </div>
                               </div>
@@ -1409,6 +1049,7 @@ const EmployeeAttendancePrint = () => {
                                   {attendance.leaveTemplate
                                     ?.compensatoryWorkDate && (
                                     <div className="text-blue-600 mt-1">
+                                      Duty date:{" "}
                                       {formatDateWithDay(
                                         attendance.leaveTemplate
                                           .compensatoryWorkDate
@@ -1470,7 +1111,7 @@ const EmployeeAttendancePrint = () => {
               {/* Manager signature line */}
             </div>
             <div className="mt-1 uppercase">
-              {dutyScheduleInfo?.departmentName || "Unknown Department"} Manager
+              {department?.name || "Unknown Department"} Manager
             </div>
           </div>
 
