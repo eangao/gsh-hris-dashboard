@@ -3457,7 +3457,7 @@ const DutyScheduleForm = ({
                           </div>
 
                           <div className="text-xs text-gray-500 mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                            📝 Add the date duty that entitle you to this
+                            📝 Add the date(s) duty that entitle you to this
                             compensatory time off.
                           </div>
 
