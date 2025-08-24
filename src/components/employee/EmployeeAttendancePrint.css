@@ -700,3 +700,29 @@
     color: #000 !important;
   }
 }
+
+/* Holiday styling - Red color for both screen and print */
+.text-red-600 {
+  color: #dc2626 !important;
+}
+
+.text-red-500 {
+  color: #ef4444 !important;
+}
+
+/* Ensure holiday colors print correctly */
+@media print {
+  .text-red-600 {
+    color: #dc2626 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .text-red-500 {
+    color: #ef4444 !important;
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

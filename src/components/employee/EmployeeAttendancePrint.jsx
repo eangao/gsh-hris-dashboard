@@ -254,9 +254,9 @@ const ScheduleDisplay = ({ attendance, isDesktop = true }) => {
     return (
       <div className="flex items-start gap-2">
         <div className="flex-1">{renderScheduleContent()}</div>
-        <div className="text-xs text-blue-600 leading-tight">
-          <div className="font-medium">{holidayInfo.name}</div>
-          <div className="text-gray-500">({holidayInfo.typeAbbr})</div>
+        <div className="text-xs text-red-600 leading-tight">
+          <div className="font-semibold">{holidayInfo.name}</div>
+          <div className="text-red-500">({holidayInfo.typeAbbr})</div>
         </div>
       </div>
     );
@@ -1530,11 +1530,18 @@ const EmployeeAttendancePrint = () => {
                             const isCompensatoryTimeOff =
                               attendance.scheduleType === "leave" &&
                               attendance.leaveTemplate?.isCompensatoryTimeOff;
+                            const isHoliday = attendance.holiday;
 
                             if (isCompensatoryTimeOff) {
                               return (
                                 <div>
-                                  <div>
+                                  <div
+                                    className={
+                                      isHoliday
+                                        ? "text-red-600 font-semibold"
+                                        : ""
+                                    }
+                                  >
                                     {formatDateWithDay(
                                       attendance.datePH || attendance.date
                                     )}
@@ -1552,8 +1559,16 @@ const EmployeeAttendancePrint = () => {
                               );
                             }
 
-                            return formatDateWithDay(
-                              attendance.datePH || attendance.date
+                            return (
+                              <span
+                                className={
+                                  isHoliday ? "text-red-600 font-semibold" : ""
+                                }
+                              >
+                                {formatDateWithDay(
+                                  attendance.datePH || attendance.date
+                                )}
+                              </span>
                             );
                           })()}
                         </div>
