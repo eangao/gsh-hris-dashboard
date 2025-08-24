@@ -3457,9 +3457,8 @@ const DutyScheduleForm = ({
                           </div>
 
                           <div className="text-xs text-gray-500 mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                            📝 Add the date(s) when you worked overtime or duty
-                            that entitle you to this compensatory time off. Work
-                            dates must be before the time off date.
+                            📝 Add the date duty that entitle you to this
+                            compensatory time off.
                           </div>
 
                           {/* Work date entries in single column format */}
