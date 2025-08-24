@@ -73,9 +73,11 @@ const DutyScheduleForm = ({
   const [scheduleType, setScheduleType] = useState("duty"); // New: duty, off, leave, holiday_off
   const [selectedShift, setSelectedShift] = useState("");
   const [selectedLeave, setSelectedLeave] = useState(""); // New: for leave template
-  const [compensatoryWorkDate, setCompensatoryWorkDate] = useState(""); // New: for compensatory time off work date
-  const [compensatoryWorkShift, setCompensatoryWorkShift] = useState(""); // New: for compensatory work shift schedule
+  const [compensatoryWorkDates, setCompensatoryWorkDates] = useState([]); // New: for multiple compensatory work dates
   const [description, setDescription] = useState("");
+
+  // Legacy compatibility - these are no longer used but kept to prevent errors
+  // Removed: Legacy single work date/shift variables - now using compensatoryWorkDates array only
 
   const [localDutySchedule, setLocalDutySchedule] = useState({
     name: "",
@@ -99,10 +101,8 @@ const DutyScheduleForm = ({
   const [employeeError, setEmployeeError] = useState("");
   const [typeError, setTypeError] = useState(""); // New: for schedule type validation
   const [leaveError, setLeaveError] = useState(""); // New: for leave template validation
-  const [compensatoryWorkDateError, setCompensatoryWorkDateError] =
-    useState(""); // New: for compensatory work date validation
-  const [compensatoryWorkShiftError, setCompensatoryWorkShiftError] =
-    useState(""); // New: for compensatory work shift validation
+  const [compensatoryWorkDatesError, setCompensatoryWorkDatesError] =
+    useState(""); // New: for multiple compensatory work dates validation
 
   const weekDays = [
     { day: "Sun", isWeekend: true },
@@ -307,8 +307,7 @@ const DutyScheduleForm = ({
     setScheduleType("duty"); // Reset to default
     setSelectedShift("");
     setSelectedLeave(""); // Reset leave template
-    setCompensatoryWorkDate(""); // Reset compensatory work date
-    setCompensatoryWorkShift(""); // Reset compensatory work shift
+    setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
     setDescription("");
 
     // Clear all error states
@@ -316,8 +315,7 @@ const DutyScheduleForm = ({
     setTypeError("");
     setShiftError("");
     setLeaveError("");
-    setCompensatoryWorkDateError(""); // Clear compensatory work date error
-    setCompensatoryWorkShiftError(""); // Clear compensatory work shift error
+    setCompensatoryWorkDatesError(""); // Clear multiple compensatory work dates error
   };
 
   const getEmployeesForDate = (date) => {
@@ -327,134 +325,165 @@ const DutyScheduleForm = ({
     const entry = allEntries?.find((e) => formatDatePH(e.date) === dateKey);
     if (!entry) return [];
 
-    const employeesForDate = entry.employeeSchedules
-      .map((es) => {
-        const empId =
-          typeof es.employee === "string" ? es.employee : es.employee?._id;
+    // First, process all employee schedules
+    const processedSchedules = entry.employeeSchedules.map((es) => {
+      const empId =
+        typeof es.employee === "string" ? es.employee : es.employee?._id;
 
-        let employee =
-          typeof es.employee === "object" && es.employee?._id
-            ? es.employee
-            : employees.find((emp) => emp._id === empId);
+      let employee =
+        typeof es.employee === "object" && es.employee?._id
+          ? es.employee
+          : employees.find((emp) => emp._id === empId);
 
-        // Handle different schedule types
-        let displayInfo = {
-          shift: "N/A",
-          shiftName: "unknown",
-          startIn: "",
-          type: es.type || "duty",
-        };
+      // Handle different schedule types
+      let displayInfo = {
+        shift: "N/A",
+        shiftName: "unknown",
+        startIn: "",
+        type: es.type || "duty",
+      };
 
-        if (es.type === "duty") {
-          let shiftTemplate;
-          if (es.shiftTemplate) {
-            const wsId =
-              typeof es.shiftTemplate === "string"
-                ? es.shiftTemplate
-                : es.shiftTemplate?._id;
+      if (es.type === "duty") {
+        let shiftTemplate;
+        if (es.shiftTemplate) {
+          const wsId =
+            typeof es.shiftTemplate === "string"
+              ? es.shiftTemplate
+              : es.shiftTemplate?._id;
 
-            shiftTemplate =
-              typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
-                ? es.shiftTemplate
-                : shiftTemplates.find((ws) => ws._id === wsId);
-          }
-
-          if (shiftTemplate) {
-            displayInfo.shiftName =
-              shiftTemplate.name?.toLowerCase() || "unknown";
-            displayInfo.shift =
-              shiftTemplate.type === "Standard"
-                ? `${formatTimeTo12HourPH(
-                    shiftTemplate.morningIn
-                  )}-${formatTimeTo12HourPH(
-                    shiftTemplate.morningOut
-                  )}, ${formatTimeTo12HourPH(
-                    shiftTemplate.afternoonIn
-                  )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
-                : `${formatTimeTo12HourPH(
-                    shiftTemplate.startTime
-                  )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`;
-            displayInfo.startIn =
-              shiftTemplate.type === "Standard"
-                ? shiftTemplate.morningIn
-                : shiftTemplate.startTime;
-          }
-        } else if (es.type === "leave") {
-          let leaveTemplate;
-          if (es.leaveTemplate) {
-            const leaveId =
-              typeof es.leaveTemplate === "string"
-                ? es.leaveTemplate
-                : es.leaveTemplate?._id;
-
-            leaveTemplate =
-              typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
-                ? es.leaveTemplate
-                : leaveTemplates.find((lt) => lt._id === leaveId);
-          }
-
-          if (leaveTemplate) {
-            displayInfo.shift = "LEAVE";
-            displayInfo.shiftName = "leave";
-            displayInfo.startIn = "leave";
-            displayInfo.leaveAbbreviation = getLeaveAbbreviation(
-              leaveTemplate.name
-            );
-            displayInfo.leaveTemplateName = leaveTemplate.name;
-          }
-        } else if (es.type === "off") {
-          displayInfo.shift = "Day Off";
-          displayInfo.shiftName = "off";
-          displayInfo.startIn = "off";
-        } else if (es.type === "holiday_off") {
-          displayInfo.shift = "Day Off";
-          displayInfo.shiftName = "holiday_off";
-          displayInfo.startIn = "holiday_off";
+          shiftTemplate =
+            typeof es.shiftTemplate === "object" && es.shiftTemplate?._id
+              ? es.shiftTemplate
+              : shiftTemplates.find((ws) => ws._id === wsId);
         }
 
-        return {
-          id: empId,
-          name: employee
-            ? `${
-                employee.personalInformation.lastName
-              }, ${employee.personalInformation.firstName
-                .charAt(0)
-                .toUpperCase()}`
-            : "Unknown Employee",
-          lastName: employee?.personalInformation?.lastName || "Unknown",
-          shiftName: displayInfo.shiftName,
-          shift: displayInfo.shift,
-          description: es.remarks || "",
-          startIn: displayInfo.startIn,
-          type: es.type || "duty",
-          leaveAbbreviation: displayInfo.leaveAbbreviation || null,
-          leaveTemplateName: displayInfo.leaveTemplateName || null,
-          compensatoryWorkDate: es.compensatoryWorkDate || null, // Add compensatory work date to employee object
-          compensatoryWorkShift: es.compensatoryWorkShift || null, // Add compensatory work shift to employee object
-        };
-      })
-      .sort((a, b) => {
-        // Sort by type first (duty, leave, off, holiday_off)
-        const typeOrder = { duty: 1, leave: 2, off: 3, holiday_off: 4 };
-        const typeComparison =
-          (typeOrder[a.type] || 5) - (typeOrder[b.type] || 5);
-        if (typeComparison !== 0) return typeComparison;
+        if (shiftTemplate) {
+          displayInfo.shiftName =
+            shiftTemplate.name?.toLowerCase() || "unknown";
+          displayInfo.shift =
+            shiftTemplate.type === "Standard"
+              ? `${formatTimeTo12HourPH(
+                  shiftTemplate.morningIn
+                )}-${formatTimeTo12HourPH(
+                  shiftTemplate.morningOut
+                )}, ${formatTimeTo12HourPH(
+                  shiftTemplate.afternoonIn
+                )}-${formatTimeTo12HourPH(shiftTemplate.afternoonOut)}`
+              : `${formatTimeTo12HourPH(
+                  shiftTemplate.startTime
+                )}-${formatTimeTo12HourPH(shiftTemplate.endTime)}`;
+          displayInfo.startIn =
+            shiftTemplate.type === "Standard"
+              ? shiftTemplate.morningIn
+              : shiftTemplate.startTime;
+        }
+      } else if (es.type === "leave") {
+        let leaveTemplate;
+        if (es.leaveTemplate) {
+          const leaveId =
+            typeof es.leaveTemplate === "string"
+              ? es.leaveTemplate
+              : es.leaveTemplate?._id;
 
-        // Then sort by start time for duty schedules
-        if (a.type === "duty" && b.type === "duty") {
-          if (a.startIn === "off" || a.startIn === "") return 1;
-          if (b.startIn === "off" || b.startIn === "") return -1;
-          if (!a.startIn) return 1;
-          if (!b.startIn) return -1;
-
-          const [hA, mA] = a.startIn.split(":").map(Number);
-          const [hB, mB] = b.startIn.split(":").map(Number);
-          return hA * 60 + mA - (hB * 60 + mB);
+          leaveTemplate =
+            typeof es.leaveTemplate === "object" && es.leaveTemplate?._id
+              ? es.leaveTemplate
+              : leaveTemplates.find((lt) => lt._id === leaveId);
         }
 
-        // Finally sort by last name
-        return a.lastName.localeCompare(b.lastName);
-      });
+        if (leaveTemplate) {
+          displayInfo.shift = "LEAVE";
+          displayInfo.shiftName = "leave";
+          displayInfo.startIn = "leave";
+          displayInfo.leaveAbbreviation = getLeaveAbbreviation(
+            leaveTemplate.name
+          );
+          displayInfo.leaveTemplateName = leaveTemplate.name;
+        }
+      } else if (es.type === "off") {
+        displayInfo.shift = "Day Off";
+        displayInfo.shiftName = "off";
+        displayInfo.startIn = "off";
+      } else if (es.type === "holiday_off") {
+        displayInfo.shift = "Day Off";
+        displayInfo.shiftName = "holiday_off";
+        displayInfo.startIn = "holiday_off";
+      }
+
+      return {
+        id: empId,
+        name: employee
+          ? `${
+              employee.personalInformation.lastName
+            }, ${employee.personalInformation.firstName
+              .charAt(0)
+              .toUpperCase()}`
+          : "Unknown Employee",
+        lastName: employee?.personalInformation?.lastName || "Unknown",
+        shiftName: displayInfo.shiftName,
+        shift: displayInfo.shift,
+        description: es.remarks || "",
+        startIn: displayInfo.startIn,
+        type: es.type || "duty",
+        leaveAbbreviation: displayInfo.leaveAbbreviation || null,
+        leaveTemplateName: displayInfo.leaveTemplateName || null,
+        compensatoryWorkDate: es.compensatoryWorkDate || null, // Add compensatory work date to employee object
+        compensatoryWorkShift: es.compensatoryWorkShift || null, // Add compensatory work shift to employee object
+        compensatoryWorkDates: es.compensatoryWorkDates || [], // Add compensatory work dates array to employee object
+      };
+    });
+
+    // Group employees by ID to ensure each employee appears only once
+    const employeeGroups = processedSchedules.reduce((acc, emp) => {
+      if (!acc[emp.id]) {
+        acc[emp.id] = emp;
+      } else {
+        // If employee already exists, we need to merge the data
+        // For compensatory time off, combine compensatory work dates
+        if (emp.compensatoryWorkDates && emp.compensatoryWorkDates.length > 0) {
+          acc[emp.id].compensatoryWorkDates = [
+            ...(acc[emp.id].compensatoryWorkDates || []),
+            ...emp.compensatoryWorkDates,
+          ];
+        }
+
+        // Keep the most specific type (duty > leave > off > holiday_off)
+        const typeOrder = { duty: 4, leave: 3, off: 2, holiday_off: 1 };
+        if ((typeOrder[emp.type] || 0) > (typeOrder[acc[emp.id].type] || 0)) {
+          acc[emp.id].type = emp.type;
+          acc[emp.id].shiftName = emp.shiftName;
+          acc[emp.id].shift = emp.shift;
+          acc[emp.id].startIn = emp.startIn;
+          acc[emp.id].leaveAbbreviation = emp.leaveAbbreviation;
+          acc[emp.id].leaveTemplateName = emp.leaveTemplateName;
+        }
+      }
+      return acc;
+    }, {});
+
+    // Convert back to array and sort
+    const employeesForDate = Object.values(employeeGroups).sort((a, b) => {
+      // Sort by type first (duty, leave, off, holiday_off)
+      const typeOrder = { duty: 1, leave: 2, off: 3, holiday_off: 4 };
+      const typeComparison =
+        (typeOrder[a.type] || 5) - (typeOrder[b.type] || 5);
+      if (typeComparison !== 0) return typeComparison;
+
+      // Then sort by start time for duty schedules
+      if (a.type === "duty" && b.type === "duty") {
+        if (a.startIn === "off" || a.startIn === "") return 1;
+        if (b.startIn === "off" || b.startIn === "") return -1;
+        if (!a.startIn) return 1;
+        if (!b.startIn) return -1;
+
+        const [hA, mA] = a.startIn.split(":").map(Number);
+        const [hB, mB] = b.startIn.split(":").map(Number);
+        return hA * 60 + mA - (hB * 60 + mB);
+      }
+
+      // Finally sort by last name
+      return a.lastName.localeCompare(b.lastName);
+    });
 
     // Group by type and shift - consolidate all leave types into one group
     const grouped = employeesForDate.reduce((acc, emp) => {
@@ -535,7 +564,7 @@ const DutyScheduleForm = ({
     setTypeError("");
     setShiftError("");
     setLeaveError("");
-    setCompensatoryWorkDateError(""); // Clear compensatory work date error
+    setCompensatoryWorkDatesError(""); // Clear multiple compensatory work dates error
 
     // Validate employee selection
     if (!employeeInput) {
@@ -560,22 +589,46 @@ const DutyScheduleForm = ({
       valid = false;
     }
 
-    // Validate compensatory work date for compensatory time off leave
+    // Validate compensatory work dates for compensatory time off leave
     if (scheduleType === "leave" && selectedLeave) {
       const leaveTemplate = leaveTemplates?.find(
         (lt) => lt._id === selectedLeave
       );
-      if (leaveTemplate?.isCompensatoryTimeOff && !compensatoryWorkDate) {
-        setCompensatoryWorkDateError(
-          "Work date is required for compensatory time off."
-        );
-        valid = false;
-      }
-      if (leaveTemplate?.isCompensatoryTimeOff && !compensatoryWorkShift) {
-        setCompensatoryWorkShiftError(
-          "Work shift schedule is required for compensatory time off."
-        );
-        valid = false;
+      if (leaveTemplate?.isCompensatoryTimeOff) {
+        // Check if at least one complete work date is provided
+        if (compensatoryWorkDates.length === 0) {
+          setCompensatoryWorkDatesError(
+            "At least one work date with shift is required for compensatory time off."
+          );
+          valid = false;
+        } else {
+          // Validate each work date entry
+          for (let i = 0; i < compensatoryWorkDates.length; i++) {
+            const workEntry = compensatoryWorkDates[i];
+            if (!workEntry.date) {
+              if (compensatoryWorkDates.length === 1) {
+                setCompensatoryWorkDatesError("Work date is required.");
+              } else {
+                setCompensatoryWorkDatesError(
+                  `Work date #${i + 1} is required.`
+                );
+              }
+              valid = false;
+              break;
+            }
+            if (!workEntry.shiftTemplate) {
+              if (compensatoryWorkDates.length === 1) {
+                setCompensatoryWorkDatesError("Work shift is required.");
+              } else {
+                setCompensatoryWorkDatesError(
+                  `Work shift for date #${i + 1} is required.`
+                );
+              }
+              valid = false;
+              break;
+            }
+          }
+        }
       }
     }
 
@@ -609,18 +662,22 @@ const DutyScheduleForm = ({
     } else if (scheduleType === "leave") {
       newSchedule.leaveTemplate = selectedLeave;
 
-      // Add compensatory work date if this is compensatory time off
+      // Add compensatory work data if this is compensatory time off
       const leaveTemplate = leaveTemplates?.find(
         (lt) => lt._id === selectedLeave
       );
-      if (leaveTemplate?.isCompensatoryTimeOff && compensatoryWorkDate) {
-        // Convert YYYY-MM-DD string to proper Date object for backend
-        newSchedule.compensatoryWorkDate = new Date(
-          compensatoryWorkDate + "T00:00:00.000Z"
-        );
-        // Add compensatory work shift reference
-        if (compensatoryWorkShift) {
-          newSchedule.compensatoryWorkShift = compensatoryWorkShift;
+      if (leaveTemplate?.isCompensatoryTimeOff) {
+        // Add compensatory work dates array to the schedule
+        if (compensatoryWorkDates.length > 0) {
+          const validWorkDates = compensatoryWorkDates
+            .filter((workEntry) => workEntry.date && workEntry.shiftTemplate) // Only include complete entries
+            .map((workEntry) => ({
+              date: new Date(workEntry.date + "T00:00:00.000Z"),
+              shiftTemplate: workEntry.shiftTemplate,
+              hoursWorked: workEntry.hoursWorked || null,
+            }));
+
+          newSchedule.compensatoryWorkDates = validWorkDates;
         }
       }
     }
@@ -701,8 +758,7 @@ const DutyScheduleForm = ({
     setScheduleType("duty");
     setSelectedShift("");
     setSelectedLeave("");
-    setCompensatoryWorkDate(""); // Reset compensatory work date
-    setCompensatoryWorkShift(""); // Reset compensatory work shift
+    setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
     setSelectedDate(null);
     setDescription("");
   };
@@ -1005,23 +1061,21 @@ const DutyScheduleForm = ({
       if (emp.type === "duty") {
         setSelectedShift(emp.shiftTemplate || "");
         setSelectedLeave("");
-        setCompensatoryWorkDate(""); // Reset compensatory work date
+        // setCompensatoryWorkDate(""); // Reset compensatory work date (legacy) - DISABLED
+        // setCompensatoryWorkShift(""); // Reset compensatory work shift (legacy) - DISABLED
+        setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
       } else if (emp.type === "leave") {
         setSelectedLeave(emp.leaveTemplate || "");
-        setCompensatoryWorkDate(
-          emp.compensatoryWorkDate
-            ? typeof emp.compensatoryWorkDate === "string"
-              ? emp.compensatoryWorkDate.split("T")[0] // Extract YYYY-MM-DD from ISO string
-              : emp.compensatoryWorkDate.toISOString().split("T")[0] // Convert Date to YYYY-MM-DD
-            : ""
-        ); // Set compensatory work date if available
-        setCompensatoryWorkShift(emp.compensatoryWorkShift || ""); // Set compensatory work shift if available
+        // setCompensatoryWorkDate (legacy) - REMOVED
+        // setCompensatoryWorkShift (legacy) - REMOVED
+        setCompensatoryWorkDates([]); // Reset for now
         setSelectedShift("");
       } else {
         setSelectedShift("");
         setSelectedLeave("");
-        setCompensatoryWorkDate(""); // Reset compensatory work date
-        setCompensatoryWorkShift(""); // Reset compensatory work shift
+        // setCompensatoryWorkDate(""); // Reset compensatory work date (legacy) - REMOVED
+        // setCompensatoryWorkShift(""); // Reset compensatory work shift (legacy) - REMOVED
+        setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
       }
 
       setDescription(emp.description || "");
@@ -1031,7 +1085,7 @@ const DutyScheduleForm = ({
         setScheduleType("duty");
         setSelectedShift("");
         setSelectedLeave("");
-        setCompensatoryWorkDate(""); // Reset compensatory work date
+        // setCompensatoryWorkDate(""); // Reset compensatory work date - REMOVED
         setSelectedDate(null);
         setDescription("");
         setDraggedItem(null);
@@ -1061,24 +1115,21 @@ const DutyScheduleForm = ({
           if (emp.type === "duty") {
             setSelectedShift(emp.shiftTemplate || "");
             setSelectedLeave("");
-            setCompensatoryWorkDate(""); // Reset compensatory work date
-            setCompensatoryWorkShift(""); // Reset compensatory work shift
+            // setCompensatoryWorkDate(""); // Reset compensatory work date (legacy) - REMOVED
+            // setCompensatoryWorkShift(""); // Reset compensatory work shift (legacy) - REMOVED
+            setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
           } else if (emp.type === "leave") {
             setSelectedLeave(emp.leaveTemplate || "");
-            setCompensatoryWorkDate(
-              emp.compensatoryWorkDate
-                ? typeof emp.compensatoryWorkDate === "string"
-                  ? emp.compensatoryWorkDate.split("T")[0] // Extract YYYY-MM-DD from ISO string
-                  : emp.compensatoryWorkDate.toISOString().split("T")[0] // Convert Date to YYYY-MM-DD
-                : ""
-            ); // Set compensatory work date if available
-            setCompensatoryWorkShift(emp.compensatoryWorkShift || ""); // Set compensatory work shift if available
+            // setCompensatoryWorkDate (legacy) - REMOVED
+            // setCompensatoryWorkShift (legacy) - REMOVED
+            setCompensatoryWorkDates([]); // Reset for now
             setSelectedShift("");
           } else {
             setSelectedShift("");
             setSelectedLeave("");
-            setCompensatoryWorkDate(""); // Reset compensatory work date
-            setCompensatoryWorkShift(""); // Reset compensatory work shift
+            // setCompensatoryWorkDate(""); // Reset compensatory work date (legacy) - REMOVED
+            // setCompensatoryWorkShift(""); // Reset compensatory work shift (legacy) - REMOVED
+            setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
           }
 
           setDescription(emp.description || "");
@@ -1087,7 +1138,9 @@ const DutyScheduleForm = ({
           setScheduleType("duty");
           setSelectedShift("");
           setSelectedLeave("");
-          setCompensatoryWorkDate(""); // Reset compensatory work date
+          // setCompensatoryWorkDate(""); // Reset compensatory work date (legacy) - REMOVED
+          // setCompensatoryWorkShift(""); // Reset compensatory work shift (legacy) - REMOVED
+          setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
           setSelectedDate(null);
           setDescription("");
           if (idx === group.employees.length - 1) setDraggedItem(null);
@@ -2005,14 +2058,112 @@ const DutyScheduleForm = ({
                                                       className="text-sm mb-1 p-1 rounded bg-white/50 ml-2"
                                                     >
                                                       <div className="flex justify-between items-center">
-                                                        <span
-                                                          title={
-                                                            emp.leaveTemplateName
-                                                          }
-                                                          className="text-xs"
-                                                        >
-                                                          {emp.name}
-                                                          {emp.compensatoryWorkDate &&
+                                                        <div className="flex flex-col">
+                                                          <span
+                                                            title={
+                                                              emp.leaveTemplateName
+                                                            }
+                                                            className="text-xs font-medium"
+                                                          >
+                                                            {emp.name}
+                                                          </span>
+
+                                                          {/* Display multiple compensatory work dates */}
+                                                          {emp.compensatoryWorkDates &&
+                                                            Array.isArray(
+                                                              emp.compensatoryWorkDates
+                                                            ) &&
+                                                            emp
+                                                              .compensatoryWorkDates
+                                                              .length > 0 &&
+                                                            emp.compensatoryWorkDates.map(
+                                                              (
+                                                                workEntry,
+                                                                workIndex
+                                                              ) => (
+                                                                <div
+                                                                  key={
+                                                                    workIndex
+                                                                  }
+                                                                  className="text-xs text-green-600 font-medium mt-0.5"
+                                                                >
+                                                                  {(() => {
+                                                                    try {
+                                                                      const compactDate =
+                                                                        formatUTCToCompactDatePH(
+                                                                          workEntry.date
+                                                                        );
+
+                                                                      // Find shift template from Redux or use embedded data
+                                                                      const shiftTemplate =
+                                                                        typeof workEntry.shiftTemplate ===
+                                                                        "object"
+                                                                          ? workEntry.shiftTemplate
+                                                                          : shiftTemplates?.find(
+                                                                              (
+                                                                                st
+                                                                              ) =>
+                                                                                st._id ===
+                                                                                workEntry.shiftTemplate
+                                                                            );
+
+                                                                      const shiftText =
+                                                                        shiftTemplate
+                                                                          ? shiftTemplate.type ===
+                                                                            "Standard"
+                                                                            ? `${formatTimeTo12HourPH(
+                                                                                shiftTemplate.morningIn
+                                                                              )}-${formatTimeTo12HourPH(
+                                                                                shiftTemplate.morningOut
+                                                                              )}, ${formatTimeTo12HourPH(
+                                                                                shiftTemplate.afternoonIn
+                                                                              )}-${formatTimeTo12HourPH(
+                                                                                shiftTemplate.afternoonOut
+                                                                              )}`
+                                                                            : `${formatTimeTo12HourPH(
+                                                                                shiftTemplate.startTime
+                                                                              )}-${formatTimeTo12HourPH(
+                                                                                shiftTemplate.endTime
+                                                                              )}`
+                                                                          : "";
+
+                                                                      return (
+                                                                        <div className="flex flex-col">
+                                                                          {compactDate && (
+                                                                            <span className="text-green-600 font-medium">
+                                                                              {
+                                                                                compactDate
+                                                                              }
+                                                                            </span>
+                                                                          )}
+                                                                          {shiftText && (
+                                                                            <span className="text-blue-600 font-medium">
+                                                                              {
+                                                                                shiftText
+                                                                              }
+                                                                            </span>
+                                                                          )}
+                                                                        </div>
+                                                                      );
+                                                                    } catch (error) {
+                                                                      console.error(
+                                                                        "Error parsing compensatory work entry:",
+                                                                        workEntry,
+                                                                        error
+                                                                      );
+                                                                      return null;
+                                                                    }
+                                                                  })()}
+                                                                </div>
+                                                              )
+                                                            )}
+
+                                                          {/* Fallback for legacy single compensatory work date (backward compatibility) */}
+                                                          {(!emp.compensatoryWorkDates ||
+                                                            emp
+                                                              .compensatoryWorkDates
+                                                              .length === 0) &&
+                                                            emp.compensatoryWorkDate &&
                                                             (() => {
                                                               try {
                                                                 const compactDate =
@@ -2020,71 +2171,74 @@ const DutyScheduleForm = ({
                                                                     emp.compensatoryWorkDate
                                                                   );
                                                                 return compactDate ? (
-                                                                  <span className="text-green-600 font-medium text-xs inline">
-                                                                    -
+                                                                  <span className="text-green-600 font-medium text-xs mt-0.5">
                                                                     {
                                                                       compactDate
                                                                     }
                                                                   </span>
-                                                                ) : (
-                                                                  ""
-                                                                );
+                                                                ) : null;
                                                               } catch (error) {
                                                                 console.error(
-                                                                  "Error parsing compensatory work date:",
+                                                                  "Error parsing legacy compensatory work date:",
                                                                   emp.compensatoryWorkDate,
                                                                   error
                                                                 );
-                                                                return "";
+                                                                return null;
                                                               }
                                                             })()}
-                                                        </span>
-                                                        {/* Display compensatory work shift on second line */}
-                                                        {emp.compensatoryWorkShift && (
-                                                          <div className="text-blue-600 font-medium text-xs mt-0.5">
-                                                            {(() => {
-                                                              // Find shift template from Redux or use embedded data
-                                                              const shiftTemplate =
-                                                                typeof emp.compensatoryWorkShift ===
-                                                                "object"
-                                                                  ? emp.compensatoryWorkShift
-                                                                  : shiftTemplates?.find(
-                                                                      (st) =>
-                                                                        st._id ===
-                                                                        emp.compensatoryWorkShift
-                                                                    );
 
-                                                              if (
-                                                                !shiftTemplate
-                                                              )
-                                                                return "";
+                                                          {/* Legacy shift display (backward compatibility) */}
+                                                          {(!emp.compensatoryWorkDates ||
+                                                            emp
+                                                              .compensatoryWorkDates
+                                                              .length === 0) &&
+                                                            emp.compensatoryWorkShift && (
+                                                              <div className="text-blue-600 font-medium text-xs mt-0.5">
+                                                                {(() => {
+                                                                  const shiftTemplate =
+                                                                    typeof emp.compensatoryWorkShift ===
+                                                                    "object"
+                                                                      ? emp.compensatoryWorkShift
+                                                                      : shiftTemplates?.find(
+                                                                          (
+                                                                            st
+                                                                          ) =>
+                                                                            st._id ===
+                                                                            emp.compensatoryWorkShift
+                                                                        );
 
-                                                              return (
-                                                                <span
-                                                                  title={`Compensatory work shift: ${shiftTemplate.name}`}
-                                                                  className="text-xs"
-                                                                >
-                                                                  {shiftTemplate.type ===
-                                                                  "Standard"
-                                                                    ? `${formatTimeTo12HourPH(
-                                                                        shiftTemplate.morningIn
-                                                                      )}-${formatTimeTo12HourPH(
-                                                                        shiftTemplate.morningOut
-                                                                      )}, ${formatTimeTo12HourPH(
-                                                                        shiftTemplate.afternoonIn
-                                                                      )}-${formatTimeTo12HourPH(
-                                                                        shiftTemplate.afternoonOut
-                                                                      )}`
-                                                                    : `${formatTimeTo12HourPH(
-                                                                        shiftTemplate.startTime
-                                                                      )}-${formatTimeTo12HourPH(
-                                                                        shiftTemplate.endTime
-                                                                      )}`}
-                                                                </span>
-                                                              );
-                                                            })()}
-                                                          </div>
-                                                        )}
+                                                                  if (
+                                                                    !shiftTemplate
+                                                                  )
+                                                                    return "";
+
+                                                                  return (
+                                                                    <span
+                                                                      title={`Compensatory work shift: ${shiftTemplate.name}`}
+                                                                      className="text-xs"
+                                                                    >
+                                                                      {shiftTemplate.type ===
+                                                                      "Standard"
+                                                                        ? `${formatTimeTo12HourPH(
+                                                                            shiftTemplate.morningIn
+                                                                          )}-${formatTimeTo12HourPH(
+                                                                            shiftTemplate.morningOut
+                                                                          )}, ${formatTimeTo12HourPH(
+                                                                            shiftTemplate.afternoonIn
+                                                                          )}-${formatTimeTo12HourPH(
+                                                                            shiftTemplate.afternoonOut
+                                                                          )}`
+                                                                        : `${formatTimeTo12HourPH(
+                                                                            shiftTemplate.startTime
+                                                                          )}-${formatTimeTo12HourPH(
+                                                                            shiftTemplate.endTime
+                                                                          )}`}
+                                                                    </span>
+                                                                  );
+                                                                })()}
+                                                              </div>
+                                                            )}
+                                                        </div>
                                                         <button
                                                           onClick={(e) => {
                                                             e.stopPropagation();
@@ -3032,8 +3186,10 @@ const DutyScheduleForm = ({
                     // Reset dependent fields when type changes
                     setSelectedShift("");
                     setSelectedLeave("");
+                    setCompensatoryWorkDates([]); // Reset compensatory work dates
                     setShiftError("");
                     setLeaveError("");
+                    setCompensatoryWorkDatesError("");
                   }}
                   className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
                 >
@@ -3202,7 +3358,39 @@ const DutyScheduleForm = ({
                   <select
                     required
                     value={selectedLeave}
-                    onChange={(e) => setSelectedLeave(e.target.value)}
+                    onChange={(e) => {
+                      const leaveId = e.target.value;
+                      setSelectedLeave(leaveId);
+
+                      // Initialize with one work date entry for compensatory time off
+                      if (leaveId) {
+                        const leaveTemplate = leaveTemplates?.find(
+                          (lt) => lt._id === leaveId
+                        );
+                        if (leaveTemplate?.isCompensatoryTimeOff) {
+                          // Initialize with one empty work date entry if none exist
+                          if (compensatoryWorkDates.length === 0) {
+                            setCompensatoryWorkDates([
+                              {
+                                date: "",
+                                shiftTemplate: "",
+                                hoursWorked: null,
+                              },
+                            ]);
+                          }
+                        } else {
+                          // Clear compensatory work dates for non-compensatory leave types
+                          setCompensatoryWorkDates([]);
+                        }
+                      } else {
+                        // Clear compensatory work dates when no leave is selected
+                        setCompensatoryWorkDates([]);
+                      }
+
+                      // Clear any existing errors
+                      setLeaveError("");
+                      setCompensatoryWorkDatesError("");
+                    }}
                     className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
                   >
                     <option value="" className="text-gray-500">
@@ -3238,7 +3426,7 @@ const DutyScheduleForm = ({
                     </div>
                   )}
 
-                  {/* Compensatory Work Date - Only for compensatory time off */}
+                  {/* Compensatory Work Dates - Only for compensatory time off */}
                   {selectedLeave &&
                     (() => {
                       const leaveTemplate = leaveTemplates?.find(
@@ -3246,79 +3434,293 @@ const DutyScheduleForm = ({
                       );
                       return leaveTemplate?.isCompensatoryTimeOff;
                     })() && (
-                      <div className="space-y-2 mt-4">
-                        <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 text-gray-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 10a1 1 0 001 1h10a1 1 0 001-1L16 7m-6 0V5"
-                            />
-                          </svg>
-                          Date Worked for This Time Off
-                        </label>
-                        <input
-                          type="date"
-                          required
-                          value={compensatoryWorkDate}
-                          max={formatDatePH(getCurrentDatePH())} // Prevent future dates
-                          onChange={(e) =>
-                            setCompensatoryWorkDate(e.target.value)
-                          }
-                          className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
-                        />
-
-                        {/* Readable date display */}
-                        {compensatoryWorkDate && (
-                          <div className="mt-2 px-3 py-2 bg-green-50 rounded-lg border-l-4 border-green-400">
-                            <p className="text-sm text-green-700 font-medium">
-                              📅 Work Date:{" "}
-                              {(() => {
-                                const workDate = new Date(
-                                  compensatoryWorkDate + "T00:00:00"
-                                );
-                                const days = [
-                                  "Sunday",
-                                  "Monday",
-                                  "Tuesday",
-                                  "Wednesday",
-                                  "Thursday",
-                                  "Friday",
-                                  "Saturday",
-                                ];
-                                const months = [
-                                  "January",
-                                  "February",
-                                  "March",
-                                  "April",
-                                  "May",
-                                  "June",
-                                  "July",
-                                  "August",
-                                  "September",
-                                  "October",
-                                  "November",
-                                  "December",
-                                ];
-                                return `${days[workDate.getDay()]}, ${
-                                  months[workDate.getMonth()]
-                                } ${workDate.getDate()}, ${workDate.getFullYear()}`;
-                              })()}
-                            </p>
-                            <p className="text-xs text-green-600 mt-1">
-                              This compensatory time off is for work performed
-                              on the above date.
-                            </p>
+                      <div className="space-y-4 mt-4">
+                        <div className="border-t border-gray-200 pt-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-gray-400"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 0h6m-6 0l-2 10a1 1 0 001 1h10a1 1 0 001-1L16 7m-6 0V5"
+                                />
+                              </svg>
+                              Work Date(s) Earned
+                            </label>
                           </div>
-                        )}
-                        {compensatoryWorkDateError && (
+
+                          <div className="text-xs text-gray-500 mb-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                            📝 Add the date(s) when you worked overtime or duty
+                            that entitle you to this compensatory time off. Work
+                            dates must be before the time off date.
+                          </div>
+
+                          {/* Work date entries in single column format */}
+                          <div className="space-y-4">
+                            {compensatoryWorkDates.map((workEntry, index) => (
+                              <div
+                                key={index}
+                                className="relative p-4 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-200"
+                              >
+                                {/* Remove button - positioned absolutely in top right corner */}
+                                {compensatoryWorkDates.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const newWorkDates =
+                                        compensatoryWorkDates.filter(
+                                          (_, i) => i !== index
+                                        );
+                                      setCompensatoryWorkDates(newWorkDates);
+                                    }}
+                                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                    title="Remove this work date"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M6 18L18 6M6 6l12 12"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
+
+                                <div className="space-y-4">
+                                  {/* Work Date Row */}
+                                  <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                      Work Date
+                                    </label>
+                                    <input
+                                      type="date"
+                                      required
+                                      value={workEntry.date}
+                                      max={
+                                        selectedDate
+                                          ? (() => {
+                                              const maxDate = new Date(
+                                                selectedDate
+                                              );
+                                              maxDate.setDate(
+                                                maxDate.getDate() - 1
+                                              );
+                                              return formatDatePH(maxDate);
+                                            })()
+                                          : formatDatePH(getCurrentDatePH())
+                                      }
+                                      onChange={(e) => {
+                                        const selectedWorkDate = e.target.value;
+
+                                        // Check if this date is already selected
+                                        const isDateAlreadySelected =
+                                          compensatoryWorkDates.some(
+                                            (entry, i) =>
+                                              i !== index &&
+                                              entry.date === selectedWorkDate
+                                          );
+
+                                        if (isDateAlreadySelected) {
+                                          alert(
+                                            "This date has already been selected. Please choose a different date."
+                                          );
+                                          return;
+                                        }
+
+                                        // Check if work date is on or after the leave date
+                                        if (
+                                          selectedDate &&
+                                          selectedWorkDate >=
+                                            formatDatePH(selectedDate)
+                                        ) {
+                                          alert(
+                                            `Work date must be before the compensatory time off date (${formatDatePH(
+                                              selectedDate
+                                            )}). You cannot work on or after the day you are taking time off.`
+                                          );
+                                          return;
+                                        }
+
+                                        const newWorkDates = [
+                                          ...compensatoryWorkDates,
+                                        ];
+                                        newWorkDates[index].date =
+                                          selectedWorkDate;
+                                        setCompensatoryWorkDates(newWorkDates);
+                                      }}
+                                      className="block w-full rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm transition-all"
+                                    />
+                                    {/* Show warning if trying to select already used date */}
+                                    {workEntry.date &&
+                                      compensatoryWorkDates.some(
+                                        (entry, i) =>
+                                          i !== index &&
+                                          entry.date === workEntry.date
+                                      ) && (
+                                        <div className="text-red-500 text-xs flex items-center gap-1 mt-1">
+                                          <svg
+                                            className="w-3 h-3"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                          </svg>
+                                          Already selected
+                                        </div>
+                                      )}
+                                  </div>
+
+                                  {/* Work Shift Row */}
+                                  <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                      Work Shift
+                                    </label>
+                                    <select
+                                      required
+                                      value={workEntry.shiftTemplate}
+                                      onChange={(e) => {
+                                        const newWorkDates = [
+                                          ...compensatoryWorkDates,
+                                        ];
+                                        newWorkDates[index].shiftTemplate =
+                                          e.target.value;
+                                        setCompensatoryWorkDates(newWorkDates);
+                                      }}
+                                      className="block w-full rounded-lg border border-gray-300 bg-white py-2.5 px-3 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 shadow-sm transition-all"
+                                    >
+                                      <option
+                                        value=""
+                                        className="text-gray-500"
+                                      >
+                                        -- Select Shift --
+                                      </option>
+                                      {shiftTemplates &&
+                                        [...shiftTemplates]
+                                          .filter(
+                                            (schedule) =>
+                                              schedule.isActive !== false
+                                          )
+                                          .map((schedule) => (
+                                            <option
+                                              key={schedule._id}
+                                              value={schedule._id}
+                                              className="py-1"
+                                            >
+                                              {schedule.name}
+                                              {schedule.type === "Standard"
+                                                ? ` (${formatTimeTo12HourPH(
+                                                    schedule.morningIn
+                                                  )}-${formatTimeTo12HourPH(
+                                                    schedule.morningOut
+                                                  )}, ${formatTimeTo12HourPH(
+                                                    schedule.afternoonIn
+                                                  )}-${formatTimeTo12HourPH(
+                                                    schedule.afternoonOut
+                                                  )})`
+                                                : ` (${formatTimeTo12HourPH(
+                                                    schedule.startTime
+                                                  )}-${formatTimeTo12HourPH(
+                                                    schedule.endTime
+                                                  )})`}
+                                            </option>
+                                          ))}
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* Minimum required indicator for single entry */}
+                                {compensatoryWorkDates.length === 1 && (
+                                  <div className="absolute bottom-2 right-2">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                      Required
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Compact Add Additional Work Date Button */}
+                          <div className="mt-4 flex justify-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCompensatoryWorkDates([
+                                  ...compensatoryWorkDates,
+                                  {
+                                    date: "",
+                                    shiftTemplate: "",
+                                    hoursWorked: null,
+                                  },
+                                ]);
+                              }}
+                              className="inline-flex items-center justify-center w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-sm hover:shadow-md transition-all duration-200 group"
+                              title="Add additional work date (optional)"
+                            >
+                              <svg
+                                className="w-4 h-4 group-hover:scale-110 transition-transform duration-200"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+
+                          {/* Initialize with one work date if none exist */}
+                          {(() => {
+                            // Automatically initialize with one work date for compensatory time off
+                            if (compensatoryWorkDates.length === 0) {
+                              // Set initial work date entry
+                              setTimeout(() => {
+                                setCompensatoryWorkDates([
+                                  {
+                                    date: "",
+                                    shiftTemplate: "",
+                                    hoursWorked: null,
+                                  },
+                                ]);
+                              }, 0);
+
+                              return (
+                                <div className="text-center py-6">
+                                  <div className="text-sm text-gray-600 italic">
+                                    Initializing work date entry...
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+
+                        {/* Show error message for compensatory work dates */}
+                        {compensatoryWorkDatesError && (
                           <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
                             <svg
                               className="w-4 h-4"
@@ -3333,98 +3735,9 @@ const DutyScheduleForm = ({
                                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                               />
                             </svg>
-                            {compensatoryWorkDateError}
+                            {compensatoryWorkDatesError}
                           </div>
                         )}
-                        <div className="text-xs text-gray-500">
-                          Select the date when you worked that entitles you to
-                          this compensatory time off. Future dates are not
-                          allowed.
-                        </div>
-
-                        {/* Compensatory Work Shift Schedule */}
-                        <div className="mt-4">
-                          <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 text-gray-400"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            Work Shift Schedule
-                          </label>
-                          <select
-                            required
-                            value={compensatoryWorkShift}
-                            onChange={(e) =>
-                              setCompensatoryWorkShift(e.target.value)
-                            }
-                            className="block w-full rounded-lg border border-gray-300 bg-white py-3 px-4 text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-base shadow-sm transition-all"
-                          >
-                            <option value="" className="text-gray-500">
-                              -- Select Work Shift --
-                            </option>
-                            {shiftTemplates &&
-                              [...shiftTemplates]
-                                .filter(
-                                  (schedule) => schedule.isActive !== false
-                                )
-                                .map((schedule) => (
-                                  <option
-                                    key={schedule._id}
-                                    value={schedule._id}
-                                    className="py-2"
-                                  >
-                                    {schedule.name}
-                                    {schedule.type === "Standard"
-                                      ? ` (${formatTimeTo12HourPH(
-                                          schedule.morningIn
-                                        )}-${formatTimeTo12HourPH(
-                                          schedule.morningOut
-                                        )}, ${formatTimeTo12HourPH(
-                                          schedule.afternoonIn
-                                        )}-${formatTimeTo12HourPH(
-                                          schedule.afternoonOut
-                                        )})`
-                                      : ` (${formatTimeTo12HourPH(
-                                          schedule.startTime
-                                        )}-${formatTimeTo12HourPH(
-                                          schedule.endTime
-                                        )})`}
-                                  </option>
-                                ))}
-                          </select>
-                          {compensatoryWorkShiftError && (
-                            <div className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                />
-                              </svg>
-                              {compensatoryWorkShiftError}
-                            </div>
-                          )}
-                          <div className="text-xs text-gray-500 mt-2">
-                            Select the shift schedule that was worked on the
-                            compensatory work date to identify the time in/out.
-                          </div>
-                        </div>
                       </div>
                     )}
                 </div>
@@ -3470,15 +3783,13 @@ const DutyScheduleForm = ({
                     setScheduleType("duty");
                     setSelectedShift("");
                     setSelectedLeave("");
-                    setCompensatoryWorkDate(""); // Reset compensatory work date
-                    setCompensatoryWorkShift(""); // Reset compensatory work shift
+                    setCompensatoryWorkDates([]); // Reset multiple compensatory work dates
                     setDescription("");
                     setEmployeeError("");
                     setTypeError("");
                     setShiftError("");
                     setLeaveError("");
-                    setCompensatoryWorkDateError(""); // Reset compensatory work date error
-                    setCompensatoryWorkShiftError(""); // Reset compensatory work shift error
+                    setCompensatoryWorkDatesError(""); // Reset multiple compensatory work dates error
                   }}
                   className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-all duration-200 border border-gray-300 flex items-center gap-2 justify-center"
                 >

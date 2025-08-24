@@ -160,105 +160,150 @@ const ScheduleDisplay = ({ attendance, isDesktop = false }) => {
       // Check if this is compensatory time off and display schedule accordingly
       const isCompensatoryTimeOff =
         attendance.leaveTemplate?.isCompensatoryTimeOff;
-      const compensatoryWorkShift =
-        attendance.leaveTemplate?.compensatoryWorkShift;
+      const compensatoryWorkEntries =
+        attendance.leaveTemplate?.compensatoryWorkEntries || [];
 
-      if (isCompensatoryTimeOff && compensatoryWorkShift) {
-        // Display time schedule for compensatory time off
-        if (compensatoryWorkShift.type === "Standard") {
-          // Helper function to format time from HH:mm to 12-hour format
-          const formatTime = (timeStr) => {
-            if (!timeStr) return "";
-            const [hours, minutes] = timeStr.split(":").map(Number);
-            const date = new Date();
-            date.setHours(hours);
-            date.setMinutes(minutes);
-            return date.toLocaleTimeString([], {
-              hour: "numeric",
-              minute: "numeric",
-              hour12: true,
-            });
-          };
-
-          const morningIn = formatTime(compensatoryWorkShift.morningIn);
-          const morningOut = formatTime(compensatoryWorkShift.morningOut);
-          const afternoonIn = formatTime(compensatoryWorkShift.afternoonIn);
-          const afternoonOut = formatTime(compensatoryWorkShift.afternoonOut);
-
-          return (
-            <div className={`${baseClasses} space-y-1`}>
-              <div className="text-amber-700 font-semibold capitalize mb-1">
-                {attendance.leaveTemplate?.name || "Leave"}
-              </div>
-              <div className="flex items-center">
-                <span className="text-blue-800">
-                  {morningIn}-{morningOut}
-                </span>
-              </div>
-              <div className="flex items-center">
-                <span className="text-blue-800">
-                  {afternoonIn}-{afternoonOut}
-                </span>
-              </div>
-              {!isDesktop && (
-                <div className="flex items-center gap-1 mt-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-3 w-3 text-blue-600"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="text-xs text-blue-600 font-medium">
-                    Compensatory Standard
-                  </span>
-                </div>
-              )}
+      if (isCompensatoryTimeOff && compensatoryWorkEntries.length > 0) {
+        // Display time schedule for compensatory time off with multiple work entries
+        return (
+          <div className={`${baseClasses} space-y-2`}>
+            <div className="text-amber-700 font-semibold capitalize mb-1">
+              {attendance.leaveTemplate?.name || "Leave"}
             </div>
-          );
-        } else if (compensatoryWorkShift.type === "Shifting") {
-          // Helper function to format time from HH:mm to 12-hour format
-          const formatTime = (timeStr) => {
-            if (!timeStr) return "";
-            const [hours, minutes] = timeStr.split(":").map(Number);
-            const date = new Date();
-            date.setHours(hours);
-            date.setMinutes(minutes);
-            return date.toLocaleTimeString([], {
-              hour: "numeric",
-              minute: "numeric",
-              hour12: true,
-            });
-          };
+            {compensatoryWorkEntries.map((workEntry, index) => {
+              if (!workEntry.shift) return null;
 
-          const startTime = formatTime(compensatoryWorkShift.startTime);
-          const endTime = formatTime(compensatoryWorkShift.endTime);
+              if (workEntry.shift.type === "Standard") {
+                // Helper function to format time from HH:mm to 12-hour format
+                const formatTime = (timeStr) => {
+                  if (!timeStr) return "";
+                  const [hours, minutes] = timeStr.split(":").map(Number);
+                  const date = new Date();
+                  date.setHours(hours);
+                  date.setMinutes(minutes);
+                  return date.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "numeric",
+                    hour12: true,
+                  });
+                };
 
-          return (
-            <div className={`${baseClasses}`}>
-              <div className="text-amber-700 font-semibold capitalize mb-1">
-                {attendance.leaveTemplate?.name || "Leave"}
-              </div>
-              <div className="flex items-center">
-                <span className="text-cyan-800 whitespace-nowrap">
-                  {startTime}-{endTime}
-                </span>
-              </div>
-              {!isDesktop && (
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="text-xs text-cyan-600 font-medium">
-                    Compensatory Shifting
-                  </span>
-                </div>
-              )}
-            </div>
-          );
-        }
+                const morningIn = formatTime(workEntry.shift.morningIn);
+                const morningOut = formatTime(workEntry.shift.morningOut);
+                const afternoonIn = formatTime(workEntry.shift.afternoonIn);
+                const afternoonOut = formatTime(workEntry.shift.afternoonOut);
+
+                return (
+                  <div key={index} className="border-l-2 border-blue-300 pl-2">
+                    {/* Work date display */}
+                    <div className="text-xs text-gray-600 font-medium mb-1">
+                      {formatDatePH(workEntry.date, "ddd D MMM YY")}
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-blue-800">
+                        {morningIn}-{morningOut}
+                      </span>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-blue-800">
+                        {afternoonIn}-{afternoonOut}
+                      </span>
+                    </div>
+                    {!isDesktop && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3 text-blue-600"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span className="text-xs text-blue-600 font-medium">
+                          Compensatory Standard
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              } else if (workEntry.shift.type === "Shifting") {
+                // Helper function to format time from HH:mm to 12-hour format
+                const formatTime = (timeStr) => {
+                  if (!timeStr) return "";
+                  const [hours, minutes] = timeStr.split(":").map(Number);
+                  const date = new Date();
+                  date.setHours(hours);
+                  date.setMinutes(minutes);
+                  return date.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "numeric",
+                    hour12: true,
+                  });
+                };
+
+                const startTime = formatTime(workEntry.shift.startTime);
+                const endTime = formatTime(workEntry.shift.endTime);
+                const isNightDifferential = workEntry.shift.isNightDifferential;
+
+                return (
+                  <div key={index} className="border-l-2 border-cyan-300 pl-2">
+                    {/* Work date display */}
+                    <div className="text-xs text-gray-600 font-medium mb-1">
+                      {formatDatePH(workEntry.date, "ddd D MMM YY")}
+                    </div>
+                    {isNightDifferential ? (
+                      // Two-line format for night differential shifts
+                      <div className="space-y-1">
+                        <div className="flex items-center">
+                          <span className="text-cyan-800 whitespace-nowrap">
+                            {formatDatePH(workEntry.date, "ddd D MMM YY")}{" "}
+                            {startTime} -
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-cyan-800 whitespace-nowrap">
+                            {(() => {
+                              // Calculate next day for end time display
+                              const currentDate = new Date(
+                                workEntry.date + "T00:00:00"
+                              );
+                              const nextDay = new Date(currentDate);
+                              nextDay.setDate(currentDate.getDate() + 1);
+                              const nextDayFormatted = formatDatePH(
+                                nextDay.toISOString(),
+                                "MMM D, YYYY"
+                              );
+                              return `${nextDayFormatted} ${endTime}`;
+                            })()}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      // Single line format for regular shifting schedules
+                      <div className="flex items-center">
+                        <span className="text-cyan-800 whitespace-nowrap">
+                          {startTime}-{endTime}
+                        </span>
+                      </div>
+                    )}
+                    {!isDesktop && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="text-xs text-cyan-600 font-medium">
+                          Compensatory Shifting
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            })}
+          </div>
+        );
       }
 
       // Default leave display (non-compensatory)
@@ -488,10 +533,12 @@ const EmployeeAttendance = ({
     return false;
   };
 
+  console.log(attendances);
+
   // Handle opening manual attendance modal
   const handleManualAttendanceClick = (attendance, timeType) => {
     if (isManualAttendanceAllowed(attendance, timeType)) {
-      // For compensatory time off, modify the attendance object to use compensatoryWorkDate
+      // For compensatory time off, modify the attendance object to use compensatoryWorkEntries
       let modifiedAttendance = attendance;
       const isCompensatoryTimeOff =
         attendance.scheduleType === "leave" &&
@@ -499,28 +546,61 @@ const EmployeeAttendance = ({
 
       if (
         isCompensatoryTimeOff &&
-        attendance.leaveTemplate?.compensatoryWorkDate
+        attendance.leaveTemplate?.compensatoryWorkEntries?.length > 0
       ) {
-        // Format the compensatory duty date to PH date format for proper handling
-        const formattedWorkDate = formatDatePH(
-          attendance.leaveTemplate.compensatoryWorkDate
-        );
+        // Find the work entry that matches the current attendance date
+        const currentAttendanceDate = attendance.datePH || attendance.date;
+        const matchingWorkEntry =
+          attendance.leaveTemplate.compensatoryWorkEntries.find(
+            (entry) => entry.date === currentAttendanceDate
+          );
+
+        // Use the matching work entry, or fallback to first entry if no exact match
+        const workEntry =
+          matchingWorkEntry ||
+          attendance.leaveTemplate.compensatoryWorkEntries[0];
+
+        // IMPORTANT: Keep the original attendance date for manual attendance logging
+        // Only use the work entry's shift information, not its date
+        // Ensure the date is in proper format for manual attendance modal
+        const originalDate = attendance.datePH || attendance.date;
+        const formattedOriginalDate = formatDatePH(originalDate); // Ensure consistent format
 
         modifiedAttendance = {
           ...attendance,
-          datePH: formattedWorkDate,
-          date: formattedWorkDate,
+          // Preserve the original attendance date in proper format
+          datePH: formattedOriginalDate,
+          date: formattedOriginalDate,
+          // Use the specific work entry's shift as the shiftTemplate for manual attendance modal
+          shiftTemplate: workEntry.shift,
+          // Add metadata to help identify which work entry this relates to
+          _compensatoryWorkEntryDate: workEntry.date,
+          _compensatoryWorkEntryIndex:
+            attendance.leaveTemplate.compensatoryWorkEntries.indexOf(workEntry),
         };
       }
 
       // For night differential shifts, adjust the date for time out entries
       const isNightDifferential =
-        attendance?.shiftTemplate?.isNightDifferential;
+        attendance?.shiftTemplate?.isNightDifferential ||
+        (isCompensatoryTimeOff &&
+          (() => {
+            // Find the matching work entry for night differential check
+            const currentAttendanceDate = attendance.datePH || attendance.date;
+            const matchingWorkEntry =
+              attendance.leaveTemplate?.compensatoryWorkEntries?.find(
+                (entry) => entry.date === currentAttendanceDate
+              );
+            const workEntry =
+              matchingWorkEntry ||
+              attendance.leaveTemplate?.compensatoryWorkEntries?.[0];
+            return workEntry?.shift?.isNightDifferential;
+          })());
       const isTimeOut = timeType === "timeOut";
 
       if (isNightDifferential && isTimeOut) {
         // For night differential time out, use the next day's date
-        const currentDate = new Date(attendance.datePH + "T00:00:00");
+        const currentDate = new Date(modifiedAttendance.datePH + "T00:00:00");
         const nextDay = new Date(currentDate);
         nextDay.setDate(currentDate.getDate() + 1);
         const nextDayFormatted = formatDatePH(nextDay.toISOString());
@@ -728,9 +808,22 @@ const EmployeeAttendance = ({
 
     if (!displayTime && type === "out" && timeType === "timeOut") {
       // Check if this is a night differential shift that crosses midnight
-      const isNightDifferential =
-        attendance?.shiftTemplate?.isNightDifferential;
-      const shiftType = attendance?.shiftTemplate?.type;
+      const isCompensatoryTimeOff =
+        attendance.scheduleType === "leave" &&
+        attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+      let isNightDifferential, shiftType;
+
+      if (isCompensatoryTimeOff) {
+        // For compensatory time off, check the first work entry's shift
+        const firstWorkEntry =
+          attendance.leaveTemplate?.compensatoryWorkEntries?.[0];
+        isNightDifferential = firstWorkEntry?.shift?.isNightDifferential;
+        shiftType = firstWorkEntry?.shift?.type;
+      } else {
+        isNightDifferential = attendance?.shiftTemplate?.isNightDifferential;
+        shiftType = attendance?.shiftTemplate?.type;
+      }
 
       if (isNightDifferential && shiftType === "Shifting") {
         // For night differential shifts, the timeOut might be on the next day
@@ -763,7 +856,20 @@ const EmployeeAttendance = ({
             </button>
             {/* Night differential badge for timeOut - show even when no data */}
             {type === "out" &&
-              attendance?.shiftTemplate?.isNightDifferential && (
+              (() => {
+                const isCompensatoryTimeOff =
+                  attendance.scheduleType === "leave" &&
+                  attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+                if (isCompensatoryTimeOff) {
+                  // Check first work entry's shift for night differential
+                  const firstWorkEntry =
+                    attendance.leaveTemplate?.compensatoryWorkEntries?.[0];
+                  return firstWorkEntry?.shift?.isNightDifferential;
+                }
+
+                return attendance?.shiftTemplate?.isNightDifferential;
+              })() && (
                 <span
                   className="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 bg-indigo-100 text-indigo-800 border-indigo-200"
                   title="Night differential shift"
@@ -778,14 +884,28 @@ const EmployeeAttendance = ({
         <div className="flex items-center">
           <span className="text-gray-400">--:--</span>
           {/* Night differential badge for timeOut - show even when no data */}
-          {type === "out" && attendance?.shiftTemplate?.isNightDifferential && (
-            <span
-              className="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 bg-indigo-100 text-indigo-800 border-indigo-200"
-              title="Night differential shift"
-            >
-              N
-            </span>
-          )}
+          {type === "out" &&
+            (() => {
+              const isCompensatoryTimeOff =
+                attendance.scheduleType === "leave" &&
+                attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+              if (isCompensatoryTimeOff) {
+                // Check first work entry's shift for night differential
+                const firstWorkEntry =
+                  attendance.leaveTemplate?.compensatoryWorkEntries?.[0];
+                return firstWorkEntry?.shift?.isNightDifferential;
+              }
+
+              return attendance?.shiftTemplate?.isNightDifferential;
+            })() && (
+              <span
+                className="inline-flex items-center justify-center w-4 h-4 text-xs font-semibold rounded-full border ml-1 bg-indigo-100 text-indigo-800 border-indigo-200"
+                title="Night differential shift"
+              >
+                N
+              </span>
+            )}
         </div>
       );
     }
@@ -835,7 +955,7 @@ const EmployeeAttendance = ({
             ? new Date(displayTime).toTimeString().slice(0, 5)
             : displayTime;
 
-        // For compensatory time off, modify the attendance object to use compensatoryWorkDate
+        // For compensatory time off, modify the attendance object to use compensatoryWorkEntries
         let modifiedAttendance = attendance;
         const isCompensatoryTimeOff =
           attendance.scheduleType === "leave" &&
@@ -843,17 +963,39 @@ const EmployeeAttendance = ({
 
         if (
           isCompensatoryTimeOff &&
-          attendance.leaveTemplate?.compensatoryWorkDate
+          attendance.leaveTemplate?.compensatoryWorkEntries?.length > 0
         ) {
-          // Format the compensatory duty date to PH date format for proper handling
-          const formattedWorkDate = formatDatePH(
-            attendance.leaveTemplate.compensatoryWorkDate
-          );
+          // Find the work entry that matches the current attendance date
+          const currentAttendanceDate = attendance.datePH || attendance.date;
+          const matchingWorkEntry =
+            attendance.leaveTemplate.compensatoryWorkEntries.find(
+              (entry) => entry.date === currentAttendanceDate
+            );
+
+          // Use the matching work entry, or fallback to first entry if no exact match
+          const workEntry =
+            matchingWorkEntry ||
+            attendance.leaveTemplate.compensatoryWorkEntries[0];
+
+          // IMPORTANT: Keep the original attendance date for manual attendance logging
+          // Only use the work entry's shift information for schedule display
+          // Ensure the date is in proper format for manual attendance modal
+          const originalDate = attendance.datePH || attendance.date;
+          const formattedOriginalDate = formatDatePH(originalDate); // Ensure consistent format
 
           modifiedAttendance = {
             ...attendance,
-            datePH: formattedWorkDate,
-            date: formattedWorkDate,
+            // Preserve the original attendance date in proper format
+            datePH: formattedOriginalDate,
+            date: formattedOriginalDate,
+            // Use the work entry's shift as the shiftTemplate for schedule display in modal
+            shiftTemplate: workEntry.shift,
+            // Add metadata to help identify which work entry this relates to
+            _compensatoryWorkEntryDate: workEntry.date,
+            _compensatoryWorkEntryIndex:
+              attendance.leaveTemplate.compensatoryWorkEntries.indexOf(
+                workEntry
+              ),
           };
         }
 
@@ -1764,32 +1906,16 @@ const EmployeeAttendance = ({
                                     ?.isCompensatoryTimeOff;
 
                                 if (isCompensatoryTimeOff) {
-                                  return (
-                                    <div>
-                                      <div>
-                                        {formatDatePH(
-                                          attendance.datePH || attendance.date,
-                                          "ddd MMM D, YYYY"
-                                        )}
-                                      </div>
-                                      {attendance.leaveTemplate
-                                        ?.compensatoryWorkDate && (
-                                        <div className="text-sm text-blue-600 mt-1">
-                                          Duty Date:{" "}
-                                          {formatDatePH(
-                                            attendance.leaveTemplate
-                                              .compensatoryWorkDate,
-                                            "ddd MMM D, YYYY"
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
+                                  // For compensatory time off, only show the leave date without work dates
+                                  return formatDatePH(
+                                    attendance.datePH || attendance.date,
+                                    "ddd D MMM YY"
                                   );
                                 }
 
                                 return formatDatePH(
                                   attendance.datePH || attendance.date,
-                                  "MMM D, YYYY"
+                                  "ddd D MMM YY"
                                 );
                               })()}
                             </div>
@@ -1873,72 +1999,220 @@ const EmployeeAttendance = ({
                               </span>
                             </div>
                             <div>
-                              {attendance.shiftTemplate?.type === "Standard" ? (
-                                <div className="space-y-1">
-                                  {/* Morning In - Always show for Standard */}
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-3 w-3 text-yellow-200"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                                          clipRule="evenodd"
-                                        />
-                                      </svg>
-                                      AM
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.morningInLog}
-                                      type="in"
-                                      attendance={attendance}
-                                      timeType="morningIn"
-                                      source={attendance.morningInLogSource}
-                                      manualId={attendance.morningInLogManualId}
-                                      showManualOption={true}
-                                    />
+                              {(() => {
+                                // For compensatory time off, check the compensatoryWorkEntries shift types
+                                const isCompensatoryTimeOff =
+                                  attendance.scheduleType === "leave" &&
+                                  attendance.leaveTemplate
+                                    ?.isCompensatoryTimeOff;
+
+                                if (isCompensatoryTimeOff) {
+                                  const compensatoryWorkEntries =
+                                    attendance.leaveTemplate
+                                      ?.compensatoryWorkEntries || [];
+
+                                  if (compensatoryWorkEntries.length === 0) {
+                                    return (
+                                      <span className="text-gray-400">
+                                        --:--
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <div className="space-y-3">
+                                      {compensatoryWorkEntries.map(
+                                        (workEntry, index) => {
+                                          if (!workEntry.shift) return null;
+
+                                          const shiftType =
+                                            workEntry.shift.type;
+
+                                          return (
+                                            <div
+                                              key={index}
+                                              className="border-l-3 border-blue-400 pl-3 bg-blue-50 rounded-r"
+                                            >
+                                              {/* Work date label */}
+                                              <div className="text-xs font-semibold text-blue-700 mb-2">
+                                                {formatDatePH(
+                                                  workEntry.date,
+                                                  "ddd, MMM D"
+                                                )}
+                                              </div>
+
+                                              {shiftType === "Standard" ? (
+                                                <div className="space-y-1">
+                                                  {/* Morning In */}
+                                                  <div className="flex items-center gap-1">
+                                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                      <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-3 w-3 text-yellow-200"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                      >
+                                                        <path
+                                                          fillRule="evenodd"
+                                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                                          clipRule="evenodd"
+                                                        />
+                                                      </svg>
+                                                      AM
+                                                    </span>
+                                                    <TimeDisplay
+                                                      time={
+                                                        attendance.morningInLog
+                                                      }
+                                                      type="in"
+                                                      attendance={{
+                                                        ...attendance,
+                                                        datePH: workEntry.date,
+                                                      }}
+                                                      timeType="morningIn"
+                                                      source={
+                                                        attendance.morningInLogSource
+                                                      }
+                                                      manualId={
+                                                        attendance.morningInLogManualId
+                                                      }
+                                                      showManualOption={true}
+                                                    />
+                                                  </div>
+                                                  {/* Afternoon In */}
+                                                  <div className="flex items-center gap-1">
+                                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                      <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-3 w-3 text-blue-200"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                      >
+                                                        <path d="M17.293 13.293A8 8 0 716.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                                      </svg>
+                                                      PM
+                                                    </span>
+                                                    <TimeDisplay
+                                                      time={
+                                                        attendance.afternoonInLog
+                                                      }
+                                                      type="in"
+                                                      attendance={{
+                                                        ...attendance,
+                                                        datePH: workEntry.date,
+                                                      }}
+                                                      timeType="afternoonIn"
+                                                      source={
+                                                        attendance.afternoonInLogSource
+                                                      }
+                                                      manualId={
+                                                        attendance.afternoonInLogManualId
+                                                      }
+                                                      showManualOption={true}
+                                                    />
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                <TimeDisplay
+                                                  time={attendance.timeIn}
+                                                  type="in"
+                                                  attendance={{
+                                                    ...attendance,
+                                                    datePH: workEntry.date,
+                                                    shiftTemplate:
+                                                      workEntry.shift,
+                                                  }}
+                                                  timeType="timeIn"
+                                                  source={
+                                                    attendance.timeInSource
+                                                  }
+                                                  manualId={
+                                                    attendance.timeInManualId
+                                                  }
+                                                  showManualOption={true}
+                                                />
+                                              )}
+                                            </div>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                // Regular duty schedule handling
+                                const shiftType =
+                                  attendance.shiftTemplate?.type;
+
+                                return shiftType === "Standard" ? (
+                                  <div className="space-y-1">
+                                    {/* Morning In - Always show for Standard */}
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3 text-yellow-200"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                        AM
+                                      </span>
+                                      <TimeDisplay
+                                        time={attendance.morningInLog}
+                                        type="in"
+                                        attendance={attendance}
+                                        timeType="morningIn"
+                                        source={attendance.morningInLogSource}
+                                        manualId={
+                                          attendance.morningInLogManualId
+                                        }
+                                        showManualOption={true}
+                                      />
+                                    </div>
+                                    {/* Afternoon In - Always show for Standard */}
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3 text-blue-200"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
+                                        >
+                                          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                        </svg>
+                                        PM
+                                      </span>
+                                      <TimeDisplay
+                                        time={attendance.afternoonInLog}
+                                        type="in"
+                                        attendance={attendance}
+                                        timeType="afternoonIn"
+                                        source={attendance.afternoonInLogSource}
+                                        manualId={
+                                          attendance.afternoonInLogManualId
+                                        }
+                                        showManualOption={true}
+                                      />
+                                    </div>
                                   </div>
-                                  {/* Afternoon In - Always show for Standard */}
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-3 w-3 text-blue-200"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                      >
-                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                                      </svg>
-                                      PM
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.afternoonInLog}
-                                      type="in"
-                                      attendance={attendance}
-                                      timeType="afternoonIn"
-                                      source={attendance.afternoonInLogSource}
-                                      manualId={
-                                        attendance.afternoonInLogManualId
-                                      }
-                                      showManualOption={true}
-                                    />
-                                  </div>
-                                </div>
-                              ) : (
-                                <TimeDisplay
-                                  time={attendance.timeIn}
-                                  type="in"
-                                  attendance={attendance}
-                                  timeType="timeIn"
-                                  source={attendance.timeInSource}
-                                  manualId={attendance.timeInManualId}
-                                  showManualOption={true}
-                                />
-                              )}
+                                ) : (
+                                  <TimeDisplay
+                                    time={attendance.timeIn}
+                                    type="in"
+                                    attendance={attendance}
+                                    timeType="timeIn"
+                                    source={attendance.timeInSource}
+                                    manualId={attendance.timeInManualId}
+                                    showManualOption={true}
+                                  />
+                                );
+                              })()}
                             </div>
                           </div>
 
@@ -1962,75 +2236,223 @@ const EmployeeAttendance = ({
                               </span>
                             </div>
                             <div>
-                              {attendance.shiftTemplate?.type === "Standard" ? (
-                                <div className="space-y-1">
-                                  {/* Morning Out - Always show for Standard */}
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-3 w-3 text-yellow-200"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                                          clipRule="evenodd"
-                                        />
-                                      </svg>
-                                      AM
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.morningOutLog}
-                                      type="out"
-                                      attendance={attendance}
-                                      timeType="morningOut"
-                                      source={attendance.morningOutLogSource}
-                                      manualId={
-                                        attendance.morningOutLogManualId
-                                      }
-                                      showManualOption={true}
-                                    />
+                              {(() => {
+                                // For compensatory time off, use compensatoryWorkEntries to determine display type
+                                const isCompensatoryTimeOff =
+                                  attendance.leaveTemplate
+                                    ?.isCompensatoryTimeOff;
+
+                                if (isCompensatoryTimeOff) {
+                                  const compensatoryWorkEntries =
+                                    attendance.leaveTemplate
+                                      ?.compensatoryWorkEntries || [];
+
+                                  if (compensatoryWorkEntries.length === 0) {
+                                    return (
+                                      <span className="text-gray-400">
+                                        --:--
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <div className="space-y-3">
+                                      {compensatoryWorkEntries.map(
+                                        (workEntry, index) => {
+                                          if (!workEntry.shift) return null;
+
+                                          const shiftType =
+                                            workEntry.shift.type;
+
+                                          return (
+                                            <div
+                                              key={index}
+                                              className="border-l-3 border-red-400 pl-3 bg-red-50 rounded-r"
+                                            >
+                                              {/* Work date label */}
+                                              <div className="text-xs font-semibold text-red-700 mb-2">
+                                                {formatDatePH(
+                                                  workEntry.date,
+                                                  "ddd, MMM D"
+                                                )}
+                                              </div>
+
+                                              {shiftType === "Standard" ? (
+                                                <div className="space-y-1">
+                                                  {/* Morning Out */}
+                                                  <div className="flex items-center gap-1">
+                                                    <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                      <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-3 w-3 text-yellow-200"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                      >
+                                                        <path
+                                                          fillRule="evenodd"
+                                                          d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                                          clipRule="evenodd"
+                                                        />
+                                                      </svg>
+                                                      AM
+                                                    </span>
+                                                    <TimeDisplay
+                                                      time={
+                                                        attendance.morningOutLog
+                                                      }
+                                                      type="out"
+                                                      attendance={{
+                                                        ...attendance,
+                                                        datePH: workEntry.date,
+                                                      }}
+                                                      timeType="morningOut"
+                                                      source={
+                                                        attendance.morningOutLogSource
+                                                      }
+                                                      manualId={
+                                                        attendance.morningOutLogManualId
+                                                      }
+                                                      showManualOption={true}
+                                                    />
+                                                  </div>
+                                                  {/* Afternoon Out */}
+                                                  <div className="flex items-center gap-1">
+                                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                      <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        className="h-3 w-3 text-blue-200"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                      >
+                                                        <path d="M17.293 13.293A8 8 0 716.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                                      </svg>
+                                                      PM
+                                                    </span>
+                                                    <TimeDisplay
+                                                      time={
+                                                        attendance.afternoonOutLog
+                                                      }
+                                                      type="out"
+                                                      attendance={{
+                                                        ...attendance,
+                                                        datePH: workEntry.date,
+                                                      }}
+                                                      timeType="afternoonOut"
+                                                      source={
+                                                        attendance.afternoonOutLogSource
+                                                      }
+                                                      manualId={
+                                                        attendance.afternoonOutLogManualId
+                                                      }
+                                                      showManualOption={true}
+                                                    />
+                                                  </div>
+                                                </div>
+                                              ) : (
+                                                // For non-Standard shifts (including Shifting with night differential)
+                                                <TimeDisplay
+                                                  time={attendance.timeOut}
+                                                  type="out"
+                                                  attendance={{
+                                                    ...attendance,
+                                                    datePH: workEntry.date,
+                                                    shiftTemplate:
+                                                      workEntry.shift,
+                                                  }}
+                                                  timeType="timeOut"
+                                                  source={
+                                                    attendance.timeOutSource
+                                                  }
+                                                  manualId={
+                                                    attendance.timeOutManualId
+                                                  }
+                                                  showManualOption={true}
+                                                />
+                                              )}
+                                            </div>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                  );
+                                }
+
+                                // Regular duty schedule handling
+                                const shiftType =
+                                  attendance.shiftTemplate?.type;
+
+                                return shiftType === "Standard" ? (
+                                  <div className="space-y-1">
+                                    {/* Morning Out - Always show for Standard */}
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3 text-yellow-200"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                            clipRule="evenodd"
+                                          />
+                                        </svg>
+                                        AM
+                                      </span>
+                                      <TimeDisplay
+                                        time={attendance.morningOutLog}
+                                        type="out"
+                                        attendance={attendance}
+                                        timeType="morningOut"
+                                        source={attendance.morningOutLogSource}
+                                        manualId={
+                                          attendance.morningOutLogManualId
+                                        }
+                                        showManualOption={true}
+                                      />
+                                    </div>
+                                    {/* Afternoon Out - Always show for Standard */}
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-3 w-3 text-blue-200"
+                                          viewBox="0 0 20 20"
+                                          fill="currentColor"
+                                        >
+                                          <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                        </svg>
+                                        PM
+                                      </span>
+                                      <TimeDisplay
+                                        time={attendance.afternoonOutLog}
+                                        type="out"
+                                        attendance={attendance}
+                                        timeType="afternoonOut"
+                                        source={
+                                          attendance.afternoonOutLogSource
+                                        }
+                                        manualId={
+                                          attendance.afternoonOutLogManualId
+                                        }
+                                        showManualOption={true}
+                                      />
+                                    </div>
                                   </div>
-                                  {/* Afternoon Out - Always show for Standard */}
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="h-3 w-3 text-blue-200"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                      >
-                                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                                      </svg>
-                                      PM
-                                    </span>
-                                    <TimeDisplay
-                                      time={attendance.afternoonOutLog}
-                                      type="out"
-                                      attendance={attendance}
-                                      timeType="afternoonOut"
-                                      source={attendance.afternoonOutLogSource}
-                                      manualId={
-                                        attendance.afternoonOutLogManualId
-                                      }
-                                      showManualOption={true}
-                                    />
-                                  </div>
-                                </div>
-                              ) : (
-                                // For non-Standard shifts (including Shifting with night differential)
-                                <TimeDisplay
-                                  time={attendance.timeOut}
-                                  type="out"
-                                  attendance={attendance}
-                                  timeType="timeOut"
-                                  source={attendance.timeOutSource}
-                                  manualId={attendance.timeOutManualId}
-                                  showManualOption={true}
-                                />
-                              )}
+                                ) : (
+                                  // For non-Standard shifts (including Shifting with night differential)
+                                  <TimeDisplay
+                                    time={attendance.timeOut}
+                                    type="out"
+                                    attendance={attendance}
+                                    timeType="timeOut"
+                                    source={attendance.timeOutSource}
+                                    manualId={attendance.timeOutManualId}
+                                    showManualOption={true}
+                                  />
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>
@@ -2210,26 +2632,10 @@ const EmployeeAttendance = ({
                                 attendance.leaveTemplate?.isCompensatoryTimeOff;
 
                               if (isCompensatoryTimeOff) {
-                                return (
-                                  <div>
-                                    <div>
-                                      {formatDatePH(
-                                        attendance.datePH || attendance.date,
-                                        "ddd MMM D, YYYY"
-                                      )}
-                                    </div>
-                                    {attendance.leaveTemplate
-                                      ?.compensatoryWorkDate && (
-                                      <div className="text-sm text-blue-600 mt-1">
-                                        Duty Date:{" "}
-                                        {formatDatePH(
-                                          attendance.leaveTemplate
-                                            .compensatoryWorkDate,
-                                          "ddd MMM D, YYYY"
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
+                                // For compensatory time off, only show the leave date without work dates
+                                return formatDatePH(
+                                  attendance.datePH || attendance.date,
+                                  "ddd D MMM YY"
                                 );
                               }
 
@@ -2237,14 +2643,8 @@ const EmployeeAttendance = ({
                                 <div>
                                   {formatDatePH(
                                     attendance.datePH || attendance.date,
-                                    "MMM D, YYYY"
+                                    "ddd D MMM YY"
                                   )}
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    {formatDatePH(
-                                      attendance.datePH || attendance.date,
-                                      "dddd"
-                                    )}
-                                  </div>
                                 </div>
                               );
                             })()}
@@ -2276,14 +2676,153 @@ const EmployeeAttendance = ({
                           {/* Time In */}
                           <div>
                             {(() => {
-                              // For compensatory time off, check the compensatoryWorkShift type
+                              // For compensatory time off, check the compensatoryWorkEntries shift types
                               const isCompensatoryTimeOff =
                                 attendance.scheduleType === "leave" &&
                                 attendance.leaveTemplate?.isCompensatoryTimeOff;
-                              const shiftType = isCompensatoryTimeOff
-                                ? attendance.leaveTemplate
-                                    ?.compensatoryWorkShift?.type
-                                : attendance.shiftTemplate?.type;
+
+                              if (isCompensatoryTimeOff) {
+                                const compensatoryWorkEntries =
+                                  attendance.leaveTemplate
+                                    ?.compensatoryWorkEntries || [];
+
+                                if (compensatoryWorkEntries.length === 0) {
+                                  return (
+                                    <span className="text-gray-400">--:--</span>
+                                  );
+                                }
+
+                                return (
+                                  <div className="space-y-2">
+                                    {compensatoryWorkEntries.map(
+                                      (workEntry, index) => {
+                                        if (!workEntry.shift) return null;
+
+                                        const shiftType = workEntry.shift.type;
+
+                                        return (
+                                          <div
+                                            key={index}
+                                            className="border-l-2 border-blue-300 pl-2"
+                                          >
+                                            {/* Work date label */}
+                                            <div className="text-xs text-gray-600 font-medium mb-1">
+                                              {formatDatePH(
+                                                workEntry.date,
+                                                "MMM D"
+                                              )}
+                                            </div>
+
+                                            {shiftType === "Standard" ? (
+                                              <div className="space-y-1">
+                                                {/* Morning In */}
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                    <svg
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      className="h-3 w-3 text-yellow-200"
+                                                      viewBox="0 0 20 20"
+                                                      fill="currentColor"
+                                                    >
+                                                      <path
+                                                        fillRule="evenodd"
+                                                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                                        clipRule="evenodd"
+                                                      />
+                                                    </svg>
+                                                    AM
+                                                  </span>
+                                                  <TimeDisplay
+                                                    time={
+                                                      workEntry.logData
+                                                        ?.morningInLog
+                                                    }
+                                                    type="in"
+                                                    attendance={{
+                                                      ...attendance,
+                                                      datePH: workEntry.date,
+                                                    }}
+                                                    timeType="morningIn"
+                                                    source={
+                                                      workEntry.logData
+                                                        ?.morningInLogSource
+                                                    }
+                                                    manualId={
+                                                      workEntry.logData
+                                                        ?.morningInLogManualId
+                                                    }
+                                                    showManualOption={true}
+                                                  />
+                                                </div>
+                                                {/* Afternoon In */}
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                    <svg
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      className="h-3 w-3 text-blue-200"
+                                                      viewBox="0 0 20 20"
+                                                      fill="currentColor"
+                                                    >
+                                                      <path d="M17.293 13.293A8 8 0 716.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                                    </svg>
+                                                    PM
+                                                  </span>
+                                                  <TimeDisplay
+                                                    time={
+                                                      workEntry.logData
+                                                        ?.afternoonInLog
+                                                    }
+                                                    type="in"
+                                                    attendance={{
+                                                      ...attendance,
+                                                      datePH: workEntry.date,
+                                                    }}
+                                                    timeType="afternoonIn"
+                                                    source={
+                                                      workEntry.logData
+                                                        ?.afternoonInLogSource
+                                                    }
+                                                    manualId={
+                                                      workEntry.logData
+                                                        ?.afternoonInLogManualId
+                                                    }
+                                                    showManualOption={true}
+                                                  />
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              // For Shifting shifts, show single time in
+                                              <TimeDisplay
+                                                time={workEntry.logData?.timeIn}
+                                                type="in"
+                                                attendance={{
+                                                  ...attendance,
+                                                  datePH: workEntry.date,
+                                                  shiftTemplate:
+                                                    workEntry.shift,
+                                                }}
+                                                timeType="timeIn"
+                                                source={
+                                                  workEntry.logData
+                                                    ?.timeInSource
+                                                }
+                                                manualId={
+                                                  workEntry.logData
+                                                    ?.timeInManualId
+                                                }
+                                                showManualOption={true}
+                                              />
+                                            )}
+                                          </div>
+                                        );
+                                      }
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              // Regular duty schedule handling
+                              const shiftType = attendance.shiftTemplate?.type;
 
                               return shiftType === "Standard" ? (
                                 // For Standard shifts, show morning and afternoon separately
@@ -2359,13 +2898,154 @@ const EmployeeAttendance = ({
                           {/* Time Out */}
                           <div>
                             {(() => {
-                              // For compensatory time off, use compensatoryWorkShift to determine display type
+                              // For compensatory time off, use compensatoryWorkEntries to determine display type
                               const isCompensatoryTimeOff =
                                 attendance.leaveTemplate?.isCompensatoryTimeOff;
-                              const shiftType = isCompensatoryTimeOff
-                                ? attendance.leaveTemplate
-                                    ?.compensatoryWorkShift?.type
-                                : attendance.shiftTemplate?.type;
+
+                              if (isCompensatoryTimeOff) {
+                                const compensatoryWorkEntries =
+                                  attendance.leaveTemplate
+                                    ?.compensatoryWorkEntries || [];
+
+                                if (compensatoryWorkEntries.length === 0) {
+                                  return (
+                                    <span className="text-gray-400">--:--</span>
+                                  );
+                                }
+
+                                return (
+                                  <div className="space-y-2">
+                                    {compensatoryWorkEntries.map(
+                                      (workEntry, index) => {
+                                        if (!workEntry.shift) return null;
+
+                                        const shiftType = workEntry.shift.type;
+
+                                        return (
+                                          <div
+                                            key={index}
+                                            className="border-l-2 border-red-300 pl-2"
+                                          >
+                                            {/* Work date label */}
+                                            <div className="text-xs text-gray-600 font-medium mb-1">
+                                              {formatDatePH(
+                                                workEntry.date,
+                                                "MMM D"
+                                              )}
+                                            </div>
+
+                                            {shiftType === "Standard" ? (
+                                              <div className="space-y-1">
+                                                {/* Morning Out */}
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white font-medium bg-sky-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                    <svg
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      className="h-3 w-3 text-yellow-200"
+                                                      viewBox="0 0 20 20"
+                                                      fill="currentColor"
+                                                    >
+                                                      <path
+                                                        fillRule="evenodd"
+                                                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                                        clipRule="evenodd"
+                                                      />
+                                                    </svg>
+                                                    AM
+                                                  </span>
+                                                  <TimeDisplay
+                                                    time={
+                                                      workEntry.logData
+                                                        ?.morningOutLog
+                                                    }
+                                                    type="out"
+                                                    attendance={{
+                                                      ...attendance,
+                                                      datePH: workEntry.date,
+                                                    }}
+                                                    timeType="morningOut"
+                                                    source={
+                                                      workEntry.logData
+                                                        ?.morningOutLogSource
+                                                    }
+                                                    manualId={
+                                                      workEntry.logData
+                                                        ?.morningOutLogManualId
+                                                    }
+                                                    showManualOption={true}
+                                                  />
+                                                </div>
+                                                {/* Afternoon Out */}
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-white font-medium bg-amber-500 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                                    <svg
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      className="h-3 w-3 text-blue-200"
+                                                      viewBox="0 0 20 20"
+                                                      fill="currentColor"
+                                                    >
+                                                      <path d="M17.293 13.293A8 8 0 716.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                                                    </svg>
+                                                    PM
+                                                  </span>
+                                                  <TimeDisplay
+                                                    time={
+                                                      workEntry.logData
+                                                        ?.afternoonOutLog
+                                                    }
+                                                    type="out"
+                                                    attendance={{
+                                                      ...attendance,
+                                                      datePH: workEntry.date,
+                                                    }}
+                                                    timeType="afternoonOut"
+                                                    source={
+                                                      workEntry.logData
+                                                        ?.afternoonOutLogSource
+                                                    }
+                                                    manualId={
+                                                      workEntry.logData
+                                                        ?.afternoonOutLogManualId
+                                                    }
+                                                    showManualOption={true}
+                                                  />
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              // For Shifting shifts, show single time out
+                                              <TimeDisplay
+                                                time={
+                                                  workEntry.logData?.timeOut
+                                                }
+                                                type="out"
+                                                attendance={{
+                                                  ...attendance,
+                                                  datePH: workEntry.date,
+                                                  shiftTemplate:
+                                                    workEntry.shift,
+                                                }}
+                                                timeType="timeOut"
+                                                source={
+                                                  workEntry.logData
+                                                    ?.timeOutSource
+                                                }
+                                                manualId={
+                                                  workEntry.logData
+                                                    ?.timeOutManualId
+                                                }
+                                                showManualOption={true}
+                                              />
+                                            )}
+                                          </div>
+                                        );
+                                      }
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              // Regular duty schedule handling
+                              const shiftType = attendance.shiftTemplate?.type;
 
                               return shiftType === "Standard" ? (
                                 // For Standard shifts, show morning and afternoon separately

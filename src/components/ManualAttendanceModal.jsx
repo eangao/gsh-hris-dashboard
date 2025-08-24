@@ -145,7 +145,29 @@ const ManualAttendanceModal = ({
 
     // Convert date and time to UTC
     const dateStr = attendance.datePH || attendance.date;
-    const logTime = combineDateTimeToUTC(dateStr, formData.time);
+
+    // Ensure we have a proper date format for combineDateTimeToUTC
+    let processedDateStr = dateStr;
+
+    // If dateStr contains 'T' (ISO format), extract just the date part
+    if (typeof dateStr === "string" && dateStr.includes("T")) {
+      processedDateStr = dateStr.split("T")[0];
+    }
+
+    // Format to YYYY-MM-DD if it's not already in that format
+    if (processedDateStr && !processedDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Try to parse and reformat the date
+      try {
+        const tempDate = new Date(processedDateStr);
+        if (!isNaN(tempDate.getTime())) {
+          processedDateStr = tempDate.toISOString().split("T")[0];
+        }
+      } catch (error) {
+        console.error("Date parsing error:", error);
+      }
+    }
+
+    const logTime = combineDateTimeToUTC(processedDateStr, formData.time);
 
     if (!logTime) {
       setErrors({ time: "Invalid date or time" });
@@ -162,6 +184,53 @@ const ManualAttendanceModal = ({
       remarks: formData.remarks,
       timeType: timeType, // Additional field to specify which time slot for frontend reference
     };
+
+    // Add compensatory time off specific data if applicable
+    const isCompensatoryTimeOff =
+      attendance.scheduleType === "leave" &&
+      attendance.leaveTemplate?.isCompensatoryTimeOff;
+
+    if (isCompensatoryTimeOff) {
+      // Find the matching work entry for this attendance date
+      const attendanceDate = attendance.datePH || attendance.date;
+      const compensatoryWorkEntries =
+        attendance.leaveTemplate?.compensatoryWorkEntries;
+
+      let matchingWorkEntry;
+
+      // Check if we have metadata from the parent component about which work entry to use
+      if (
+        attendance._compensatoryWorkEntryIndex !== undefined &&
+        compensatoryWorkEntries &&
+        attendance._compensatoryWorkEntryIndex < compensatoryWorkEntries.length
+      ) {
+        // Use the specific work entry identified by the parent component
+        matchingWorkEntry =
+          compensatoryWorkEntries[attendance._compensatoryWorkEntryIndex];
+      } else {
+        // Fallback to finding by date matching
+        matchingWorkEntry = compensatoryWorkEntries?.find(
+          (entry) => entry.date === attendanceDate
+        );
+      }
+
+      // Add compensatory time off metadata to help backend process this correctly
+      manualAttendanceData.isCompensatoryTimeOff = true;
+      manualAttendanceData.compensatoryWorkDate = attendanceDate; // The attendance date (when leave was taken)
+
+      if (matchingWorkEntry) {
+        manualAttendanceData.compensatoryWorkEntryId =
+          matchingWorkEntry.id || matchingWorkEntry.date;
+        manualAttendanceData.compensatoryShiftType =
+          matchingWorkEntry.shift?.type;
+        manualAttendanceData.compensatoryWorkEntryDate = matchingWorkEntry.date; // The actual work date
+      }
+
+      // Include leave template ID for backend reference
+      if (attendance.leaveTemplate?.id) {
+        manualAttendanceData.leaveTemplateId = attendance.leaveTemplate.id;
+      }
+    }
 
     // Store the submission data and show password confirmation modal
     setPendingSubmissionData(manualAttendanceData);
@@ -292,13 +361,44 @@ const ManualAttendanceModal = ({
             </div>
 
             {(() => {
-              // Check if this is compensatory time off
+              // Handle compensatory time off with new data structure
               const isCompensatoryTimeOff =
                 attendance.scheduleType === "leave" &&
                 attendance.leaveTemplate?.isCompensatoryTimeOff;
-              const workShift = isCompensatoryTimeOff
-                ? attendance.leaveTemplate?.compensatoryWorkShift
-                : attendance.shiftTemplate;
+
+              let workShift = null;
+
+              if (isCompensatoryTimeOff) {
+                // Check if we have compensatoryWorkEntries (new structure)
+                const compensatoryWorkEntries =
+                  attendance.leaveTemplate?.compensatoryWorkEntries;
+                if (
+                  compensatoryWorkEntries &&
+                  compensatoryWorkEntries.length > 0
+                ) {
+                  // Find the work entry that matches the current attendance date
+                  const attendanceDate = attendance.datePH || attendance.date;
+                  const matchingWorkEntry = compensatoryWorkEntries.find(
+                    (entry) => entry.date === attendanceDate
+                  );
+
+                  if (matchingWorkEntry) {
+                    // Use the matching work entry's shift
+                    workShift = matchingWorkEntry.shift;
+                  } else {
+                    // If no exact match found, use first entry as fallback
+                    workShift = compensatoryWorkEntries[0].shift;
+                  }
+                } else {
+                  // Fallback to modified shiftTemplate or old structure
+                  workShift =
+                    attendance.shiftTemplate ||
+                    attendance.leaveTemplate?.compensatoryWorkShift;
+                }
+              } else {
+                // Regular duty - use shiftTemplate
+                workShift = attendance.shiftTemplate;
+              }
 
               if (!workShift) return null;
 

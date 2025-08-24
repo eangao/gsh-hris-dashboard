@@ -170,79 +170,66 @@ const ScheduleDisplay = ({ attendance, isDesktop = true }) => {
         // Check if this is compensatory time off and display schedule accordingly
         const isCompensatoryTimeOff =
           attendance.leaveTemplate?.isCompensatoryTimeOff;
-        const compensatoryWorkShift =
-          attendance.leaveTemplate?.compensatoryWorkShift;
+        const compensatoryWorkEntries =
+          attendance.leaveTemplate?.compensatoryWorkEntries;
 
-        if (isCompensatoryTimeOff && compensatoryWorkShift) {
-          // Display time schedule for compensatory time off
-          if (compensatoryWorkShift.type === "Standard") {
-            // Helper function to format time from HH:mm to 12-hour format
-            const formatTime = (timeStr) => {
-              if (!timeStr) return "";
-              const [hours, minutes] = timeStr.split(":").map(Number);
-              const date = new Date();
-              date.setHours(hours);
-              date.setMinutes(minutes);
-              return date.toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "numeric",
-                hour12: true,
-              });
-            };
+        if (isCompensatoryTimeOff && compensatoryWorkEntries?.length > 0) {
+          // Helper function to format time from HH:mm to 12-hour format
+          const formatTime = (timeStr) => {
+            if (!timeStr) return "";
+            const [hours, minutes] = timeStr.split(":").map(Number);
+            const date = new Date();
+            date.setHours(hours);
+            date.setMinutes(minutes);
+            return date.toLocaleTimeString([], {
+              hour: "numeric",
+              minute: "numeric",
+              hour12: true,
+            });
+          };
 
-            const morningIn = formatTime(compensatoryWorkShift.morningIn);
-            const morningOut = formatTime(compensatoryWorkShift.morningOut);
-            const afternoonIn = formatTime(compensatoryWorkShift.afternoonIn);
-            const afternoonOut = formatTime(compensatoryWorkShift.afternoonOut);
-
-            return (
-              <div className="text-sm space-y-1">
-                <div className="text-amber-700 font-semibold capitalize mb-1">
-                  {attendance.leaveTemplate?.name || "Leave"}
-                </div>
-                <div className="flex items-center">
-                  <span className="text-blue-800">
-                    {morningIn}-{morningOut}
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-blue-800">
-                    {afternoonIn}-{afternoonOut}
-                  </span>
-                </div>
+          return (
+            <div className="text-sm space-y-1">
+              <div className="text-amber-700 font-semibold capitalize mb-2">
+                {attendance.leaveTemplate?.name || "Leave"}
               </div>
-            );
-          } else if (compensatoryWorkShift.type === "Shifting") {
-            // Helper function to format time from HH:mm to 12-hour format
-            const formatTime = (timeStr) => {
-              if (!timeStr) return "";
-              const [hours, minutes] = timeStr.split(":").map(Number);
-              const date = new Date();
-              date.setHours(hours);
-              date.setMinutes(minutes);
-              return date.toLocaleTimeString([], {
-                hour: "numeric",
-                minute: "numeric",
-                hour12: true,
-              });
-            };
+              {compensatoryWorkEntries.map((workEntry, index) => {
+                if (!workEntry.shift) return null;
 
-            const startTime = formatTime(compensatoryWorkShift.startTime);
-            const endTime = formatTime(compensatoryWorkShift.endTime);
-
-            return (
-              <div className="text-sm">
-                <div className="text-amber-700 font-semibold capitalize mb-1">
-                  {attendance.leaveTemplate?.name || "Leave"}
-                </div>
-                <div className="flex items-center">
-                  <span className="text-cyan-800 whitespace-nowrap">
-                    {startTime}-{endTime}
-                  </span>
-                </div>
-              </div>
-            );
-          }
+                return (
+                  <div key={index} className="space-y-1">
+                    <div className="text-xs text-gray-500 font-medium">
+                      {formatDatePH(workEntry.date, "ddd D MMM YY")}
+                    </div>
+                    {workEntry.shift.type === "Standard" && (
+                      <>
+                        <div className="flex items-center">
+                          <span className="text-blue-800">
+                            {formatTime(workEntry.shift.morningIn)}-
+                            {formatTime(workEntry.shift.morningOut)}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span className="text-blue-800">
+                            {formatTime(workEntry.shift.afternoonIn)}-
+                            {formatTime(workEntry.shift.afternoonOut)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {workEntry.shift.type === "Shifting" && (
+                      <div className="flex items-center">
+                        <span className="text-cyan-800 whitespace-nowrap">
+                          {formatTime(workEntry.shift.startTime)}-
+                          {formatTime(workEntry.shift.endTime)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
         }
 
         // Default leave display (non-compensatory)
@@ -359,13 +346,144 @@ const TimeDisplay = ({ attendance, type = "in" }) => {
     return null;
   };
 
-  // Determine shift type - for compensatory time off, use compensatoryWorkShift
+  // Determine shift type - for compensatory time off, use compensatoryWorkEntries
   const isCompensatoryTimeOff =
     attendance.scheduleType === "leave" &&
     attendance.leaveTemplate?.isCompensatoryTimeOff;
-  const shiftTemplate = isCompensatoryTimeOff
-    ? attendance.leaveTemplate?.compensatoryWorkShift
-    : attendance.shiftTemplate;
+  const compensatoryWorkEntries = isCompensatoryTimeOff
+    ? attendance.leaveTemplate?.compensatoryWorkEntries
+    : null;
+
+  // For compensatory time off, show combined time data from all work entries
+  if (isCompensatoryTimeOff && compensatoryWorkEntries?.length > 0) {
+    if (type === "in") {
+      return (
+        <div className="text-xs space-y-1">
+          {compensatoryWorkEntries.map((workEntry, index) => {
+            if (!workEntry.shift) return null;
+
+            if (workEntry.shift.type === "Standard") {
+              const morningIn = workEntry.logData?.morningInLog
+                ? formatTime(workEntry.logData.morningInLog)
+                : "--:--";
+              const afternoonIn = workEntry.logData?.afternoonInLog
+                ? formatTime(workEntry.logData.afternoonInLog)
+                : "--:--";
+
+              const morningIndicator = getSourceIndicator(
+                workEntry.logData?.morningInLogSource
+              );
+              const afternoonIndicator = getSourceIndicator(
+                workEntry.logData?.afternoonInLogSource
+              );
+
+              return (
+                <div key={index} className="space-y-1">
+                  {/* Work date label */}
+                  <div className="text-xs text-gray-600 font-medium text-center">
+                    {formatDatePH(workEntry.date, "MMM D")}
+                  </div>
+                  <div className="flex items-center gap-1 justify-center">
+                    <span>{morningIn}</span>
+                    {morningIndicator}
+                  </div>
+                  <div className="flex items-center gap-1 justify-center">
+                    <span>{afternoonIn}</span>
+                    {afternoonIndicator}
+                  </div>
+                </div>
+              );
+            } else if (workEntry.shift.type === "Shifting") {
+              const time = workEntry.logData?.timeIn;
+              const source = workEntry.logData?.timeInSource;
+              const formattedTime = formatTime(time);
+              const indicator = getSourceIndicator(source);
+
+              return (
+                <div key={index} className="space-y-1">
+                  {/* Work date label */}
+                  <div className="text-xs text-gray-600 font-medium text-center">
+                    {formatDatePH(workEntry.date, "MMM D")}
+                  </div>
+                  <div className="flex items-center gap-1 justify-center">
+                    <span>{formattedTime}</span>
+                    {indicator}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })}
+        </div>
+      );
+    } else {
+      return (
+        <div className="text-xs space-y-1">
+          {compensatoryWorkEntries.map((workEntry, index) => {
+            if (!workEntry.shift) return null;
+
+            if (workEntry.shift.type === "Standard") {
+              const morningOut = workEntry.logData?.morningOutLog
+                ? formatTime(workEntry.logData.morningOutLog)
+                : "--:--";
+              const afternoonOut = workEntry.logData?.afternoonOutLog
+                ? formatTime(workEntry.logData.afternoonOutLog)
+                : "--:--";
+
+              const morningIndicator = getSourceIndicator(
+                workEntry.logData?.morningOutLogSource
+              );
+              const afternoonIndicator = getSourceIndicator(
+                workEntry.logData?.afternoonOutLogSource
+              );
+
+              return (
+                <div key={index} className="space-y-1">
+                  {/* Work date label */}
+                  <div className="text-xs text-gray-600 font-medium text-center">
+                    {formatDatePH(workEntry.date, "MMM D")}
+                  </div>
+                  <div className="flex items-center gap-1 justify-center">
+                    <span>{morningOut}</span>
+                    {morningIndicator}
+                  </div>
+                  <div className="flex items-center gap-1 justify-center">
+                    <span>{afternoonOut}</span>
+                    {afternoonIndicator}
+                  </div>
+                </div>
+              );
+            } else if (workEntry.shift.type === "Shifting") {
+              const time = workEntry.logData?.timeOut;
+              const source = workEntry.logData?.timeOutSource;
+              const formattedTime = formatTime(time);
+              const indicator = getSourceIndicator(source);
+              const nightBadge = workEntry.shift?.isNightDifferential ? (
+                <span className="print-badge print-badge-night">N</span>
+              ) : null;
+
+              return (
+                <div key={index} className="space-y-1">
+                  {/* Work date label */}
+                  <div className="text-xs text-gray-600 font-medium text-center">
+                    {formatDatePH(workEntry.date, "MMM D")}
+                  </div>
+                  <div className="flex items-center gap-1 justify-center">
+                    <span>{formattedTime}</span>
+                    {indicator}
+                    {nightBadge}
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })}
+        </div>
+      );
+    }
+  }
+
+  const shiftTemplate = attendance.shiftTemplate;
 
   // Check if it's a Standard shift (has morning/afternoon times)
   if (shiftTemplate?.type === "Standard") {
@@ -554,13 +672,28 @@ const LateDisplay = ({ attendance }) => {
     return <span className="text-gray-400">--</span>;
   }
 
-  // Determine shift type - for compensatory time off, use compensatoryWorkShift
+  // Determine shift type - for compensatory time off, use first work entry type
   const isCompensatoryTimeOff =
     attendance.scheduleType === "leave" &&
     attendance.leaveTemplate?.isCompensatoryTimeOff;
-  const shiftTemplate = isCompensatoryTimeOff
-    ? attendance.leaveTemplate?.compensatoryWorkShift
-    : attendance.shiftTemplate;
+  const compensatoryWorkEntries = isCompensatoryTimeOff
+    ? attendance.leaveTemplate?.compensatoryWorkEntries
+    : null;
+
+  // For compensatory time off, find the shift type that matches this attendance date
+  const shiftTemplate =
+    isCompensatoryTimeOff && compensatoryWorkEntries?.length > 0
+      ? (() => {
+          // Find the work entry that matches the attendance date
+          const attendanceDate = attendance.datePH || attendance.date;
+          const matchingWorkEntry = compensatoryWorkEntries.find(
+            (entry) => entry.date === attendanceDate
+          );
+          // Use matching entry's shift type, or fallback to first entry
+          const workEntry = matchingWorkEntry || compensatoryWorkEntries[0];
+          return { type: workEntry.shift?.type || workEntry.type };
+        })()
+      : attendance.shiftTemplate;
 
   // Check if it's a Standard shift (has morning/afternoon late minutes)
   if (shiftTemplate?.type === "Standard") {
