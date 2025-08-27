@@ -33,13 +33,13 @@ export const managerNav = [
     icon: <FaUserCog />,
     role: managerRoles,
   },
-  {
-    title: "Dashboard Overview",
-    icon: <AiOutlineDashboard />,
-    path: "/manager/dashboard",
-    role: managerRoles,
-    group: "Manager Dashboard",
-  },
+  // {
+  //   title: "Dashboard Overview",
+  //   icon: <AiOutlineDashboard />,
+  //   path: "/manager/dashboard",
+  //   role: managerRoles,
+  //   group: "Manager Dashboard",
+  // },
 
   {
     title: "Employees",

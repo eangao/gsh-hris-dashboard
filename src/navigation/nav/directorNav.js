@@ -31,13 +31,13 @@ export const directorNav = [
     icon: <MdOutlineSupervisorAccount />,
     role: directorRoles,
   },
-  {
-    title: "Dashboard Overview",
-    icon: <AiOutlineDashboard />,
-    path: "/director/dashboard",
-    role: directorRoles,
-    group: "Director Dashboard",
-  },
+  // {
+  //   title: "Dashboard Overview",
+  //   icon: <AiOutlineDashboard />,
+  //   path: "/director/dashboard",
+  //   role: directorRoles,
+  //   group: "Director Dashboard",
+  // },
   {
     title: "Employees",
     icon: <AiOutlineUserSwitch />, // Manage all employee profiles

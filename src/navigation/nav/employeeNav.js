@@ -39,13 +39,13 @@ export const employeeNav = [
     icon: <FaUserTie />,
     role: employeeAccessRoles,
   },
-  {
-    title: "Dashboard Overview",
-    icon: <AiOutlineDashboard />,
-    path: "/employee/dashboard",
-    role: employeeAccessRoles,
-    group: "My Dashboard",
-  },
+  // {
+  //   title: "Dashboard Overview",
+  //   icon: <AiOutlineDashboard />,
+  //   path: "/employee/dashboard",
+  //   role: employeeAccessRoles,
+  //   group: "My Dashboard",
+  // },
   {
     title: "My Profile",
     icon: <AiOutlineUser />,
@@ -67,13 +67,13 @@ export const employeeNav = [
     role: employeeAccessRoles,
     group: "My Dashboard",
   },
-  {
-    title: "My Dependents",
-    icon: <AiOutlineTeam />,
-    path: "/employee/dependents",
-    role: employeeAccessRoles,
-    group: "My Dashboard",
-  },
+  // {
+  //   title: "My Dependents",
+  //   icon: <AiOutlineTeam />,
+  //   path: "/employee/dependents",
+  //   role: employeeAccessRoles,
+  //   group: "My Dashboard",
+  // },
 
   // {
   //   title: "My Licenses",

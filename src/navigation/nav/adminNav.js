@@ -33,13 +33,13 @@ export const adminNav = [
     icon: <FaUserShield />,
     role: adminRoles,
   },
-  {
-    title: "Dashboard Overview",
-    icon: <AiOutlineDashboard />,
-    role: adminRoles,
-    path: "/admin/dashboard",
-    group: "Admin Dashboard",
-  },
+  // {
+  //   title: "Dashboard Overview",
+  //   icon: <AiOutlineDashboard />,
+  //   role: adminRoles,
+  //   path: "/admin/dashboard",
+  //   group: "Admin Dashboard",
+  // },
   {
     title: "Dashboard Analytics",
     icon: <FiBarChart2 />,

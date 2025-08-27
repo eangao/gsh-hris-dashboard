@@ -110,21 +110,21 @@ const employeeRoutes = [
     role: employeeAccessRoles,
   },
 
-  {
-    path: "/employee/dependents",
-    element: <MyDependents />,
-    role: employeeAccessRoles,
-  },
-  {
-    path: "/employee/account-settings",
-    element: <AccountSettings />,
-    role: employeeAccessRoles,
-  },
-  {
-    path: "/employee/help-support",
-    element: <HelpSupport />,
-    role: employeeAccessRoles,
-  },
+  // {
+  //   path: "/employee/dependents",
+  //   element: <MyDependents />,
+  //   role: employeeAccessRoles,
+  // },
+  // {
+  //   path: "/employee/account-settings",
+  //   element: <AccountSettings />,
+  //   role: employeeAccessRoles,
+  // },
+  // {
+  //   path: "/employee/help-support",
+  //   element: <HelpSupport />,
+  //   role: employeeAccessRoles,
+  // },
 
   // {
   //   path: "/employee/leave",

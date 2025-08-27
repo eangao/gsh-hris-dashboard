@@ -42,13 +42,13 @@ export const hrNav = [
     icon: <FaPeopleGroup />,
     role: hrRoles,
   },
-  {
-    title: "Dashboard Overview",
-    icon: <AiOutlineDashboard />, // Overview and stats for HR
-    path: "/hr/dashboard",
-    role: hrRoles,
-    group: "HR Dashboard",
-  },
+  // {
+  //   title: "Dashboard Overview",
+  //   icon: <AiOutlineDashboard />, // Overview and stats for HR
+  //   path: "/hr/dashboard",
+  //   role: hrRoles,
+  //   group: "HR Dashboard",
+  // },
   {
     title: "Employees",
     icon: <AiOutlineUserSwitch />, // Manage all employee profiles
