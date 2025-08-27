@@ -961,6 +961,276 @@ const DutyScheduleDetails = ({
           </div>
 
           {/* Summary Section */}
+          <div className="overflow-x-auto mb-6 mt-6">
+            <h2 className="text-lg font-bold mb-2 text-blue-800">
+              Weekly Summary
+            </h2>
+            {(() => {
+              // 1. Get all unique employees from allEntries using denormalized data
+              const employeeMap = {};
+              allEntries.forEach((entry) => {
+                entry.employeeSchedules.forEach((es) => {
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+
+                  if (empId) {
+                    // Prioritize denormalized employee data
+                    if (es.employeeData && es.employeeData.firstName) {
+                      employeeMap[empId] = {
+                        _id: empId,
+                        personalInformation: {
+                          firstName: es.employeeData.firstName,
+                          lastName: es.employeeData.lastName,
+                          middleName: es.employeeData.middleName,
+                          suffix: es.employeeData.suffix,
+                        },
+                      };
+                    }
+                    // Fall back to populated employee data
+                    else if (
+                      typeof es.employee === "object" &&
+                      es.employee?._id
+                    ) {
+                      employeeMap[empId] = es.employee;
+                    }
+                  }
+                });
+              });
+              const sortedEmployees = Object.values(employeeMap).sort((a, b) =>
+                a.personalInformation.lastName.localeCompare(
+                  b.personalInformation.lastName
+                )
+              );
+              // 2. Build a map of employeeId to total hours for the month
+              const employeeMonthTotals = {};
+              allEntries.forEach((entry) => {
+                entry.employeeSchedules.forEach((es) => {
+                  const empId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+
+                  // Get shift data prioritizing denormalized data
+                  let shift = null;
+                  if (es.type === "duty") {
+                    if (es.shiftData && es.shiftData.name) {
+                      shift = es.shiftData;
+                    } else if (es.shiftTemplate) {
+                      shift = es.shiftTemplate;
+                    }
+                  }
+
+                  const hours = getShiftHours(shift);
+                  if (
+                    hours !== "off" &&
+                    hours !== "" &&
+                    !isNaN(Number(hours))
+                  ) {
+                    if (!employeeMonthTotals[empId])
+                      employeeMonthTotals[empId] = 0;
+                    employeeMonthTotals[empId] += Number(hours);
+                  }
+                });
+              });
+              // 3. Build calendar weeks (array of arrays of dates)
+              const weekDaysShort = [
+                "Sun",
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+              ];
+              const weeks = [];
+              let week = [];
+              days.forEach((date) => {
+                if (week.length === 0 && date.getDay() !== 0) {
+                  for (let i = 0; i < date.getDay(); i++) week.push(null);
+                }
+                week.push(date);
+                if (week.length === 7) {
+                  weeks.push(week);
+                  week = [];
+                }
+              });
+              if (week.length > 0) {
+                while (week.length < 7) week.push(null);
+                weeks.push(week);
+              }
+              // 4. For each week, build summary rows
+              const getDayHours = (empId, date) => {
+                if (!date) return "";
+                const entry = allEntries.find(
+                  (e) => formatDatePH(e.date) === formatDatePH(date)
+                );
+                if (!entry) return "";
+                const es = entry.employeeSchedules.find((es) => {
+                  const esEmpId =
+                    typeof es.employee === "string"
+                      ? es.employee
+                      : es.employee?._id;
+                  return esEmpId === empId;
+                });
+                if (!es) return "";
+
+                // Get shift data prioritizing denormalized data
+                let shift = null;
+                if (es.type === "duty") {
+                  if (es.shiftData && es.shiftData.name) {
+                    shift = es.shiftData;
+                  } else if (es.shiftTemplate) {
+                    shift = es.shiftTemplate;
+                  }
+                }
+
+                const hours = getShiftHours(shift);
+                return hours;
+              };
+              return (
+                <>
+                  {weeks.map((weekDates, weekIdx) => (
+                    <div key={weekIdx} className="mb-4">
+                      <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                        <thead>
+                          <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
+                            <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                              Employee
+                            </th>
+                            {weekDaysShort.map((d, i) => {
+                              const dateObj = weekDates[i];
+                              const isHoliday =
+                                dateObj &&
+                                holidays?.some((h) => {
+                                  const holidayDatePH = formatDatePH(
+                                    new Date(h.date)
+                                  );
+                                  return (
+                                    holidayDatePH === formatDatePH(dateObj)
+                                  );
+                                });
+                              const isWeekend = i === 0 || i === 6;
+                              return (
+                                <th
+                                  key={i}
+                                  className={`px-2 py-2 border text-center font-semibold ${
+                                    isHoliday || isWeekend
+                                      ? "text-red-600"
+                                      : "text-blue-700"
+                                  }`}
+                                >
+                                  <div>{d}</div>
+                                  <div
+                                    className={`text-xs ${
+                                      isHoliday || isWeekend
+                                        ? "text-red-600"
+                                        : "text-blue-600"
+                                    }`}
+                                  >
+                                    {dateObj ? dateObj.getDate() : ""}
+                                  </div>
+                                </th>
+                              );
+                            })}
+                            <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedEmployees.map((emp, i) => {
+                            let total = 0;
+                            const dayVals = weekDates.map((date) => {
+                              const val = getDayHours(emp._id, date);
+                              if (
+                                val !== "off" &&
+                                val !== "" &&
+                                !isNaN(Number(val))
+                              )
+                                total += Number(val);
+                              return val;
+                            });
+                            return (
+                              <tr
+                                key={emp._id}
+                                className={
+                                  i % 2 === 0 ? "bg-white" : "bg-slate-100"
+                                }
+                              >
+                                <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                                  {emp.personalInformation.lastName},{" "}
+                                  {emp.personalInformation.firstName}
+                                </td>
+                                {dayVals.map((val, j) => (
+                                  <td
+                                    key={j}
+                                    className={`px-2 py-2 border text-center capitalize text-blue-700 ${
+                                      val === "off"
+                                        ? "bg-gray-200 text-gray-500 font-semibold"
+                                        : ""
+                                    }`}
+                                  >
+                                    {val === "off" || val === ""
+                                      ? val
+                                      : formatHoursAndMinutes(val)}
+                                  </td>
+                                ))}
+                                <td className="px-2 py-2 border text-center font-bold text-blue-900 capitalize">
+                                  {total === 0
+                                    ? ""
+                                    : formatHoursAndMinutes(total)}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                  {/* Monthly total row */}
+                  <div className="mb-4">
+                    <h2 className="text-lg font-bold mb-2 text-blue-800">
+                      Summary for this Month
+                    </h2>
+                    <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-blue-200 to-blue-300">
+                          <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                            Employee
+                          </th>
+                          <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                            Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedEmployees.map((emp, i) => (
+                          <tr
+                            key={emp._id}
+                            className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                          >
+                            <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                              {emp.personalInformation.lastName},{" "}
+                              {emp.personalInformation.firstName}
+                            </td>
+                            <td className="px-2 py-2 border text-center font-bold text-blue-900">
+                              {employeeMonthTotals[emp._id]
+                                ? formatHoursAndMinutes(
+                                    employeeMonthTotals[emp._id]
+                                  )
+                                : "0 min"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
 
           {/* Section Save Buttons */}
 

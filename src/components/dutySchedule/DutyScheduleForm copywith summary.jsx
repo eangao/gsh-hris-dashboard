@@ -2311,6 +2311,321 @@ const DutyScheduleForm = ({
 
           {/* Summary Section Card */}
 
+          <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
+            <div className="p-6">
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 mb-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  Weekly Summary
+                </h2>
+                <p className="text-sm text-gray-600">
+                  Review total working hours for each employee by week and
+                  month.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                {(() => {
+                  const weekDaysShort = [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat",
+                  ];
+                  const summary = getWeeklySummary();
+                  // Build a flat map of employeeId to total hours for the month
+                  const employeeMonthTotals = {};
+
+                  // Build a map of employees from entries (prioritize entry data)
+                  const employeeMap = {};
+
+                  // First, collect all unique employees from entries
+                  const entryEmployees = new Set();
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const empId =
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id;
+                      entryEmployees.add(empId);
+
+                      // If employee data is populated in entry, use it
+                      if (typeof es.employee === "object" && es.employee?._id) {
+                        employeeMap[empId] = es.employee;
+                      }
+                    });
+                  });
+
+                  // Fill in missing employee data from Redux store (for select options compatibility)
+                  entryEmployees.forEach((empId) => {
+                    if (!employeeMap[empId]) {
+                      const empFromStore = employees.find(
+                        (emp) => emp._id === empId
+                      );
+                      if (empFromStore) {
+                        employeeMap[empId] = empFromStore;
+                      }
+                    }
+                  });
+
+                  // Build a map of shiftTemplates from entries (prioritize entry data)
+                  const shiftMap = {};
+
+                  // First, collect all unique shift templates from entries
+                  const entryShiftTemplates = new Set();
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const shiftId =
+                        typeof es.shiftTemplate === "string"
+                          ? es.shiftTemplate
+                          : es.shiftTemplate?._id;
+                      entryShiftTemplates.add(shiftId);
+
+                      // If shift template data is populated in entry, use it
+                      if (
+                        typeof es.shiftTemplate === "object" &&
+                        es.shiftTemplate?._id
+                      ) {
+                        shiftMap[shiftId] = es.shiftTemplate;
+                      }
+                    });
+                  });
+
+                  // Fill in missing shift template data from Redux store (for select options compatibility)
+                  entryShiftTemplates.forEach((shiftId) => {
+                    if (!shiftMap[shiftId]) {
+                      const shiftFromStore = shiftTemplates.find(
+                        (st) => st._id === shiftId
+                      );
+                      if (shiftFromStore) {
+                        shiftMap[shiftId] = shiftFromStore;
+                      }
+                    }
+                  });
+
+                  // Calculate total per employee for the month
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const empId =
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id;
+                      const shift =
+                        shiftMap[
+                          typeof es.shiftTemplate === "string"
+                            ? es.shiftTemplate
+                            : es.shiftTemplate?._id
+                        ];
+                      const hours = getShiftHours(shift);
+                      if (
+                        hours !== "off" &&
+                        hours !== "" &&
+                        !isNaN(Number(hours))
+                      ) {
+                        if (!employeeMonthTotals[empId])
+                          employeeMonthTotals[empId] = 0;
+                        employeeMonthTotals[empId] += Number(hours);
+                      }
+                    });
+                  });
+
+                  // Get all unique employees scheduled in this month, sorted by last name
+                  const scheduledEmployeeIds = new Set();
+                  allEntries.forEach((entry) => {
+                    entry.employeeSchedules.forEach((es) => {
+                      const empId =
+                        typeof es.employee === "string"
+                          ? es.employee
+                          : es.employee?._id;
+                      scheduledEmployeeIds.add(empId);
+                    });
+                  });
+
+                  const sortedEmployees = Array.from(scheduledEmployeeIds)
+                    .map((id) => employeeMap[id])
+                    .filter((emp) => emp) // Remove null/undefined entries
+                    .sort((a, b) =>
+                      a.personalInformation.lastName.localeCompare(
+                        b.personalInformation.lastName
+                      )
+                    );
+                  // Render summary tables per week
+                  return (
+                    <>
+                      {summary.map((rows, weekIdx) => {
+                        // Get the weekDates for this week (aligned to calendar)
+                        const weekDates = (() => {
+                          // The weeks array in getWeeklySummary uses the same logic as the calendar grid
+                          // So we can reconstruct the weeks array here for header rendering
+                          const weeks = [];
+                          let week = [];
+                          days.forEach((date) => {
+                            if (week.length === 0 && date.getDay() !== 0) {
+                              for (let i = 0; i < date.getDay(); i++)
+                                week.push(null);
+                            }
+                            week.push(date);
+                            if (week.length === 7) {
+                              weeks.push(week);
+                              week = [];
+                            }
+                          });
+                          if (week.length > 0) {
+                            while (week.length < 7) week.push(null);
+                            weeks.push(week);
+                          }
+                          return weeks[weekIdx] || [];
+                        })();
+                        return (
+                          <div key={weekIdx} className="mb-4">
+                            <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                              <thead>
+                                <tr className="bg-gradient-to-r from-blue-100 to-blue-200">
+                                  <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                                    Employee
+                                  </th>
+                                  {weekDaysShort.map((d, i) => {
+                                    const dateObj = weekDates[i];
+                                    // Check if this date is a holiday
+                                    const isHoliday =
+                                      dateObj &&
+                                      holidays?.some((h) => {
+                                        const holidayDatePH = formatDatePH(
+                                          new Date(h.date)
+                                        );
+                                        return (
+                                          holidayDatePH ===
+                                          formatDatePH(dateObj)
+                                        );
+                                      });
+                                    const isWeekend = i === 0 || i === 6;
+                                    return (
+                                      <th
+                                        key={i}
+                                        className={`px-2 py-2 border text-center font-semibold ${
+                                          isHoliday || isWeekend
+                                            ? "text-red-600"
+                                            : "text-blue-700"
+                                        }`}
+                                      >
+                                        <div>{d}</div>
+                                        <div
+                                          className={`text-xs ${
+                                            isHoliday || isWeekend
+                                              ? "text-red-600"
+                                              : "text-blue-400"
+                                          }`}
+                                        >
+                                          {dateObj ? dateObj.getDate() : ""}
+                                        </div>
+                                      </th>
+                                    );
+                                  })}
+                                  <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                                    Total
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {rows.map((row, i) => (
+                                  <tr
+                                    key={i}
+                                    className={
+                                      i % 2 === 0 ? "bg-white" : "bg-slate-100"
+                                    }
+                                  >
+                                    <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                                      {row.employee}
+                                    </td>
+                                    {row.days.map((val, j) => (
+                                      <td
+                                        key={j}
+                                        className={`px-2 py-2 border text-center capitalize text-blue-700 ${
+                                          val === "off"
+                                            ? "bg-gray-200 text-gray-500 font-semibold"
+                                            : ""
+                                        }`}
+                                      >
+                                        {val === "off" || val === ""
+                                          ? val
+                                          : formatHoursAndMinutes(val)}
+                                      </td>
+                                    ))}
+                                    <td className="px-2 py-2 border text-center font-bold text-blue-900 capitalize">
+                                      {row.total === ""
+                                        ? ""
+                                        : formatHoursAndMinutes(row.total)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+                      {/* Monthly total row */}
+                      <div className="mb-4">
+                        <h2 className="text-lg font-bold mb-2 text-blue-800">
+                          Summary for this Month
+                        </h2>
+                        <table className="min-w-full border border-gray-300 rounded-lg shadow-md overflow-hidden">
+                          <thead>
+                            <tr className="bg-gradient-to-r from-blue-200 to-blue-300">
+                              <th className="px-2 py-2 border text-left font-semibold text-gray-700">
+                                Employee
+                              </th>
+                              <th className="px-2 py-2 border text-center font-semibold text-gray-700">
+                                Total
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {sortedEmployees.map((emp, i) => (
+                              <tr
+                                key={emp._id}
+                                className={
+                                  i % 2 === 0 ? "bg-white" : "bg-gray-50"
+                                }
+                              >
+                                <td className="px-2 py-2 border text-left whitespace-nowrap text-gray-800 font-medium">
+                                  {emp.personalInformation.lastName},{" "}
+                                  {emp.personalInformation.firstName}
+                                </td>
+                                <td className="px-2 py-2 border text-center font-bold text-blue-900">
+                                  {employeeMonthTotals[emp._id]
+                                    ? formatHoursAndMinutes(
+                                        employeeMonthTotals[emp._id]
+                                      )
+                                    : "0 min"}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+
           {/* Action Buttons Section */}
           <div className="bg-white shadow-sm rounded-lg border border-gray-200 mb-6">
             <div className="p-6">
